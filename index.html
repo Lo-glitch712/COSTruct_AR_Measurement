@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COSTruct AR Measurement v8</title>
+
+  <script crossorigin="anonymous" src="./external/scripts/8frame-1.5.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/coaching-overlay@1/dist/coaching-overlay.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" crossorigin="anonymous" async="true" data-preload-chunks="slam"></script>
+
+  <style>
+    #promptText {
+      position: absolute; top: 20px; left: 0; right: 0;
+      text-align: center; color: white; font-size: 22px;
+      font-family: sans-serif; z-index: 10; text-shadow: 0 0 4px black;
+    }
+    #resetBtn {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      z-index: 10; padding: 12px 28px; font-size: 16px;
+      border-radius: 8px; border: none; background: #2563eb; color: white;
+    }
+
+    #crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 40px;
+  z-index: 10;
+  text-shadow: 0 0 4px black;
+  pointer-events: none;
+}
+#placeBtn {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 14px 32px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  background: #22c55e;
+  color: white;
+}
+#calibrateBtn {
+  position: absolute;
+  bottom: 170px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 10px 20px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  background: #111827;
+  color: white;
+}
+#calibrationPanel {
+  position: absolute;
+  left: 50%;
+  bottom: 230px;
+  transform: translateX(-50%);
+  z-index: 11;
+  display: none;
+  width: min(86vw, 360px);
+  padding: 14px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.96);
+  color: #111827;
+  font-family: sans-serif;
+  text-align: center;
+}
+#calibrationPanel input {
+  width: 90px;
+  padding: 8px;
+  font-size: 18px;
+  text-align: center;
+  border: 1px solid #9ca3af;
+  border-radius: 6px;
+}
+#calibrationPanel button {
+  margin-top: 10px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+}
+#calibrationStatus {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+#measureMode {
+  position:absolute;
+  top:58px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:12;
+  display:flex;
+  gap:6px;
+  padding:5px;
+  border-radius:12px;
+  background:rgba(17,24,39,0.86);
+}
+#measureMode button {
+  border:0;
+  border-radius:8px;
+  padding:8px 13px;
+  font-size:14px;
+  font-family:sans-serif;
+  color:#fff;
+  background:transparent;
+}
+#measureMode button.active {
+  background:#2563eb;
+}
+#areaResult {
+  position:absolute;
+  top:102px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:12;
+  display:none;
+  color:#111;
+  background:#fff;
+  padding:8px 14px;
+  border-radius:10px;
+  font-size:17px;
+  font-family:sans-serif;
+  font-weight:700;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);
+}
+#snapHint {
+  position:absolute;
+  top:132px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:11;
+  display:none;
+  color:#fff;
+  font-size:15px;
+  font-family:sans-serif;
+  font-weight:700;
+  text-align:center;
+  text-shadow:0 0 4px #000;
+  pointer-events:none;
+}
+#heightHint {
+  position:absolute;
+  top:102px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:11;
+  display:none;
+  color:#fff;
+  font-size:14px;
+  font-family:sans-serif;
+  text-align:center;
+  text-shadow:0 0 4px #000;
+  pointer-events:none;
+  width:90vw;
+}
+  </style>
+</head>
+
+<body>
+<div id="crosshair">+</div>
+<div id="measureMode">
+  <button id="floorModeBtn" class="active">Floor</button>
+  <button id="heightModeBtn">Height</button>
+</div>
+<div id="heightHint">Height: tap the floor/base point first, then aim vertically to the top point.</div>
+<div id="snapHint">● SNAP</div>
+<div id="areaResult"></div>
+
+<button id="placeBtn">Place Point</button>
+<button id="calibrateBtn">Calibrate</button>
+<div id="calibrationPanel">
+  <div><strong>Calibration</strong></div>
+  <div style="margin-top:6px">Measure a known distance, then enter its real length in meters.</div>
+  <div style="margin-top:10px">
+    <input id="knownDistance" type="number" min="0.01" step="0.01" value="1.00">
+    <span>m</span>
+  </div>
+  <button id="applyCalibration">Apply Calibration</button>
+  <div id="calibrationStatus">Current scale: 1.000×</div>
+  <div style="font-size:13px;color:#4b5563;margin-top:6px;line-height:1.35;">For best accuracy, calibrate using a measured reference of at least 1 m and keep the phone steady while placing both points.</div>
+</div>
+<div id="promptText">I-tap ang unang punto</div>
+<button id="resetBtn">I-reset</button>
+
+<a-scene
+  distance-measure
+  coaching-overlay
+  landing-page
+  xrextras-loading
+  xrextras-runtime-error
+  xrextras-almost-there
+  renderer="colorManagement:true"
+  xrweb="
+    allowedDevices: any;
+    defaultEnvironmentFogIntensity: 0.5; 
+    defaultEnvironmentFloorTexture: #groundTex; 
+    defaultEnvironmentFloorColor: #FFF;
+    defaultEnvironmentSkyBottomColor: #B4C4CC; 
+    defaultEnvironmentSkyTopColor: #5ac8fa;
+    defaultEnvironmentSkyGradientStrength: 0.5;
+    scale: absolute;">
+
+  <a-assets>
+    <img id="groundTex" src="assets/sand.jpg">
+  </a-assets>
+
+  <a-camera
+    id="camera"
+    position="0 1.75 5"
+    raycaster="objects: .cantap"
+    cursor="
+      fuse: false;
+      rayOrigin: mouse;">
+  </a-camera>
+
+  <a-entity
+    light="
+      type: directional;
+      intensity: 0.8;
+      castShadow: true;
+      shadowMapHeight:2048;
+      shadowMapWidth:2048;
+      shadowCameraTop: 40;
+      shadowCameraBottom: -40;
+      shadowCameraRight: 40;
+      shadowCameraLeft: -40;
+      target: #camera"
+    xrextras-attach="target: camera; offset: 8 15 4"
+    position="1 4.3 2.5"
+    shadow>
+  </a-entity>
+
+  <a-light type="ambient" intensity="0.5"></a-light>
+
+  <a-box
+    id="ground"
+    class="cantap"
+    scale="1000 2 1000"
+    position="0 -0.99 0"
+    material="shader: shadow; transparent: true; opacity: 0.4"
+    shadow>
+  </a-box>
+
+  
+</a-scene>
+
+<script>
+AFRAME.registerComponent('distance-measure', {
+    init: function () {
+      this.corners = [];
+      this.markers = [];
+      this.lines = [];
+      this.previewLines = {};
+      this.labels = [];
+      this.previewLabel = null;
+
+      this.step = 'A';
+      this.measurementY = null;
+      this.snapThreshold = 0.12;
+      this.isSnapped = false;
+      this.rawAimPoint = null;
+      this.aimHistory = [];
+      this.historyMax = 12;
+      this.calibrationActive = false;
+      this.calibrationPoints = [];
+      // Calibration is session-specific. Reusing a factor after reload can
+      // compound tracking differences from a new AR session.
+      this.calibrationFactor = 1;
+
+      this.promptText = document.getElementById('promptText');
+      this.resetBtn = document.getElementById('resetBtn');
+      this.placeBtn = document.getElementById('placeBtn');
+      this.calibrateBtn = document.getElementById('calibrateBtn');
+      this.calibrationPanel = document.getElementById('calibrationPanel');
+      this.knownDistanceInput = document.getElementById('knownDistance');
+      this.applyCalibrationBtn = document.getElementById('applyCalibration');
+      this.calibrationStatus = document.getElementById('calibrationStatus');
+
+      this.floorModeBtn = document.getElementById('floorModeBtn');
+      this.heightModeBtn = document.getElementById('heightModeBtn');
+      this.heightHint = document.getElementById('heightHint');
+      this.snapHint = document.getElementById('snapHint');
+      this.areaResult = document.getElementById('areaResult');
+      this.measureMode = 'floor';
+      this.waitingForContinue = false;
+      this.closed = false;
+
+      this.raycaster = new THREE.Raycaster();
+      this.updateCalibrationStatus();
+
+      this.resetBtn.addEventListener('click', this.reset.bind(this));
+      this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
+      this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
+      this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
+      this.floorModeBtn.addEventListener('click', () => this.setMeasureMode('floor'));
+      this.heightModeBtn.addEventListener('click', () => this.setMeasureMode('height'));
+    },
+
+    setMeasureMode: function (mode) {
+      if (this.step !== 'A') return;
+
+      this.measureMode = mode;
+      this.floorModeBtn.classList.toggle('active', mode === 'floor');
+      this.heightModeBtn.classList.toggle('active', mode === 'height');
+      this.heightHint.style.display = mode === 'height' ? 'block' : 'none';
+      this.snapHint.style.display = 'none';
+
+      if (mode === 'height') {
+        this.promptText.textContent = 'HEIGHT: Aim at the floor/base point, then tap Place';
+      } else {
+        this.promptText.textContent = 'FLOOR: Aim at the first point, then tap Place';
+      }
+    },
+
+    tick: function () {
+      if (this.calibrationActive && this.step === 'DONE') return;
+      if (!this.calibrationActive && (this.step === 'DONE' || this.closed)) return;
+
+      const camera = this.el.camera;
+      const groundEl = document.getElementById('ground');
+
+      this.raycaster.setFromCamera({x: 0, y: 0}, camera);
+
+      let aimPoint = null;
+
+      if (this.step === 'A') {
+        // First point is always acquired from the real tracked floor plane.
+        const intersects = this.raycaster.intersectObject(groundEl.object3D, true);
+        if (intersects.length > 0) {
+          aimPoint = intersects[0].point.clone();
+        }
+      } else if (this.step === 'B' && this.measureMode === 'floor' && this.measurementY !== null) {
+        // FLOOR: keep both points on the same horizontal plane.
+        const origin = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        camera.getWorldPosition(origin);
+        camera.getWorldDirection(direction);
+
+        if (Math.abs(direction.y) > 0.0001) {
+          const distance = (this.measurementY - origin.y) / direction.y;
+          if (distance > 0 && Number.isFinite(distance)) {
+            aimPoint = origin.clone().add(direction.clone().multiplyScalar(distance));
+            aimPoint.y = this.measurementY;
+          }
+        }
+      } else if (this.step === 'B' && this.measureMode === 'height' && this.corners[0]) {
+        // HEIGHT: create a vertical measuring plane that passes through the
+        // base point and faces the camera. The second point is constrained to
+        // the vertical line above the base point, so X/Z never drift away
+        // from the first point.
+        const base = this.corners[0].clone();
+        const origin = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        camera.getWorldPosition(origin);
+        camera.getWorldDirection(direction);
+
+        // Horizontal forward direction of the camera.
+        const forwardXZ = new THREE.Vector3(direction.x, 0, direction.z);
+        if (forwardXZ.lengthSq() > 0.000001) {
+          forwardXZ.normalize();
+
+          // Plane normal is horizontal and points toward the camera.
+          const normal = forwardXZ.clone().negate();
+
+          // Ray-plane intersection: plane passes through base and extends vertically.
+          const denom = direction.dot(normal);
+          if (Math.abs(denom) > 0.0001) {
+            const toPlane = base.clone().sub(origin);
+            const distance = toPlane.dot(normal) / denom;
+
+            if (distance > 0 && Number.isFinite(distance)) {
+              const hit = origin.clone().add(direction.clone().multiplyScalar(distance));
+              aimPoint = new THREE.Vector3(base.x, hit.y, base.z);
+              // Don't permit a point below the floor/base.
+              if (aimPoint.y < base.y) aimPoint.y = base.y;
+            }
+          }
+        }
+      }
+
+      // FLOOR CHAIN SNAP: when aiming near any existing floor point, lock the
+      // preview endpoint to that exact stored point. This lets Point B become
+      // the starting point for Point C, D, E... and allows easy re-connection.
+      this.isSnapped = false;
+      if (aimPoint && this.step === 'B' && this.measureMode === 'floor' && this.corners.length > 0) {
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (let i = 0; i < this.corners.length; i++) {
+          const candidate = this.corners[i];
+          const d = Math.hypot(aimPoint.x - candidate.x, aimPoint.z - candidate.z);
+          if (d < nearestDist) {
+            nearestDist = d;
+            nearest = candidate;
+          }
+        }
+        if (nearest && nearestDist <= this.snapThreshold) {
+          aimPoint = nearest.clone();
+          aimPoint.y = this.measurementY;
+          this.isSnapped = true;
+        }
+      }
+
+      this.rawAimPoint = aimPoint ? aimPoint.clone() : null;
+      this.snapHint.style.display = this.isSnapped ? 'block' : 'none';
+      if (this.waitingForContinue && this.measureMode === 'floor' && !this.isSnapped) {
+        this.promptText.textContent = 'Aim at an existing point to continue';
+      } else if (this.waitingForContinue && this.measureMode === 'floor' && this.isSnapped) {
+        this.promptText.textContent = 'SNAP! Tap Place Point to start the next segment';
+      }
+
+      // Keep a short history of recent aim points. Using the median of these
+      // samples makes point placement less sensitive to one-frame tracking jitter.
+      if (aimPoint) {
+        this.aimHistory.push(aimPoint.clone());
+        if (this.aimHistory.length > this.historyMax) this.aimHistory.shift();
+      } else {
+        this.aimHistory = [];
+      }
+
+      if (!aimPoint) return;
+
+      if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'floor' && !this.waitingForContinue) {
+        const start = this.corners[this.corners.length - 1];
+        this.updatePreviewLine('main', start, aimPoint);
+        this.updateLiveLabel(start, aimPoint);
+      } else if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'floor' && this.waitingForContinue) {
+        // After completing a segment, do not draw a new line until the user
+        // deliberately clicks an existing point to start the next segment.
+        this.clearPreview();
+        this.removePreviewLabel();
+      } else if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'height' && this.corners[0]) {
+        // HEIGHT: show the live vertical line immediately after Point A.
+        // Point B follows the current aim height, so the user can see the
+        // measurement grow/shrink before committing Point B.
+        const start = this.corners[0];
+        const liveEnd = new THREE.Vector3(start.x, aimPoint.y, start.z);
+        this.updatePreviewLine('height', start, liveEnd);
+        const rawHeight = Math.abs(liveEnd.y - start.y);
+        const heightM = rawHeight * this.calibrationFactor;
+        if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+        const mid = new THREE.Vector3().addVectors(start, liveEnd).multiplyScalar(0.5);
+        this.setLabel(this.previewLabel, mid, `${heightM.toFixed(2)} m`);
+        this.faceCamera(this.previewLabel);
+      }
+
+      if (this.step === 'B' && this.calibrationActive) {
+        this.updatePreviewLine('calibration', this.calibrationPoints[0], aimPoint);
+        const raw = this.calibrationPoints[0].distanceTo(aimPoint);
+        this.promptText.textContent = `Calibration distance: ${(raw * this.calibrationFactor).toFixed(2)} m`;
+      }
+    },
+
+    startCalibration: function () {
+      this.clearAllMeasurementObjects();
+      this.calibrationActive = true;
+      this.calibrationPoints = [];
+      this.step = 'A';
+      this.measurementY = null;
+      this.snapThreshold = 0.12;
+      this.isSnapped = false;
+      this.rawAimPoint = null;
+      this.aimHistory = [];
+
+      this.measureMode = 'floor';
+      this.waitingForContinue = false;
+      this.closed = false;
+      this.areaResult.style.display = 'none';
+      this.floorModeBtn.classList.add('active');
+      this.heightModeBtn.classList.remove('active');
+      this.heightHint.style.display = 'none';
+
+      this.calibrationPanel.style.display = 'block';
+      this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+      this.promptText.textContent = 'CALIBRATION: Aim at first reference point, then tap Place';
+      this.calibrateBtn.textContent = 'Calibrating…';
+      this.calibrateBtn.disabled = true;
+    },
+
+    finishCalibration: function () {
+      if (!this.calibrationActive || this.calibrationPoints.length !== 2) {
+        this.calibrationStatus.textContent = 'Place two reference points first.';
+        return;
+      }
+
+      const known = parseFloat(this.knownDistanceInput.value);
+      if (!(known > 0)) {
+        this.calibrationStatus.textContent = 'Enter a valid real distance, e.g. 1.00 m.';
+        return;
+      }
+
+      const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+      if (!(rawDistance > 0.0001)) {
+        this.calibrationStatus.textContent = 'Reference points are too close. Try again.';
+        return;
+      }
+
+      const proposedFactor = known / rawDistance;
+      if (!Number.isFinite(proposedFactor) || proposedFactor < 0.75 || proposedFactor > 1.25) {
+        this.calibrationStatus.textContent =
+          `Large scale correction (${proposedFactor.toFixed(3)}×). Recheck the reference distance and retake the two points.`;
+        return;
+      }
+      this.calibrationFactor = proposedFactor;
+
+      this.calibrationActive = false;
+      this.step = 'A';
+      this.measurementY = null;
+      this.snapThreshold = 0.12;
+      this.isSnapped = false;
+      this.rawAimPoint = null;
+      this.aimHistory = [];
+      this.clearAllMeasurementObjects();
+
+      this.calibrationPanel.style.display = 'none';
+      this.measureMode = 'floor';
+      this.floorModeBtn.classList.add('active');
+      this.heightModeBtn.classList.remove('active');
+      this.heightHint.style.display = 'none';
+      this.calibrateBtn.disabled = false;
+      this.calibrateBtn.textContent = 'Calibrate';
+      this.promptText.textContent = `Calibration applied (${this.calibrationFactor.toFixed(3)}×) for this session. Aim at first point, then tap Place`;
+      this.updateCalibrationStatus();
+    },
+
+    updateCalibrationStatus: function () {
+      this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+    },
+
+    updateLiveLabel: function (start, end) {
+      if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+      const raw = start.distanceTo(end);
+      const dist = raw * this.calibrationFactor;
+      const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+      this.setLabel(this.previewLabel, mid, `${dist.toFixed(2)} m`);
+      this.faceCamera(this.previewLabel);
+    },
+
+    createLabelEntity: function () {
+      const wrapper = document.createElement('a-entity');
+      const bg = document.createElement('a-plane');
+      bg.setAttribute('width', 0.34);
+      bg.setAttribute('height', 0.11);
+      bg.setAttribute('color', '#ffffff');
+      bg.setAttribute('opacity', 0.92);
+      bg.setAttribute('position', '0 0 -0.002');
+      wrapper.appendChild(bg);
+
+      const txt = document.createElement('a-text');
+      txt.setAttribute('align', 'center');
+      txt.setAttribute('baseline', 'center');
+      txt.setAttribute('color', '#111111');
+      txt.setAttribute('width', 1.3);
+      wrapper.appendChild(txt);
+      wrapper.textEl = txt;
+
+      this.el.appendChild(wrapper);
+      return wrapper;
+    },
+
+    setLabel: function (wrapper, midpoint, text) {
+      wrapper.setAttribute(
+        'position',
+        `${midpoint.x} ${midpoint.y + 0.10} ${midpoint.z}`
+      );
+      wrapper.textEl.setAttribute('value', text);
+    },
+
+    faceCamera: function (wrapper) {
+      const camPos = new THREE.Vector3();
+      this.el.camera.getWorldPosition(camPos);
+      wrapper.object3D.lookAt(camPos);
+    },
+
+    finalizeLabel: function (start, end, text) {
+      const wrapper = this.createLabelEntity();
+      const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+      this.setLabel(wrapper, mid, text);
+      this.faceCamera(wrapper);
+      this.labels.push(wrapper);
+    },
+
+    removePreviewLabel: function () {
+      if (this.previewLabel && this.previewLabel.parentNode) {
+        this.previewLabel.parentNode.removeChild(this.previewLabel);
+      }
+      this.previewLabel = null;
+    },
+
+    updatePreviewLine: function (key, start, end) {
+      let el = this.previewLines[key];
+      if (!el) {
+        el = document.createElement('a-box');
+        el.setAttribute('height', 0.010);
+        el.setAttribute('depth', 0.010);
+        el.setAttribute('color', '#ffffff');
+        this.el.appendChild(el);
+        this.previewLines[key] = el;
+      }
+      this.orientLineBox(el, start, end);
+    },
+
+    orientLineBox: function (el, start, end) {
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const length = direction.length();
+
+      if (length < 0.0001) return;
+
+      const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+      el.object3D.position.copy(midpoint);
+      el.object3D.scale.set(length, 1, 1);
+
+      const unit = direction.clone().normalize();
+      const xAxis = new THREE.Vector3(1, 0, 0);
+      el.object3D.quaternion.setFromUnitVectors(xAxis, unit);
+    },
+
+    clearPreview: function () {
+      Object.values(this.previewLines).forEach(el => {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      });
+      this.previewLines = {};
+    },
+
+    getStableAimPoint: function () {
+      if (!this.aimHistory.length) return this.rawAimPoint ? this.rawAimPoint.clone() : null;
+
+      // Coordinate-wise median: robust against occasional tracking spikes.
+      const xs = this.aimHistory.map(p => p.x).sort((a,b) => a-b);
+      const ys = this.aimHistory.map(p => p.y).sort((a,b) => a-b);
+      const zs = this.aimHistory.map(p => p.z).sort((a,b) => a-b);
+      const mid = Math.floor(xs.length / 2);
+      const median = arr => arr.length % 2 ? arr[mid] : (arr[mid-1] + arr[mid]) * 0.5;
+      const p = new THREE.Vector3(median(xs), median(ys), median(zs));
+
+      // B must remain on the locked measurement plane.
+      if (this.step === 'B' && this.measureMode === 'floor' && this.measurementY !== null) p.y = this.measurementY;
+      return p;
+    },
+
+    onPlaceClick: function () {
+      if (!this.rawAimPoint) return;
+
+      const point = this.getStableAimPoint();
+      if (!point) return;
+      this.aimHistory = [];
+
+      if (this.step === 'A') {
+        if (this.calibrationActive) {
+          this.placeCalibrationMarker(point);
+          this.calibrationPoints[0] = point;
+        } else {
+          this.placeMarker(point);
+          this.corners[0] = point;
+        }
+
+        this.measurementY = point.y;
+        this.step = 'B';
+
+        if (!this.calibrationActive && this.measureMode === 'height') {
+          this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
+        }
+
+        if (this.calibrationActive) {
+          this.promptText.textContent = 'CALIBRATION: Aim at second reference point, then tap Place';
+        } else {
+          this.promptText.textContent = this.measureMode === 'height'
+            ? 'HEIGHT: Aim at the top point, then tap Place'
+            : 'FLOOR: Aim at the second point, then tap Place. You can continue after B.';
+        }
+        return;
+      }
+
+      if (this.step === 'B') {
+        if (this.calibrationActive) {
+          this.placeCalibrationMarker(point);
+          this.calibrationPoints[1] = point;
+          this.step = 'DONE';
+          const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+          this.calibrationStatus.textContent =
+            `Raw distance: ${rawDistance.toFixed(3)} m. Enter the real distance above and tap Apply Calibration.`;
+          this.promptText.textContent = 'Enter the REAL distance, then tap Apply Calibration';
+          this.clearPreview();
+          return;
+        }
+
+        if (this.measureMode === 'floor') {
+          // After A->B, the app waits. A new segment only starts when the
+          // user intentionally taps an existing point (snap required).
+          if (this.waitingForContinue) {
+            if (!this.isSnapped) return;
+
+            const snapped = point.clone();
+            // If the user snaps to the first point and we already have at
+            // least 3 corners, close the polygon instead of adding a duplicate.
+            let nearestIndex = -1;
+            let nearestDist = Infinity;
+            for (let i = 0; i < this.corners.length; i++) {
+              const c = this.corners[i];
+              const d = Math.hypot(snapped.x - c.x, snapped.z - c.z);
+              if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
+            }
+
+            if (nearestIndex === 0 && this.corners.length >= 3) {
+              this.closePolygon();
+              return;
+            }
+
+            // Start a new segment from the clicked/snapped existing point.
+            this.corners.push(snapped);
+            this.placeMarker(snapped);
+            this.waitingForContinue = false;
+            this.aimHistory = [];
+            this.clearPreview();
+            this.removePreviewLabel();
+            this.measurementY = snapped.y;
+            this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+            return;
+          }
+
+          const start = this.corners[this.corners.length - 1];
+          const end = point;
+          const rawDistance = start.distanceTo(end);
+          if (rawDistance < 0.01) return;
+
+          this.placeMarker(end);
+          this.corners.push(end);
+          this.drawLine(start, end);
+
+          const calibratedDistance = rawDistance * this.calibrationFactor;
+          this.finalizeLabel(start, end, `${calibratedDistance.toFixed(2)} m`);
+
+          this.clearPreview();
+          this.removePreviewLabel();
+          this.waitingForContinue = true;
+          this.promptText.textContent = 'Segment complete. Aim at an existing point, then tap Place to continue';
+          this.snapHint.style.display = 'none';
+          return;
+        }
+
+        // HEIGHT remains a two-point measurement and finishes after Point B.
+        this.placeMarker(point);
+        this.corners[1] = point;
+        this.clearPreview();
+        this.removePreviewLabel();
+
+        this.drawLine(this.corners[0], this.corners[1]);
+
+        const rawDistance = Math.abs(this.corners[1].y - this.corners[0].y);
+        const calibratedDistance = rawDistance * this.calibrationFactor;
+
+        this.finalizeLabel(
+          this.corners[0],
+          this.corners[1],
+          `${calibratedDistance.toFixed(2)} m`
+        );
+
+        this.step = 'DONE';
+        this.snapHint.style.display = 'none';
+        this.promptText.textContent = `Height: ${calibratedDistance.toFixed(2)} m`;
+
+      }
+    },
+
+    closePolygon: function () {
+      if (this.measureMode !== 'floor' || this.corners.length < 3 || this.closed) return;
+
+      const first = this.corners[0];
+      const last = this.corners[this.corners.length - 1];
+      const rawClosing = last.distanceTo(first);
+      if (rawClosing > 0.15) return;
+
+      // Draw the closing edge only once.
+      this.clearPreview();
+      this.removePreviewLabel();
+      if (rawClosing > 0.001) {
+        this.drawLine(last, first);
+        this.finalizeLabel(last, first, `${(rawClosing * this.calibrationFactor).toFixed(2)} m`);
+      }
+
+      // Shoelace area on the horizontal X/Z plane, then apply the squared
+      // calibration factor because area is in square meters.
+      let sum = 0;
+      for (let i = 0; i < this.corners.length; i++) {
+        const a = this.corners[i];
+        const b = this.corners[(i + 1) % this.corners.length];
+        sum += a.x * b.z - b.x * a.z;
+      }
+      const areaRaw = Math.abs(sum) * 0.5;
+      const areaM2 = areaRaw * this.calibrationFactor * this.calibrationFactor;
+
+      this.closed = true;
+      this.waitingForContinue = false;
+      this.step = 'DONE';
+      this.snapHint.style.display = 'none';
+      this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m²`;
+      this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
+      this.areaResult.style.display = 'block';
+    },
+
+    placeMarker: function (point) {
+      const marker = document.createElement('a-cylinder');
+      marker.setAttribute('radius', 0.035);
+      marker.setAttribute('height', 0.012);
+      marker.setAttribute('color', '#ffffff');
+      marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+      this.el.appendChild(marker);
+      this.markers.push(marker);
+    },
+
+    placeCalibrationMarker: function (point) {
+      const marker = document.createElement('a-cylinder');
+      marker.setAttribute('radius', 0.030);
+      marker.setAttribute('height', 0.012);
+      marker.setAttribute('color', '#00ff88');
+      marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+      this.el.appendChild(marker);
+      this.markers.push(marker);
+    },
+
+    drawLine: function (start, end) {
+      const el = document.createElement('a-box');
+      el.setAttribute('height', 0.010);
+      el.setAttribute('depth', 0.010);
+      el.setAttribute('color', '#ffffff');
+      this.el.appendChild(el);
+      this.orientLineBox(el, start, end);
+      this.lines.push(el);
+    },
+
+    clearAllMeasurementObjects: function () {
+      this.clearPreview();
+      this.removePreviewLabel();
+
+      this.labels.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+      this.labels = [];
+
+      this.markers.forEach(m => m.parentNode && m.parentNode.removeChild(m));
+      this.lines.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+
+      this.markers = [];
+      this.lines = [];
+      this.corners = [];
+    },
+
+    reset: function () {
+      this.clearAllMeasurementObjects();
+
+      this.step = 'A';
+      this.measurementY = null;
+      this.snapThreshold = 0.12;
+      this.isSnapped = false;
+      this.rawAimPoint = null;
+      this.aimHistory = [];
+
+      if (this.calibrationActive) {
+        this.calibrationActive = false;
+        this.calibrationPoints = [];
+        this.calibrationPanel.style.display = 'none';
+        this.calibrateBtn.disabled = false;
+        this.calibrateBtn.textContent = 'Calibrate';
+      }
+
+      this.measureMode = 'floor';
+      this.floorModeBtn.classList.add('active');
+      this.heightModeBtn.classList.remove('active');
+      this.heightHint.style.display = 'none';
+      this.snapHint.style.display = 'none';
+
+      this.promptText.textContent =
+        `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
+    }
+  });
+</script>
+
+</body>
+</html>
