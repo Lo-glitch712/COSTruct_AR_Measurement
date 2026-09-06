@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>COSTruct AR Measurement v8</title>
+  <title>COSTruct AR Measurement</title>
 
   <script crossorigin="anonymous" src="./external/scripts/8frame-1.5.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js" crossorigin="anonymous"></script>
@@ -13,190 +13,88 @@
   <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" crossorigin="anonymous" async="true" data-preload-chunks="slam"></script>
 
   <style>
-    #promptText {
-      position: absolute; top: 20px; left: 0; right: 0;
-      text-align: center; color: white; font-size: 22px;
-      font-family: sans-serif; z-index: 10; text-shadow: 0 0 4px black;
-    }
-    #resetBtn {
-      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-      z-index: 10; padding: 12px 28px; font-size: 16px;
-      border-radius: 8px; border: none; background: #2563eb; color: white;
-    }
+  :root { --panel: rgba(17, 24, 39, .78); --glass: rgba(255,255,255,.92); --muted: rgba(255,255,255,.72); --accent:#22c55e; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+  body { background:#111827; }
+  #hud { position:fixed; inset:0; z-index:20; pointer-events:none; }
+  #topBar { position:absolute; top:14px; left:12px; right:12px; display:flex; justify-content:center; pointer-events:none; }
+  #promptText { max-width:92vw; padding:10px 15px; border-radius:18px; background:rgba(17,24,39,.72); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; font-size:14px; line-height:1.25; text-align:center; text-shadow:none; box-shadow:0 6px 22px rgba(0,0,0,.18); }
+  #modeBar { position:absolute; top:62px; left:50%; transform:translateX(-50%); display:flex; gap:3px; padding:4px; border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 6px 18px rgba(0,0,0,.18); pointer-events:auto; }
+  .modeBtn { border:0; background:transparent; color:#374151; border-radius:14px; padding:7px 16px; font-size:13px; font-weight:700; }
+  .modeBtn.active { background:#111827; color:#fff; }
+  #areaResult { position:absolute; top:108px; left:50%; transform:translateX(-50%); padding:7px 13px; border-radius:10px; background:rgba(255,255,255,.94); color:#111827; font-size:13px; font-weight:700; box-shadow:0 5px 16px rgba(0,0,0,.14); }
+  #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:34px; font-weight:300; line-height:1; text-shadow:0 1px 5px rgba(0,0,0,.75); }
+  #snapHint, #heightHint { position:absolute; top:calc(50% + 22px); left:50%; transform:translateX(-50%); padding:6px 10px; border-radius:10px; background:rgba(17,24,39,.78); color:#fff; font-size:11px; font-weight:600; white-space:nowrap; }
+  #bottomControls { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(94vw,380px); display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:auto; }
+  .controlBtn { border:0; font-weight:700; box-shadow:0 8px 22px rgba(0,0,0,.20); }
+  #placeBtn { width:74px; height:74px; padding:0; border-radius:50%; background:#22c55e; color:#fff; font-size:13px; line-height:1.1; border:4px solid rgba(255,255,255,.92); box-shadow:0 7px 24px rgba(0,0,0,.28), inset 0 0 0 2px rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; text-align:center; }
+  #placeBtn:active { transform:scale(.95); }
+  #bottomSecondary { display:flex; align-items:center; justify-content:center; gap:10px; }
+  #resetBtn, #calibrateBtn { width:auto; min-width:112px; height:42px; border-radius:14px; font-size:14px; padding:0 18px; }
+  #resetBtn { background:rgba(17,24,39,.88); color:#fff; }
+  #calibrateBtn { background:rgba(255,255,255,.94); color:#111827; }
+  #calibrationPanel { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); z-index:21; display:none; width:min(88vw,360px); padding:16px; border-radius:18px; background:rgba(255,255,255,.96); color:#111827; box-shadow:0 12px 34px rgba(0,0,0,.22); pointer-events:auto; }
+  #calibrationPanel input { width:100px; padding:9px 10px; font-size:17px; border:1px solid #d1d5db; border-radius:10px; }
+  #calibrationPanel button { border:0; border-radius:10px; padding:10px 14px; font-weight:700; }
+  #applyCalibration { background:#111827; color:#fff; }
+  #calibrationStatus { font-size:12px; color:#4b5563; line-height:1.4; margin-top:8px; }
+  @media (min-width: 600px) { #bottomControls { width:360px; } }
 
-    #crosshair {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 40px;
-  z-index: 10;
-  text-shadow: 0 0 4px black;
-  pointer-events: none;
-}
-#placeBtn {
-  position: absolute;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  padding: 14px 32px;
-  font-size: 18px;
-  border-radius: 8px;
-  border: none;
-  background: #22c55e;
-  color: white;
-}
-#calibrateBtn {
-  position: absolute;
-  bottom: 170px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  padding: 10px 20px;
-  font-size: 15px;
-  border-radius: 8px;
-  border: none;
-  background: #111827;
-  color: white;
-}
-#calibrationPanel {
-  position: absolute;
-  left: 50%;
-  bottom: 230px;
-  transform: translateX(-50%);
-  z-index: 11;
-  display: none;
-  width: min(86vw, 360px);
-  padding: 14px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.96);
-  color: #111827;
-  font-family: sans-serif;
-  text-align: center;
-}
-#calibrationPanel input {
-  width: 90px;
-  padding: 8px;
-  font-size: 18px;
-  text-align: center;
-  border: 1px solid #9ca3af;
-  border-radius: 6px;
-}
-#calibrationPanel button {
-  margin-top: 10px;
-  padding: 9px 16px;
-  border: 0;
-  border-radius: 7px;
-  background: #2563eb;
-  color: white;
-  font-size: 15px;
-}
-#calibrationStatus {
-  margin-top: 8px;
-  font-size: 13px;
-}
+  /* Home screen */
+  #homeScreen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,#0f172a 0%,#1e293b 55%,#334155 100%); color:#fff; }
+  #homeCard { width:min(92vw,420px); padding:32px 24px 26px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
+  #homeCard { width:min(92vw,420px); padding:40px 26px 28px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
+  #homeBrand { margin:0 auto 12px; color:#fff; font-size:48px; line-height:1; font-weight:900; letter-spacing:-2px; }
+  #homeTitle { margin:0; font-size:15px; line-height:1.3; font-weight:600; color:rgba(255,255,255,.68); letter-spacing:.2px; }
+  #homeSubtitle { margin:16px auto 28px; max-width:300px; color:rgba(255,255,255,.78); font-size:14px; line-height:1.55; }
+  #startMeasureBtn { width:100%; height:56px; border:0; border-radius:18px; background:#22c55e; color:#fff; font-size:17px; font-weight:800; box-shadow:0 10px 26px rgba(0,0,0,.24); }
+  #startMeasureBtn:active { transform:scale(.985); }
+  #homeNote { margin-top:12px; color:rgba(255,255,255,.50); font-size:10px; }
+  #hud.isHidden { display:none; }
+  @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
 
-#measureMode {
-  position:absolute;
-  top:58px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:12;
-  display:flex;
-  gap:6px;
-  padding:5px;
-  border-radius:12px;
-  background:rgba(17,24,39,0.86);
-}
-#measureMode button {
-  border:0;
-  border-radius:8px;
-  padding:8px 13px;
-  font-size:14px;
-  font-family:sans-serif;
-  color:#fff;
-  background:transparent;
-}
-#measureMode button.active {
-  background:#2563eb;
-}
-#areaResult {
-  position:absolute;
-  top:102px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:12;
-  display:none;
-  color:#111;
-  background:#fff;
-  padding:8px 14px;
-  border-radius:10px;
-  font-size:17px;
-  font-family:sans-serif;
-  font-weight:700;
-  box-shadow:0 2px 10px rgba(0,0,0,.18);
-}
-#snapHint {
-  position:absolute;
-  top:132px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:11;
-  display:none;
-  color:#fff;
-  font-size:15px;
-  font-family:sans-serif;
-  font-weight:700;
-  text-align:center;
-  text-shadow:0 0 4px #000;
-  pointer-events:none;
-}
-#heightHint {
-  position:absolute;
-  top:102px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:11;
-  display:none;
-  color:#fff;
-  font-size:14px;
-  font-family:sans-serif;
-  text-align:center;
-  text-shadow:0 0 4px #000;
-  pointer-events:none;
-  width:90vw;
-}
-  </style>
+</style>
 </head>
 
 <body>
-<div id="crosshair">+</div>
-<div id="measureMode">
-  <button id="floorModeBtn" class="active">Floor</button>
-  <button id="heightModeBtn">Height</button>
-</div>
-<div id="heightHint">Height: tap the floor/base point first, then aim vertically to the top point.</div>
-<div id="snapHint">● SNAP</div>
-<div id="areaResult"></div>
-
-<button id="placeBtn">Place Point</button>
-<button id="calibrateBtn">Calibrate</button>
-<div id="calibrationPanel">
-  <div><strong>Calibration</strong></div>
-  <div style="margin-top:6px">Measure a known distance, then enter its real length in meters.</div>
-  <div style="margin-top:10px">
-    <input id="knownDistance" type="number" min="0.01" step="0.01" value="1.00">
-    <span>m</span>
+<div id="homeScreen">
+  <div id="homeCard">
+    <div id="homeBrand">COSTruct</div>
+    <h1 id="homeTitle">AR Measurement</h1>
+    <p id="homeSubtitle">Measure floor dimensions, area, and height with your phone camera.</p>
+    <button id="startMeasureBtn">Start Measuring</button>
+    <div id="homeNote">For better tracking, use the app in a well-lit area.</div>
   </div>
-  <button id="applyCalibration">Apply Calibration</button>
-  <div id="calibrationStatus">Current scale: 1.000×</div>
-  <div style="font-size:13px;color:#4b5563;margin-top:6px;line-height:1.35;">For best accuracy, calibrate using a measured reference of at least 1 m and keep the phone steady while placing both points.</div>
 </div>
-<div id="promptText">I-tap ang unang punto</div>
-<button id="resetBtn">I-reset</button>
+
+<div id="hud" class="isHidden">
+  <div id="topBar"><div id="promptText">FLOOR: Aim at the first point, then tap Place.</div></div>
+  <div id="modeBar">
+    <button id="floorModeBtn" class="modeBtn active">Floor</button>
+    <button id="heightModeBtn" class="modeBtn">Height</button>
+  </div>
+  <div id="areaResult"></div>
+  <div id="crosshair">+</div>
+  <div id="snapHint" style="display:none">SNAP • Tap Place</div>
+  <div id="heightHint" style="display:none">Vertical height • Aim at top</div>
+  <div id="calibrationPanel">
+    <div style="font-weight:800;font-size:15px;margin-bottom:8px">Calibrate measurement</div>
+    <div style="font-size:12px;color:#4b5563;margin-bottom:10px">Place two points on a known distance.</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <input id="knownDistance" type="number" min="0.01" step="0.01" value="1.00"> <span>m</span>
+    </div>
+    <button id="applyCalibration">Apply Calibration</button>
+    <div id="calibrationStatus"></div>
+  </div>
+  <div id="bottomControls">
+    <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
+    <div id="bottomSecondary">
+      <button id="calibrateBtn" class="controlBtn secondary">Calibrate</button>
+      <button id="resetBtn" class="controlBtn reset">Reset</button>
+    </div>
+  </div>
+</div>
 
 <a-scene
   distance-measure
@@ -261,6 +159,18 @@
 </a-scene>
 
 <script>
+(function () {
+  const homeScreen = document.getElementById('homeScreen');
+  const startBtn = document.getElementById('startMeasureBtn');
+  const hud = document.getElementById('hud');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      homeScreen.style.display = 'none';
+      hud.classList.remove('isHidden');
+    });
+  }
+})();
+
 AFRAME.registerComponent('distance-measure', {
     init: function () {
       this.corners = [];
