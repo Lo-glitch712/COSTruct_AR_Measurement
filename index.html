@@ -54,10 +54,17 @@
   #hud.isHidden { display:none; }
   @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
 
+  /* Keep 8th Wall coaching instructions hidden on the home page.
+     They are revealed only after Start Measuring is pressed. */
+  body.home-active .coaching-overlay,
+  body.home-active [class*='coaching-overlay'] {
+    display: none !important;
+  }
+
 </style>
 </head>
 
-<body>
+<body class="home-active">
 <div id="homeScreen">
   <div id="homeCard">
     <div id="homeBrand">COSTruct</div>
@@ -166,6 +173,7 @@
   if (startBtn) {
     startBtn.addEventListener('click', () => {
       homeScreen.style.display = 'none';
+      document.body.classList.remove('home-active');
       hud.classList.remove('isHidden');
     });
   }
