@@ -31,9 +31,12 @@
   #placeBtn { width:74px; height:74px; padding:0; border-radius:50%; background:#22c55e; color:#fff; font-size:13px; line-height:1.1; border:4px solid rgba(255,255,255,.92); box-shadow:0 7px 24px rgba(0,0,0,.28), inset 0 0 0 2px rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; text-align:center; }
   #placeBtn:active { transform:scale(.95); }
   #bottomSecondary { display:flex; align-items:center; justify-content:center; gap:10px; }
-  #resetBtn, #calibrateBtn { width:auto; min-width:112px; height:42px; border-radius:14px; font-size:14px; padding:0 18px; }
+  #resetBtn, #calibrateBtn, #editBtn { width:auto; min-width:96px; height:42px; border-radius:14px; font-size:14px; padding:0 16px; }
   #resetBtn { background:rgba(17,24,39,.88); color:#fff; }
   #calibrateBtn { background:rgba(255,255,255,.94); color:#111827; }
+  #editBtn { background:rgba(255,255,255,.94); color:#111827; }
+  #undoBtn { width:48px; height:48px; border:0; border-radius:50%; background:rgba(255,255,255,.94); color:#111827; font-size:28px; font-weight:800; line-height:1; box-shadow:0 8px 22px rgba(0,0,0,.20); }
+  #undoBtn:active { transform:scale(.95); }
   #calibrationPanel { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); z-index:21; display:none; width:min(88vw,360px); padding:16px; border-radius:18px; background:rgba(255,255,255,.96); color:#111827; box-shadow:0 12px 34px rgba(0,0,0,.22); pointer-events:auto; }
   #calibrationPanel input { width:100px; padding:9px 10px; font-size:17px; border:1px solid #d1d5db; border-radius:10px; }
   #calibrationPanel button { border:0; border-radius:10px; padding:10px 14px; font-weight:700; }
@@ -54,11 +57,10 @@
   #hud.isHidden { display:none; }
   @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
 
-  /* 8th Wall coaching is hidden everywhere except the actual AR Measurement screen.
-     This prevents "Move your phone forward and back" from appearing on
-     Material & Cost Estimation / Floor Dimension screens. */
-  body:not(.ar-active) .coaching-overlay,
-  body:not(.ar-active) [class*='coaching-overlay'] {
+  /* Keep 8th Wall coaching instructions hidden on the home page.
+     They are revealed only after Start Measuring is pressed. */
+  body.home-active .coaching-overlay,
+  body.home-active [class*='coaching-overlay'] {
     display: none !important;
   }
 
@@ -104,6 +106,18 @@
 
   .arBackTop{position:fixed;top:16px;left:14px;z-index:30;border:0;border-radius:13px;background:rgba(17,24,39,.88);color:#fff;padding:10px 15px;font-size:14px;font-weight:800;box-shadow:0 7px 20px rgba(0,0,0,.22);pointer-events:auto}
   #arSaveBar{position:absolute;top:16px;right:14px;z-index:100;pointer-events:auto;display:block}
+  #arDimensionEditor{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.38);pointer-events:auto;color:#111827}
+  #arDimensionEditor .arEditCard{width:min(92vw,390px);padding:18px;border-radius:18px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(0,0,0,.30)}
+  #arDimensionEditor .arEditTitle{font-size:14px;font-weight:850;margin-bottom:12px}
+  #arDimensionEditor .arEditGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  #arDimensionEditor label{font-size:9px;font-weight:750;color:#6b7280}
+  #arDimensionEditor input{width:100%;margin-top:4px;padding:10px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#111827;font:inherit;font-weight:700}
+  #arDimensionEditor .arEditActions{display:flex;gap:8px;margin-top:12px}
+  #arDimensionEditor .arEditActions button{flex:1;height:42px;border:0;border-radius:11px;font-weight:800}
+  #applyAREdit{background:#22c55e;color:#fff}
+  #cancelAREdit{background:#e5e7eb;color:#111827}
+  .componentMethod.active{border-color:#22c55e;background:#f0fdf4}
+  .componentMeasurements.ar-readonly input{background:#eef2f7;color:#4b5563;cursor:not-allowed}
   .saveMeasurementBtn{border:0;border-radius:13px;background:#22c55e;color:#fff;padding:11px 15px;font-size:13px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.24);cursor:pointer;display:block}
   .arInputGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:14px}
   .arInputGrid label{font-size:10px;font-weight:750;color:#6b7280}
@@ -114,6 +128,37 @@
     .saveMeasurementBtn{padding:10px 12px;font-size:12px}
   }
 
+
+  body.estimation-active .coaching-overlay, body.estimation-active [class*="coaching-overlay"] { display:none !important; }
+  .componentCard{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
+  .componentTitle{display:flex;gap:10px;align-items:center}.componentNum{width:30px;height:30px;border-radius:10px;background:#111827;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:900}.componentTitle b{display:block;font-size:15px}.componentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:2px}
+  .methodToggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.componentMethod{border:1px solid #dbe1e8;background:#f8fafc;border-radius:11px;padding:10px;font-size:11px;font-weight:800;color:#374151}.componentMethod.active{border:2px solid #22c55e;background:#f0fdf4;color:#166534}
+  .componentInputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.componentInputs label{font-size:10px;font-weight:750;color:#6b7280}.componentInputs input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f9fafb;font:inherit}.componentArea{margin-top:9px;padding-top:9px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280}.componentArea strong{color:#111827}.componentAR{margin-top:10px}.openComponentAR{width:100%;height:42px;border:0;border-radius:12px;background:#22c55e;color:#fff;font-weight:850}.componentARStatus{margin-top:7px;font-size:10px;color:#6b7280}.componentCard.ar-selected{border-color:#86efac;box-shadow:0 0 0 2px rgba(34,197,94,.12)}
+  @media(max-width:560px){.componentInputs{grid-template-columns:1fr 1fr}.componentInputs label:last-child{grid-column:1/-1}}
+
+  /* Materials & Pricing receipt page */
+  #materialsPricingScreen{position:fixed;inset:0;z-index:115;display:none;overflow:auto;background:#eef2f7;color:#111827;padding:18px 12px 42px}
+  .receiptWrap{width:min(94vw,760px);margin:0 auto}
+  .receiptTop{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .receiptTop h2{margin:0;font-size:24px;letter-spacing:-.5px}
+  .receiptPaper{background:#fff;width:100%;border-radius:8px;padding:22px 18px 26px;box-shadow:0 12px 35px rgba(15,23,42,.12);border:1px solid #e5e7eb}
+  .receiptHead{text-align:center;border-bottom:1px dashed #9ca3af;padding-bottom:15px;margin-bottom:16px}
+  .receiptBrand{font-size:24px;font-weight:950;letter-spacing:-1px}.receiptSubtitle{font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1.2px;text-transform:uppercase}
+  .receiptMeta{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#4b5563;margin:8px 0 16px}
+  .receiptComponent{border-top:1px dashed #cbd5e1;padding:15px 0 13px}
+  .receiptComponent:first-of-type{border-top:0}
+  .receiptComponentTitle{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+  .receiptComponentTitle b{font-size:14px}.receiptComponentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:3px}
+  .receiptTable{width:100%;border-collapse:collapse;font-size:11px}
+  .receiptTable th{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 3px}
+  .receiptTable th:not(:first-child),.receiptTable td:not(:first-child){text-align:right}
+  .receiptTable td{padding:7px 3px;border-bottom:1px dotted #e5e7eb}.receiptTable td:first-child{font-weight:700}
+  .receiptDim{font-size:10px;color:#6b7280;margin-bottom:7px}.receiptDim strong{color:#374151}
+  .componentSubtotal{display:flex;justify-content:flex-end;gap:10px;font-size:11px;font-weight:850;padding-top:8px}
+  .receiptGrand{border-top:2px dashed #111827;margin-top:12px;padding-top:15px;display:flex;justify-content:space-between;align-items:end}.receiptGrand span{font-size:11px;font-weight:800}.receiptGrand strong{font-size:25px;letter-spacing:-.5px}
+  .receiptNote{margin-top:14px;padding-top:12px;border-top:1px dashed #9ca3af;font-size:9px;line-height:1.5;color:#6b7280;text-align:center}
+  .emptyReceipt{text-align:center;padding:35px 15px;color:#6b7280;font-size:13px}
+  @media(max-width:560px){#materialsPricingScreen{padding:12px 9px 30px}.receiptPaper{padding:18px 12px 22px}.receiptTop h2{font-size:20px}.receiptTable{font-size:10px}.receiptTable th{font-size:8px}.receiptGrand strong{font-size:22px}}
 </style>
 </head>
 
@@ -131,96 +176,195 @@
 
 <!-- Material & Cost Estimation -->
 <div id="estimationScreen" class="appScreen" style="display:none;">
-  <div class="estimationCard">
-    <div class="estimationHeader">
-      <button id="backToHomeBtn" class="backBtn">‹</button>
-      <div>
-        <div class="estimateEyebrow">COSTruct</div>
-        <h2>Material & Cost Estimation</h2>
-      </div>
+ <div class="estimationCard">
+  <div class="estimationHeader"><button id="backToHomeBtn" class="backBtn">‹</button><div><div class="estimateEyebrow">COSTruct</div><h2>Material & Cost Estimation</h2></div></div>
+  <div class="progressDots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+  <section class="estimateSection"><div class="sectionTitle"><span>01</span> Project Details</div>
+   <div class="formGrid">
+    <label>Project Name<input id="projectName" type="text" placeholder="e.g. Living Room"></label>
+    <label>Project Type<select id="projectType"><option>Flooring</option><option>Room Renovation</option><option>Construction</option><option>Other</option></select></label>
+    <label>Location<input id="projectLocation" type="text" placeholder="Project location"></label>
+    <label>Notes<textarea id="projectNotes" rows="2" placeholder="Additional project details"></textarea></label>
+   </div>
+  </section>
+  <section class="estimateSection"><div class="sectionTitle"><span>02</span> Components & Measurements</div>
+   <p class="sectionHint">Each component has its own measurements. You can use Manual or AR independently for every component.</p>
+   <div id="componentsList"><div class="componentCard" data-component="Column">
+  <div class="componentTitle"><span class="componentNum">1</span><div><b>Column</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
     </div>
-
-    <div class="progressDots">
-      <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Beam">
+  <div class="componentTitle"><span class="componentNum">2</span><div><b>Beam</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
     </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Ground Floor Slab">
+  <div class="componentTitle"><span class="componentNum">3</span><div><b>Ground Floor Slab</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Slab">
+  <div class="componentTitle"><span class="componentNum">4</span><div><b>Slab</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Mortar">
+  <div class="componentTitle"><span class="componentNum">5</span><div><b>Mortar</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Plastering">
+  <div class="componentTitle"><span class="componentNum">6</span><div><b>Plastering</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Walls">
+  <div class="componentTitle"><span class="componentNum">7</span><div><b>Walls</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">⌨ Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">📱 AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div></div>
+  </section>
+  <div style="display:none" aria-hidden="true">
+  <section class="estimateSection"><div class="sectionTitle"><span>03</span> Materials & Pricing</div>
+   <div id="materialsList"></div>
+   <button id="addMaterialBtn" class="addMaterialBtn">+ Add Material</button>
+  </section>
+  <section class="estimateSummary"><div><span>Measured Components</span><strong id="summaryComponents">0 / 7</strong></div><div><span>Estimated Cost</span><strong id="summaryCost">₱0.00</strong></div></section>
+ </div>
+ <button id="calculateEstimateBtn" class="primaryEstimateBtn">Calculate Estimate →</button>
+ </div>
+</div>
 
-    <section class="estimateSection">
-      <div class="sectionTitle"><span>01</span> Project Details</div>
-      <div class="formGrid">
-        <label>Project Name<input id="projectName" type="text" placeholder="e.g. Living Room"></label>
-        <label>Project Type
-          <select id="projectType">
-            <option>Flooring</option>
-            <option>Room Renovation</option>
-            <option>Construction</option>
-            <option>Other</option>
-          </select>
-        </label>
-        <label>Location<input id="projectLocation" type="text" placeholder="Project location"></label>
-        <label>Notes<textarea id="projectNotes" rows="2" placeholder="Additional project details"></textarea></label>
+
+<!-- Materials & Pricing receipt page -->
+<div id="materialsPricingScreen">
+  <div class="receiptWrap">
+    <div class="receiptTop">
+      <button id="backToMeasurementsBtn" class="backBtn" type="button">‹</button>
+      <div><div class="estimateEyebrow">COSTruct</div><h2>Materials & Pricing</h2></div>
+    </div>
+    <div class="receiptPaper">
+      <div class="receiptHead">
+        <div class="receiptBrand">COSTruct</div>
+        <div class="receiptSubtitle">Material Cost Estimate</div>
       </div>
-    </section>
-
-    <section class="estimateSection">
-      <div class="sectionTitle"><span>02</span> Floor Dimension</div>
-      <p class="sectionHint">Choose how you want to get the floor measurements.</p>
-
-      <div class="measurementChoice">
-        <button class="measureChoice active" data-method="manual">
-          <b>⌨ Manual Input</b><small>Enter length, width and height yourself.</small>
-        </button>
-        <button class="measureChoice" data-method="ar">
-          <b>📱 AR Measurement</b><small>Use the existing COSTruct AR measuring tool.</small>
-        </button>
-      </div>
-
-      <div id="manualDimensionPanel" class="dimensionPanel">
-        <div class="dimensionGrid">
-          <label>Length (m)<input id="manualLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
-          <label>Width (m)<input id="manualWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
-          <label>Height (m)<input id="manualHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
-        </div>
-        <div class="areaPreview">Floor Area <strong id="manualArea">0.00 m²</strong></div>
-      </div>
-
-      <div id="arDimensionPanel" class="dimensionPanel" style="display:none;">
-        <div class="arInfo">
-          <div class="arIcon">⌁</div>
-          <div>
-            <b>AR Measurement</b>
-            <p>Use AR to get the floor measurements. Your saved measurement will automatically appear in the fields below.</p>
-          </div>
-        </div>
-
-        <div class="arInputGrid">
-          <label>Length (m)<input id="arLength" type="number" step="0.01" readonly placeholder="0.00"></label>
-          <label>Width (m)<input id="arWidth" type="number" step="0.01" readonly placeholder="0.00"></label>
-          <label>Height (m)<input id="arHeight" type="number" step="0.01" readonly placeholder="0.00"></label>
-        </div>
-        <div class="areaPreview"><span>Floor Area</span><strong id="arAreaField">0.00 m²</strong></div>
-
-        <button id="openArBtn" class="primaryEstimateBtn">Open AR Measurement</button>
-        <div id="arMeasurementResult" class="arResult" style="display:none;"></div>
-      </div>
-    </section>
-
-    <section class="estimateSection">
-      <div class="sectionTitle"><span>03</span> Materials & Pricing</div>
-      <div id="materialsList"></div>
-      <button id="addMaterialBtn" class="addMaterialBtn">+ Add Material</button>
-    </section>
-
-    <section class="estimateSummary">
-      <div><span>Floor Area</span><strong id="summaryArea">0.00 m²</strong></div>
-      <div><span>Estimated Cost</span><strong id="summaryCost">₱0.00</strong></div>
-    </section>
-
-    <button id="calculateEstimateBtn" class="primaryEstimateBtn">Calculate Estimate</button>
+      <div class="receiptMeta"><span id="receiptProjectName">Project</span><span id="receiptDate"></span></div>
+      <div id="receiptComponents"></div>
+      <div class="receiptGrand"><span>ESTIMATED TOTAL</span><strong id="receiptGrandTotal">₱0.00</strong></div>
+      <div class="receiptNote">Quantities are automatically estimated from the dimensions entered or measured by AR. Material factors are starter estimating factors and should be verified against your project specifications.</div>
+    </div>
   </div>
 </div>
 
 <div id="hud" class="isHidden">
   <button id="arBackBtn" class="arBackTop" style="display:none">← Back</button>
+  <div id="arDimensionEditor">
+    <div class="arEditCard">
+      <div class="arEditTitle">Edit AR Measurement</div>
+      <div class="arEditGrid">
+        <label>Length (m)<input id="arEditLength" type="number" min="0" step="0.01" value="0.00"></label>
+        <label>Width (m)<input id="arEditWidth" type="number" min="0" step="0.01" value="0.00"></label>
+        <label>Height (m)<input id="arEditHeight" type="number" min="0" step="0.01" value="0.00"></label>
+      </div>
+      <div class="arEditActions">
+        <button id="cancelAREdit" type="button">Cancel</button>
+        <button id="applyAREdit" type="button">Apply Changes</button>
+      </div>
+    </div>
+  </div>
   <div id="topBar"><div id="promptText">FLOOR: Aim at the first point, then tap Place.</div></div>
   <div id="modeBar">
     <button id="floorModeBtn" class="modeBtn active">Floor</button>
@@ -241,10 +385,14 @@
   </div>
   <div id="arSaveBar" style="display:none"><button id="useAreaBtn" class="saveMeasurementBtn">✓ Save Dimensions</button></div>
   <div id="bottomControls">
-    <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="undoBtn" class="controlBtn" type="button" aria-label="Undo last point" title="Undo">←</button>
+      <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
+    </div>
     <div id="bottomSecondary">
       <button id="calibrateBtn" class="controlBtn secondary">Calibrate</button>
       <button id="resetBtn" class="controlBtn reset">Reset</button>
+      <button id="editBtn" class="controlBtn" type="button">Edit</button>
     </div>
   </div>
 </div>
@@ -312,295 +460,130 @@
 </a-scene>
 
 <script>
-/* The Start Measuring button is handled by the estimation workflow below.
-   Do not open the AR HUD directly from the home screen. */
 (function () {
   const startBtn = document.getElementById('startMeasureBtn');
-  if (startBtn) {
-    startBtn.addEventListener('click', () => {
-      /* Intentionally left empty here; the estimation workflow owns this click. */
-    });
-  }
+  if (startBtn) startBtn.addEventListener('click', () => window.COSTructEstimation && window.COSTructEstimation.showEstimation());
 })();
 
 
-  /* Estimation workflow */
+  /* Estimation workflow - UI only. The original AR measurement component below is preserved unchanged. */
   (function(){
-    const homeScreen = document.getElementById('homeScreen');
-    const estimationScreen = document.getElementById('estimationScreen');
-    const hud = document.getElementById('hud');
-    const startBtn = document.getElementById('startMeasureBtn');
-    const backHome = document.getElementById('backToHomeBtn');
-    const openAr = document.getElementById('openArBtn');
-    const arBackBtn = document.getElementById('arBackBtn');
-    const arSaveBar = document.getElementById('arSaveBar');
-    const useAreaBtn = document.getElementById('useAreaBtn');
-    const arLength = document.getElementById('arLength');
-    const arWidth = document.getElementById('arWidth');
-    const arHeight = document.getElementById('arHeight');
-    const arAreaField = document.getElementById('arAreaField');
-    const manualPanel = document.getElementById('manualDimensionPanel');
-    const arPanel = document.getElementById('arDimensionPanel');
-    const manualLength = document.getElementById('manualLength');
-    const manualWidth = document.getElementById('manualWidth');
-    const manualHeight = document.getElementById('manualHeight');
-    const manualArea = document.getElementById('manualArea');
-    const summaryArea = document.getElementById('summaryArea');
-    const summaryCost = document.getElementById('summaryCost');
-    const materialsList = document.getElementById('materialsList');
+    const homeScreen=document.getElementById('homeScreen');
+    const estimationScreen=document.getElementById('estimationScreen');
+    const hud=document.getElementById('hud');
+    const arBackBtn=document.getElementById('arBackBtn');
+    const arSaveBar=document.getElementById('arSaveBar');
+    const arDimensionEditor=document.getElementById('arDimensionEditor');
+    const arEditLength=document.getElementById('arEditLength');
+    const arEditWidth=document.getElementById('arEditWidth');
+    const arEditHeight=document.getElementById('arEditHeight');
+    const materialsList=document.getElementById('materialsList');
+    const summaryCost=document.getElementById('summaryCost');
+    const summaryComponents=document.getElementById('summaryComponents');
+    const components=[...document.querySelectorAll('.componentCard')];
+    let activeComponent=null;
+    let materials=[];
+    const defaults=[['Sand',1350,'m³'],['Portland Cement',245,'bag'],['Gravel',1700,'m³'],['CHB - 4"',17,'pc'],['CHB - 5"',20,'pc']];
 
-    let currentMethod = 'manual';
-    let arArea = 0;
+    function showEstimation(){ homeScreen.style.display='none'; hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.remove('home-active'); document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+    function showHome(){ estimationScreen.style.display='none'; document.getElementById('materialsPricingScreen').style.display='none'; hud.classList.add('isHidden'); homeScreen.style.display='flex'; document.body.classList.add('home-active'); document.body.classList.remove('estimation-active'); }
+    function componentData(card){ return {length:+card.querySelector('.compLength').value||0,width:+card.querySelector('.compWidth').value||0,height:+card.querySelector('.compHeight').value||0}; }
+    function updateCard(card){ const d=componentData(card); const area=d.length*d.width; card.querySelector('.compResult').textContent=area.toFixed(2); return d; }
+    function updateAll(){ let count=0; components.forEach(c=>{ const d=updateCard(c); if(d.length>0&&d.width>0&&d.height>0) count++; }); summaryComponents.textContent=count+' / 7'; calculateCost(); }
+    function addMaterial(name='',price=0,unit=''){ const row=document.createElement('div'); row.className='materialRow'; row.innerHTML=`<label>Material<input class="matName" value="${name}"></label><label>Qty<input class="matQty" type="number" min="0" step="0.01" value="0"></label><label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${price}"></label><button class="removeMaterial" type="button">×</button>`; row.dataset.unit=unit; row.querySelector('.removeMaterial').onclick=()=>{row.remove();calculateCost()}; row.querySelectorAll('input').forEach(i=>i.addEventListener('input',calculateCost)); materialsList.appendChild(row); return row; }
+    function calculateCost(){ let total=0; materialsList.querySelectorAll('.materialRow').forEach(r=>total+=(+r.querySelector('.matQty').value||0)*(+r.querySelector('.matPrice').value||0)); summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none';
+      const d=componentData(card); arEditLength.value=d.length.toFixed(2); arEditWidth.value=d.width.toFixed(2); arEditHeight.value=d.height.toFixed(2);
+      document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.'; }
+    function leaveAR(){ hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
 
-    /* Default prices requested by the user. Quantities are computed automatically
-       from floor area, perimeter and wall height. */
-    const MATERIALS = [
-      { name:'Sand', unit:'m³', price:1350 },
-      { name:'Portland Cement', unit:'bag', price:245 },
-      { name:'Gravel', unit:'m³', price:1700 },
-      { name:'CHB - 4"', unit:'pc', price:17 },
-      { name:'CHB - 5"', unit:'pc', price:20 }
-    ];
-
-    /*
-      Starter estimating factors:
-      - Sand: 0.05 m³ per m² of floor area
-      - Portland Cement: 0.35 bag per m² of floor area
-      - Gravel: 0.04 m³ per m² of floor area
-      - CHB: 12.5 pcs per m² of wall area
-      Wall area = perimeter × wall height.
-
-      These are app estimating factors, not a structural/construction design.
-      They can be adjusted later if your project uses a specific BOQ standard.
-    */
-    const FACTORS = {
-      sandPerFloorM2: 0.05,
-      cementBagsPerFloorM2: 0.35,
-      gravelM3PerFloorM2: 0.04,
-      chbPiecesPerWallM2: 12.5
-    };
-
-    function getDimensions(){
-      if(currentMethod === 'ar'){
-        return {
-          length: Number(arLength.value)||0,
-          width: Number(arWidth.value)||0,
-          height: Number(arHeight.value)||0,
-          area: arArea || ((Number(arLength.value)||0) * (Number(arWidth.value)||0))
-        };
+    document.querySelectorAll('.componentCard').forEach(card=>{
+      const methods=card.querySelectorAll('.componentMethod');
+      const manual=card.querySelector('.componentMeasurements'); const ar=card.querySelector('.componentAR');
+      methods.forEach(btn=>btn.addEventListener('click',()=>{ methods.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const isAR=btn.dataset.method==='ar'; manual.style.display='block'; manual.classList.toggle('ar-readonly',isAR); manual.querySelectorAll('input').forEach(i=>i.readOnly=isAR); ar.style.display=isAR?'block':'none'; }));
+      card.querySelectorAll('input').forEach(i=>i.addEventListener('input',updateAll));
+      card.querySelector('.openComponentAR').addEventListener('click',()=>openAR(card));
+    });
+    document.getElementById('backToHomeBtn').addEventListener('click',showHome);
+    arBackBtn.addEventListener('click',leaveAR);
+    editBtn.addEventListener('click',()=>{
+      const inst=document.querySelector('a-scene').components['distance-measure'];
+      if(!inst || !inst.closed) { alert('Finish the floor measurement first before editing.'); return; }
+      const l=+window.__COSTructLastLength||0,w=+window.__COSTructLastWidth||0,h=+window.__COSTructLastHeight||0;
+      arEditLength.value=l.toFixed(2); arEditWidth.value=w.toFixed(2); arEditHeight.value=h.toFixed(2);
+      arDimensionEditor.style.display='flex';
+    });
+    cancelAREdit.addEventListener('click',()=>arDimensionEditor.style.display='none');
+    applyAREdit.addEventListener('click',()=>{
+      const inst=document.querySelector('a-scene').components['distance-measure'];
+      if(!inst) return;
+      const l=+arEditLength.value||0,w=+arEditWidth.value||0,h=+arEditHeight.value||0;
+      if(!(l>0&&w>0)) { alert('Length and Width must be greater than 0.'); return; }
+      inst.applyEditedDimensions(l,w,h);
+      arDimensionEditor.style.display='none';
+    });
+    function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function qty(v, decimals=2){ return v.toLocaleString('en-PH',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
+    function componentEstimate(name,d){
+      const L=d.length,W=d.width,H=d.height;
+      const floorArea=L*W;
+      const wallArea=2*(L+W)*H;
+      const concreteVol=L*W*H;
+      const out=[];
+      if(!(L>0&&W>0&&H>0)) return out;
+      if(['Column','Beam','Ground Floor Slab','Slab'].includes(name)){
+        out.push(['Sand',concreteVol*0.50,1350,'m³']);
+        out.push(['Portland Cement',concreteVol*9,245,'bag']);
+        out.push(['Gravel',concreteVol*0.80,1700,'m³']);
+      } else if(name==='Mortar'){
+        out.push(['Sand',concreteVol*1.00,1350,'m³']);
+        out.push(['Portland Cement',concreteVol*6,245,'bag']);
+      } else if(name==='Plastering'){
+        out.push(['Sand',wallArea*0.02,1350,'m³']);
+        out.push(['Portland Cement',wallArea*0.18,245,'bag']);
+      } else if(name==='Walls'){
+        out.push(['CHB - 4\"',wallArea*12.5,17,'pc']);
+        out.push(['Sand (Mortar)',wallArea*0.015,1350,'m³']);
+        out.push(['Portland Cement',wallArea*0.14,245,'bag']);
       }
-      const length = Number(manualLength.value)||0;
-      const width = Number(manualWidth.value)||0;
-      const height = Number(manualHeight.value)||0;
-      return {length, width, height, area:length*width};
+      return out;
     }
-
-    function showEstimation(){
-      homeScreen.style.display='none';
-      hud.classList.add('isHidden');
-      estimationScreen.style.display='block';
-      document.body.classList.remove('home-active');
-      document.body.classList.remove('ar-active');
-
-      /* Always start the estimation page at Floor Dimension → Manual Input.
-         AR opens only after the user explicitly taps AR Measurement. */
-      currentMethod='manual';
-      document.querySelectorAll('.measureChoice').forEach(b=>{
-        b.classList.toggle('active', b.dataset.method==='manual');
+    function renderReceipt(){
+      const box=document.getElementById('receiptComponents'); box.innerHTML='';
+      document.getElementById('receiptProjectName').textContent=document.getElementById('projectName').value.trim()||'Project Estimate';
+      document.getElementById('receiptDate').textContent=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});
+      let grand=0, count=0;
+      components.forEach(card=>{
+        const d=componentData(card); if(!(d.length>0&&d.width>0&&d.height>0)) return;
+        count++;
+        const rows=componentEstimate(card.dataset.component,d); if(!rows.length) return;
+        const section=document.createElement('div'); section.className='receiptComponent';
+        const dim=`${qty(d.length)} × ${qty(d.width)} × ${qty(d.height)} m`;
+        let subtotal=0;
+        const tr=rows.map(r=>{const amount=r[1]*r[2]; subtotal+=amount; grand+=amount; return `<tr><td>${r[0]}</td><td>${qty(r[1])} ${r[3]}</td><td>${peso(r[2])}</td><td>${peso(amount)}</td></tr>`;}).join('');
+        section.innerHTML=`<div class="receiptComponentTitle"><div><b>${card.dataset.component}</b><small>${card.querySelector('.componentMethod.active')?.textContent?.replace(/^[^A-Za-z]+/,'')||'Manual Input'}</small></div><b>${peso(subtotal)}</b></div><div class="receiptDim">Dimensions: <strong>${dim}</strong> · Floor/Plan Area: <strong>${floorAreaFor(card,d).toFixed(2)} m²</strong></div><table class="receiptTable"><thead><tr><th>Material</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr></thead><tbody>${tr}</tbody></table><div class="componentSubtotal">Component Total: ${peso(subtotal)}</div>`;
+        box.appendChild(section);
       });
-      manualPanel.style.display='block';
-      arPanel.style.display='none';
-      updateArea();
-      calculateMaterials();
+      if(!count){ box.innerHTML='<div class="emptyReceipt">No complete component dimensions yet.<br>Enter or measure Length, Width, and Height first.</div>'; }
+      document.getElementById('receiptGrandTotal').textContent=peso(grand);
     }
+    function floorAreaFor(card,d){ return d.length*d.width; }
+    function showReceipt(){ updateAll(); renderReceipt(); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); document.getElementById('materialsPricingScreen').style.display='block'; }
+    document.getElementById('calculateEstimateBtn').addEventListener('click',showReceipt);
+    document.getElementById('backToMeasurementsBtn').addEventListener('click',()=>{document.getElementById('materialsPricingScreen').style.display='none'; estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); updateAll();});
+    document.getElementById('addMaterialBtn').addEventListener('click',()=>addMaterial());
 
-    function showHome(){
-      estimationScreen.style.display='none';
-      hud.classList.add('isHidden');
-      homeScreen.style.display='flex';
-      document.body.classList.add('home-active');
-      document.body.classList.remove('ar-active');
-    }
+    defaults.forEach(d=>addMaterial(d[0],d[1],d[2]));
 
-    function updateArea(){
-      const d=getDimensions();
-      manualArea.textContent=d.area.toFixed(2)+' m²';
-      summaryArea.textContent=d.area.toFixed(2)+' m²';
-      return d.area;
-    }
-
-    function createMaterialRow(material){
-      const row=document.createElement('div');
-      row.className='materialRow';
-      row.dataset.material=material.name;
-      row.innerHTML=`
-        <label>Material<input class="matName" value="${material.name}" readonly></label>
-        <label>Qty<input class="matQty" type="number" min="0" step="0.01" value="0" readonly></label>
-        <label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${material.price}" readonly></label>
-        <div style="height:38px"></div>`;
-      materialsList.appendChild(row);
-    }
-
-    function buildMaterialsTable(){
-      materialsList.innerHTML='';
-      MATERIALS.forEach(createMaterialRow);
-    }
-
-    function roundUpQuantity(value, unit){
-      if(!(value>0)) return 0;
-      /* Materials bought by piece/bag are rounded up to a whole unit.
-         Sand/gravel remain at 2-decimal m³ precision. */
-      if(unit==='pc' || unit==='bag') return Math.ceil(value);
-      return Math.ceil(value*100)/100;
-    }
-
-    function calculateMaterials(){
-      const d=getDimensions();
-      const floorArea=d.area;
-      const perimeter=2*(d.length+d.width);
-      const wallArea=perimeter*d.height;
-
-      const quantities={
-        'Sand': roundUpQuantity(floorArea*FACTORS.sandPerFloorM2,'m³'),
-        'Portland Cement': roundUpQuantity(floorArea*FACTORS.cementBagsPerFloorM2,'bag'),
-        'Gravel': roundUpQuantity(floorArea*FACTORS.gravelM3PerFloorM2,'m³'),
-        'CHB - 4"': roundUpQuantity(wallArea*FACTORS.chbPiecesPerWallM2,'pc'),
-        'CHB - 5"': roundUpQuantity(wallArea*FACTORS.chbPiecesPerWallM2,'pc')
-      };
-
-      let total=0;
-      materialsList.querySelectorAll('.materialRow').forEach(row=>{
-        const name=row.dataset.material;
-        const material=MATERIALS.find(m=>m.name===name);
-        const qty=quantities[name]||0;
-        const price=material ? material.price : 0;
-        row.querySelector('.matQty').value=qty.toFixed(material && material.unit==='m³' ? 2 : 0);
-        row.querySelector('.matPrice').value=price.toFixed(2);
-        total += qty*price;
-      });
-
-      summaryCost.textContent='₱'+total.toLocaleString('en-PH',{
-        minimumFractionDigits:2,
-        maximumFractionDigits:2
-      });
-      updateArea();
-    }
-
-    function refreshEstimate(){
-      updateArea();
-      calculateMaterials();
-    }
-
-    /* Only this handler controls the Home → Estimation transition. */
-    startBtn.addEventListener('click',showEstimation);
-    backHome.addEventListener('click',showHome);
-
-    document.querySelectorAll('.measureChoice').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        document.querySelectorAll('.measureChoice').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        currentMethod=btn.dataset.method;
-
-        manualPanel.style.display=currentMethod==='manual'?'block':'none';
-        arPanel.style.display=currentMethod==='ar'?'block':'none';
-
-        if(currentMethod==='manual'){
-          document.body.classList.remove('ar-active');
-        }
-        refreshEstimate();
-      });
-    });
-
-    [manualLength,manualWidth,manualHeight].forEach(i=>{
-      i.addEventListener('input',refreshEstimate);
-    });
-
-    openAr.addEventListener('click',()=>{
-      estimationScreen.style.display='none';
-      hud.classList.remove('isHidden');
-      document.body.classList.add('ar-active');
-      document.body.classList.remove('home-active');
-      arBackBtn.style.display='inline-block';
-      arSaveBar.style.display='none';
-      document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.';
-    });
-
-    function leaveAR(saveMeasurement){
-      if(saveMeasurement && window.COSTructEstimation){
-        const dim = window.COSTructEstimation.getLastARDimensions ?
-          window.COSTructEstimation.getLastARDimensions() : {area:0};
-
-        if(dim.area > 0){
-          window.COSTructEstimation.receiveARDimensions(dim);
-          return;
-        }
-      }
-
-      hud.classList.add('isHidden');
-      document.body.classList.remove('ar-active');
-      estimationScreen.style.display='block';
-      arBackBtn.style.display='none';
-      arSaveBar.style.display='none';
-      refreshEstimate();
-    }
-
-    arBackBtn.addEventListener('click',()=>leaveAR(false));
-    useAreaBtn.addEventListener('click',()=>leaveAR(true));
-
-    document.getElementById('calculateEstimateBtn').addEventListener('click',()=>{
-      refreshEstimate();
-      alert('Estimate updated using the current floor dimensions and wall height.');
-    });
-
-    buildMaterialsTable();
-    updateArea();
-    calculateMaterials();
-
-    window.COSTructEstimation = {
-      getLastARArea:function(){
-        return Number(window.__COSTructLastArea)||0;
-      },
-      getLastARDimensions:function(){
-        return {
-          length:Number(window.__COSTructLastLength)||0,
-          width:Number(window.__COSTructLastWidth)||0,
-          height:Number(window.__COSTructLastHeight)||0,
-          area:Number(window.__COSTructLastArea)||0
-        };
-      },
+    window.COSTructEstimation={
+      showEstimation,
+      getLastARDimensions:()=>({length:+window.__COSTructLastLength||0,width:+window.__COSTructLastWidth||0,height:+window.__COSTructLastHeight||0,area:+window.__COSTructLastArea||0}),
+      getLastARArea:()=>+window.__COSTructLastArea||0,
       receiveARDimensions:function(dim){
-        dim=dim||{};
-        arArea=Number(dim.area)||0;
-        window.__COSTructLastArea=arArea;
-        window.__COSTructLastLength=Number(dim.length)||0;
-        window.__COSTructLastWidth=Number(dim.width)||0;
-        window.__COSTructLastHeight=Number(dim.height)||0;
-
-        arAreaField.textContent=arArea.toFixed(2)+' m²';
-        arLength.value=window.__COSTructLastLength.toFixed(2);
-        arWidth.value=window.__COSTructLastWidth.toFixed(2);
-        arHeight.value=window.__COSTructLastHeight.toFixed(2);
-
-        currentMethod='ar';
-        document.querySelectorAll('.measureChoice').forEach(b=>{
-          b.classList.toggle('active',b.dataset.method==='ar');
-        });
-        manualPanel.style.display='none';
-        arPanel.style.display='block';
-
-        const result=document.getElementById('arMeasurementResult');
-        result.style.display='block';
-        result.textContent='Saved AR Dimensions: '+
-          window.__COSTructLastLength.toFixed(2)+' m × '+
-          window.__COSTructLastWidth.toFixed(2)+' m × '+
-          window.__COSTructLastHeight.toFixed(2)+' m';
-
-        estimationScreen.style.display='block';
-        hud.classList.add('isHidden');
-        document.body.classList.remove('ar-active');
-        arBackBtn.style.display='none';
-        arSaveBar.style.display='none';
-        refreshEstimate();
+        if(!activeComponent) return;
+        dim=dim||{}; const l=+arEditLength.value||+dim.length||0,w=+arEditWidth.value||+dim.width||0,h=+arEditHeight.value||+dim.height||0,a=+dim.area||l*w;
+        activeComponent.querySelector('.compLength').value=l.toFixed(2); activeComponent.querySelector('.compWidth').value=w.toFixed(2); activeComponent.querySelector('.compHeight').value=h.toFixed(2); activeComponent.querySelector('.componentARStatus').textContent=`Saved: ${l.toFixed(2)} × ${w.toFixed(2)} × ${h.toFixed(2)} m • Area ${a.toFixed(2)} m²`;
+        updateCard(activeComponent); leaveAR();
       }
     };
   })();
@@ -645,6 +628,8 @@
 
     this.promptText = document.getElementById('promptText');
     this.resetBtn = document.getElementById('resetBtn');
+    this.undoBtn = document.getElementById('undoBtn');
+    this.editBtn = document.getElementById('editBtn');
     this.placeBtn = document.getElementById('placeBtn');
     this.calibrateBtn = document.getElementById('calibrateBtn');
      this.useAreaBtn = document.getElementById('useAreaBtn');
@@ -663,6 +648,7 @@
     this.updateCalibrationStatus();
 
     this.resetBtn.addEventListener('click', this.reset.bind(this));
+    this.undoBtn.addEventListener('click', this.undoLast.bind(this));
     this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
     this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
     this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
@@ -1177,6 +1163,7 @@
         this.heightMeasurements.push(record);
         this._lastMeasuredHeight = calibrated;
         window.__COSTructLastHeight = calibrated;
+        const edH = document.getElementById('arEditHeight'); if (edH) edH.value = calibrated.toFixed(2);
 
         // Use the measured wall height to extrude every existing floor point.
         // The height measurement itself remains exactly as measured.
@@ -1298,9 +1285,9 @@
     this.areaResult.style.display = 'block';
     this.useAreaBtn.style.display = 'inline-block';
     document.getElementById('arSaveBar').style.display = 'block';
-
     // Send the completed AR floor area back to Material & Cost Estimation.
     this._lastFloorArea = areaM2;
+    window.__COSTructLastArea = areaM2;
     // For the estimation form, derive length and width from the measured floor polygon.
     if (window.COSTructEstimation && this.corners.length >= 3) {
       const xs = this.corners.map(p => p.x), zs = this.corners.map(p => p.z);
@@ -1354,6 +1341,100 @@
     this.corners = [];
   },
 
+  undoLast: function () {
+    // Undo the most recent floor placement/closure without touching the
+    // underlying AR tracking or raycasting.
+    if (this.calibrationActive) return;
+
+    if (this.measureMode !== 'floor') {
+      this.promptText.textContent = 'Undo is available while measuring the floor.';
+      return;
+    }
+
+    if (this.closed) {
+      // Remove only the closing segment and reopen the polygon.
+      if (this.lines.length) { const el=this.lines.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+      if (this.labels.length) { const el=this.labels.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+      this.closed=false;
+      this.step='B'; this.floorStep='B'; this.waitingForContinue=true;
+      this.areaResult.style.display='none';
+      this.useAreaBtn.style.display='none';
+      document.getElementById('arSaveBar').style.display='none';
+      this.promptText.textContent='FLOOR: Snap an existing point, then tap Place to close or continue.';
+      return;
+    }
+
+    if (!this.corners.length) return;
+
+    // If the last action was a completed segment, remove its endpoint, line,
+    // and label. The first point has only a marker, so it is handled naturally.
+    const lastCorner=this.corners.pop();
+    if (this.markers.length) { const el=this.markers.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    if (this.corners.length>=1 && this.lines.length) { const el=this.lines.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    if (this.labels.length) { const el=this.labels.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    this.clearPreview(); this.removePreviewLabel();
+    this.waitingForContinue=false;
+    this.step=this.corners.length ? 'B' : 'A';
+    this.floorStep=this.step;
+    if (!this.corners.length) {
+      this.floorMeasurementY=null; this.measurementY=null;
+      this.promptText.textContent='FLOOR: Aim at the first point, then tap Place.';
+    } else {
+      this.promptText.textContent='FLOOR: Aim at the next point, then tap Place.';
+    }
+  },
+
+  applyEditedDimensions: function (newLength, newWidth, newHeight) {
+    if (!this.corners || this.corners.length < 3 || !this.closed) return;
+    const xs=this.corners.map(p=>p.x), zs=this.corners.map(p=>p.z);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minZ=Math.min(...zs), maxZ=Math.max(...zs);
+    const oldL=(maxX-minX)*this.calibrationFactor, oldW=(maxZ-minZ)*this.calibrationFactor;
+    if (!(oldL>0 && oldW>0)) return;
+    const sx=(newLength/oldL), sz=(newWidth/oldW);
+    const anchor=this.corners[0].clone();
+    this.corners.forEach(p=>{
+      p.x=anchor.x + (p.x-anchor.x)*sx;
+      p.z=anchor.z + (p.z-anchor.z)*sz;
+    });
+
+    // Rebuild floor lines/labels from the edited vertices.
+    this.lines.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.lines=[];
+    this.labels.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.labels=[];
+    for(let i=0;i<this.corners.length;i++){
+      const a=this.corners[i], b=this.corners[(i+1)%this.corners.length];
+      this.drawLine(a,b);
+      this.finalizeLabel(a,b,`${(a.distanceTo(b)*this.calibrationFactor).toFixed(2)} m`);
+    }
+
+    // Move markers to edited floor vertices.
+    this.markers.slice(0,this.corners.length).forEach((m,i)=>m.setAttribute('position',`${this.corners[i].x} ${this.corners[i].y} ${this.corners[i].z}`));
+
+    // Update height geometry/measurement when supplied.
+    if (newHeight>0) {
+      const oldBase=this.heightMeasurements.length ? this.heightMeasurements[0].base : null;
+      this.heightMeasurements=[];
+      this._lastMeasuredHeight=newHeight;
+      window.__COSTructLastHeight=newHeight;
+      this.clearExtrusionObjects();
+      this.extrudeFloorToHeight(newHeight);
+      if(oldBase){
+        // Existing height line/marker may be among the last objects; keep the
+        // saved numeric height authoritative for the estimation module.
+      }
+    }
+
+    const area=newLength*newWidth;
+    this._lastFloorArea=area;
+    window.__COSTructLastLength=newLength;
+    window.__COSTructLastWidth=newWidth;
+    window.__COSTructLastArea=area;
+    this.areaResult.textContent=`Area: ${area.toFixed(2)} m²`;
+    this.areaResult.style.display='block';
+    this.useAreaBtn.style.display='inline-block';
+    document.getElementById('arSaveBar').style.display='block';
+    this.promptText.textContent=`Dimensions updated — Area: ${area.toFixed(2)} m². Tap Save Dimensions.`;
+  },
+
   reset: function () {
     this.clearAllMeasurementObjects();
     this.step = 'A';
@@ -1392,6 +1473,7 @@
     this.areaResult.style.display = 'none';
     this.useAreaBtn.style.display = 'none';
     document.getElementById('arSaveBar').style.display = 'none';
+    const arEditor = document.getElementById('arDimensionEditor'); if (arEditor) arEditor.style.display='none';
     this.promptText.textContent = `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
   }
 });
