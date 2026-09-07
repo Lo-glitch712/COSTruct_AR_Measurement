@@ -20,8 +20,8 @@
   #hud { position:fixed; inset:0; z-index:20; pointer-events:none; }
   #topBar { position:absolute; top:14px; left:12px; right:12px; display:flex; justify-content:center; pointer-events:none; }
   #promptText { max-width:92vw; padding:10px 15px; border-radius:18px; background:rgba(17,24,39,.72); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; font-size:14px; line-height:1.25; text-align:center; text-shadow:none; box-shadow:0 6px 22px rgba(0,0,0,.18); }
-  #modeBar { position:absolute; top:62px; left:50%; transform:translateX(-50%); display:flex; gap:3px; padding:4px; border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 6px 18px rgba(0,0,0,.18); pointer-events:auto; }
-  .modeBtn { border:0; background:transparent; color:#374151; border-radius:14px; padding:7px 16px; font-size:13px; font-weight:700; }
+  #modeBar { position:absolute; top:62px; left:50%; transform:translateX(-50%); display:flex; gap:2px; padding:4px; border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 6px 18px rgba(0,0,0,.18); pointer-events:auto; }
+  .modeBtn { border:0; background:transparent; color:#374151; border-radius:14px; padding:7px 12px; font-size:12px; font-weight:700; }
   .modeBtn.active { background:#111827; color:#fff; }
   #areaResult { position:absolute; top:108px; left:50%; transform:translateX(-50%); padding:7px 13px; border-radius:10px; background:rgba(255,255,255,.94); color:#111827; font-size:13px; font-weight:700; box-shadow:0 5px 16px rgba(0,0,0,.14); }
   #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:34px; font-weight:300; line-height:1; text-shadow:0 1px 5px rgba(0,0,0,.75); }
@@ -80,6 +80,7 @@
   <div id="modeBar">
     <button id="floorModeBtn" class="modeBtn active">Floor</button>
     <button id="heightModeBtn" class="modeBtn">Height</button>
+    <button id="ceilingModeBtn" class="modeBtn">Ceiling</button>
   </div>
   <div id="areaResult"></div>
   <div id="crosshair">+</div>
@@ -180,631 +181,741 @@
 })();
 
 AFRAME.registerComponent('distance-measure', {
-    init: function () {
-      this.corners = [];
-      this.markers = [];
-      this.lines = [];
-      this.previewLines = {};
-      this.labels = [];
-      this.previewLabel = null;
+  init: function () {
+    this.corners = [];
+    this.markers = [];
+    this.lines = [];
+    this.previewLines = {};
+    this.labels = [];
+    this.previewLabel = null;
 
-      this.step = 'A';
-      this.measurementY = null;
-      this.snapThreshold = 0.12;
-      this.isSnapped = false;
-      this.rawAimPoint = null;
-      this.aimHistory = [];
-      this.historyMax = 12;
-      this.calibrationActive = false;
-      this.calibrationPoints = [];
-      // Calibration is session-specific. Reusing a factor after reload can
-      // compound tracking differences from a new AR session.
-      this.calibrationFactor = 1;
+    this.measureMode = 'floor';
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.ceilingStep = 'A';
+    this.waitingForContinue = false;
+    this.closed = false;
 
-      this.promptText = document.getElementById('promptText');
-      this.resetBtn = document.getElementById('resetBtn');
-      this.placeBtn = document.getElementById('placeBtn');
-      this.calibrateBtn = document.getElementById('calibrateBtn');
-      this.calibrationPanel = document.getElementById('calibrationPanel');
-      this.knownDistanceInput = document.getElementById('knownDistance');
-      this.applyCalibrationBtn = document.getElementById('applyCalibration');
-      this.calibrationStatus = document.getElementById('calibrationStatus');
+    this.floorMeasurementY = null;
+    this.heightBaseY = null;
+    this.ceilingBaseY = null;
+    this.measurementY = null;
 
-      this.floorModeBtn = document.getElementById('floorModeBtn');
-      this.heightModeBtn = document.getElementById('heightModeBtn');
-      this.heightHint = document.getElementById('heightHint');
-      this.snapHint = document.getElementById('snapHint');
-      this.areaResult = document.getElementById('areaResult');
-      this.measureMode = 'floor';
-      this.waitingForContinue = false;
-      this.closed = false;
+    this.heightMeasurements = [];
+    this.ceilingMeasurements = [];
 
-      this.raycaster = new THREE.Raycaster();
-      this.updateCalibrationStatus();
+    this.activeVerticalBase = null;
+    this.activeVerticalType = null;
 
-      this.resetBtn.addEventListener('click', this.reset.bind(this));
-      this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
-      this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
-      this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
-      this.floorModeBtn.addEventListener('click', () => this.setMeasureMode('floor'));
-      this.heightModeBtn.addEventListener('click', () => this.setMeasureMode('height'));
-    },
+    this.snapThreshold = 0.12;
+    this.isSnapped = false;
+    this.snapKind = '';
+    this.rawAimPoint = null;
+    this.aimHistory = [];
+    this.historyMax = 8;
 
-    setMeasureMode: function (mode) {
-      if (this.step !== 'A') return;
+    this.calibrationActive = false;
+    this.calibrationPoints = [];
+    this.calibrationFactor = 1;
 
-      this.measureMode = mode;
-      this.floorModeBtn.classList.toggle('active', mode === 'floor');
-      this.heightModeBtn.classList.toggle('active', mode === 'height');
-      this.heightHint.style.display = mode === 'height' ? 'block' : 'none';
-      this.snapHint.style.display = 'none';
+    this.promptText = document.getElementById('promptText');
+    this.resetBtn = document.getElementById('resetBtn');
+    this.placeBtn = document.getElementById('placeBtn');
+    this.calibrateBtn = document.getElementById('calibrateBtn');
+    this.calibrationPanel = document.getElementById('calibrationPanel');
+    this.knownDistanceInput = document.getElementById('knownDistance');
+    this.applyCalibrationBtn = document.getElementById('applyCalibration');
+    this.calibrationStatus = document.getElementById('calibrationStatus');
 
-      if (mode === 'height') {
-        this.promptText.textContent = 'HEIGHT: Aim at the floor/base point, then tap Place';
-      } else {
+    this.floorModeBtn = document.getElementById('floorModeBtn');
+    this.heightModeBtn = document.getElementById('heightModeBtn');
+    this.heightHint = document.getElementById('heightHint');
+    this.snapHint = document.getElementById('snapHint');
+    this.areaResult = document.getElementById('areaResult');
+
+    this.raycaster = new THREE.Raycaster();
+    this.updateCalibrationStatus();
+
+    this.resetBtn.addEventListener('click', this.reset.bind(this));
+    this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
+    this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
+    this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
+    this.floorModeBtn.addEventListener('click', () => this.setMeasureMode('floor'));
+    this.heightModeBtn.addEventListener('click', () => this.setMeasureMode('height'));
+
+    // Add a third mode without breaking the existing UI if the button is present.
+    const ceilingBtn = document.getElementById('ceilingModeBtn');
+    if (ceilingBtn) ceilingBtn.addEventListener('click', () => this.setMeasureMode('ceiling'));
+  },
+
+  setMeasureMode: function (mode) {
+    if (this.calibrationActive || !['floor', 'height', 'ceiling'].includes(mode)) return;
+    if (mode === this.measureMode) return;
+
+    // Save current mode's step state before switching.
+    if (this.measureMode === 'floor') this.floorStep = this.step;
+    if (this.measureMode === 'height') this.heightStep = this.step;
+    if (this.measureMode === 'ceiling') this.ceilingStep = this.step;
+
+    this.measureMode = mode;
+    this.step = mode === 'floor' ? this.floorStep : mode === 'height' ? this.heightStep : this.ceilingStep;
+    this.waitingForContinue = mode === 'floor' && this.waitingForContinue;
+    this.clearPreview();
+    this.removePreviewLabel();
+    this.isSnapped = false;
+    this.snapKind = '';
+
+    this.floorModeBtn.classList.toggle('active', mode === 'floor');
+    this.heightModeBtn.classList.toggle('active', mode === 'height');
+    const ceilingBtn = document.getElementById('ceilingModeBtn');
+    if (ceilingBtn) ceilingBtn.classList.toggle('active', mode === 'ceiling');
+
+    this.heightHint.style.display = mode === 'floor' ? 'none' : 'block';
+    if (mode === 'height') this.heightHint.textContent = 'Height • snap to floor point, then aim at top';
+    if (mode === 'ceiling') this.heightHint.textContent = 'Ceiling • snap to floor point, then aim at ceiling';
+    this.snapHint.style.display = 'none';
+
+    if (mode === 'floor') {
+      this.measurementY = this.floorMeasurementY;
+      if (this.closed) {
+        this.promptText.textContent = 'Floor area complete. You can switch to Height or Ceiling.';
+      } else if (this.waitingForContinue) {
+        this.promptText.textContent = 'FLOOR: Aim at an existing point to continue';
+      } else if (this.corners.length === 0) {
         this.promptText.textContent = 'FLOOR: Aim at the first point, then tap Place';
-      }
-    },
-
-    tick: function () {
-      if (this.calibrationActive && this.step === 'DONE') return;
-      if (!this.calibrationActive && (this.step === 'DONE' || this.closed)) return;
-
-      const camera = this.el.camera;
-      const groundEl = document.getElementById('ground');
-
-      this.raycaster.setFromCamera({x: 0, y: 0}, camera);
-
-      let aimPoint = null;
-
-      if (this.step === 'A') {
-        // First point is always acquired from the real tracked floor plane.
-        const intersects = this.raycaster.intersectObject(groundEl.object3D, true);
-        if (intersects.length > 0) {
-          aimPoint = intersects[0].point.clone();
-        }
-      } else if (this.step === 'B' && this.measureMode === 'floor' && this.measurementY !== null) {
-        // FLOOR: keep both points on the same horizontal plane.
-        const origin = new THREE.Vector3();
-        const direction = new THREE.Vector3();
-        camera.getWorldPosition(origin);
-        camera.getWorldDirection(direction);
-
-        if (Math.abs(direction.y) > 0.0001) {
-          const distance = (this.measurementY - origin.y) / direction.y;
-          if (distance > 0 && Number.isFinite(distance)) {
-            aimPoint = origin.clone().add(direction.clone().multiplyScalar(distance));
-            aimPoint.y = this.measurementY;
-          }
-        }
-      } else if (this.step === 'B' && this.measureMode === 'height' && this.corners[0]) {
-        // HEIGHT: create a vertical measuring plane that passes through the
-        // base point and faces the camera. The second point is constrained to
-        // the vertical line above the base point, so X/Z never drift away
-        // from the first point.
-        const base = this.corners[0].clone();
-        const origin = new THREE.Vector3();
-        const direction = new THREE.Vector3();
-        camera.getWorldPosition(origin);
-        camera.getWorldDirection(direction);
-
-        // Horizontal forward direction of the camera.
-        const forwardXZ = new THREE.Vector3(direction.x, 0, direction.z);
-        if (forwardXZ.lengthSq() > 0.000001) {
-          forwardXZ.normalize();
-
-          // Plane normal is horizontal and points toward the camera.
-          const normal = forwardXZ.clone().negate();
-
-          // Ray-plane intersection: plane passes through base and extends vertically.
-          const denom = direction.dot(normal);
-          if (Math.abs(denom) > 0.0001) {
-            const toPlane = base.clone().sub(origin);
-            const distance = toPlane.dot(normal) / denom;
-
-            if (distance > 0 && Number.isFinite(distance)) {
-              const hit = origin.clone().add(direction.clone().multiplyScalar(distance));
-              aimPoint = new THREE.Vector3(base.x, hit.y, base.z);
-              // Don't permit a point below the floor/base.
-              if (aimPoint.y < base.y) aimPoint.y = base.y;
-            }
-          }
-        }
-      }
-
-      // FLOOR CHAIN SNAP: when aiming near any existing floor point, lock the
-      // preview endpoint to that exact stored point. This lets Point B become
-      // the starting point for Point C, D, E... and allows easy re-connection.
-      this.isSnapped = false;
-      if (aimPoint && this.step === 'B' && this.measureMode === 'floor' && this.corners.length > 0) {
-        let nearest = null;
-        let nearestDist = Infinity;
-        for (let i = 0; i < this.corners.length; i++) {
-          const candidate = this.corners[i];
-          const d = Math.hypot(aimPoint.x - candidate.x, aimPoint.z - candidate.z);
-          if (d < nearestDist) {
-            nearestDist = d;
-            nearest = candidate;
-          }
-        }
-        if (nearest && nearestDist <= this.snapThreshold) {
-          aimPoint = nearest.clone();
-          aimPoint.y = this.measurementY;
-          this.isSnapped = true;
-        }
-      }
-
-      this.rawAimPoint = aimPoint ? aimPoint.clone() : null;
-      this.snapHint.style.display = this.isSnapped ? 'block' : 'none';
-      if (this.waitingForContinue && this.measureMode === 'floor' && !this.isSnapped) {
-        this.promptText.textContent = 'Aim at an existing point to continue';
-      } else if (this.waitingForContinue && this.measureMode === 'floor' && this.isSnapped) {
-        this.promptText.textContent = 'SNAP! Tap Place Point to start the next segment';
-      }
-
-      // Keep a short history of recent aim points. Using the median of these
-      // samples makes point placement less sensitive to one-frame tracking jitter.
-      if (aimPoint) {
-        this.aimHistory.push(aimPoint.clone());
-        if (this.aimHistory.length > this.historyMax) this.aimHistory.shift();
       } else {
-        this.aimHistory = [];
+        this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
       }
+      return;
+    }
 
-      if (!aimPoint) return;
+    this.activeVerticalType = mode;
+    if (mode === 'height') this.measurementY = this.heightBaseY;
+    if (mode === 'ceiling') this.measurementY = this.ceilingBaseY;
 
-      if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'floor' && !this.waitingForContinue) {
-        const start = this.corners[this.corners.length - 1];
-        this.updatePreviewLine('main', start, aimPoint);
-        this.updateLiveLabel(start, aimPoint);
-      } else if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'floor' && this.waitingForContinue) {
-        // After completing a segment, do not draw a new line until the user
-        // deliberately clicks an existing point to start the next segment.
-        this.clearPreview();
-        this.removePreviewLabel();
-      } else if (this.step === 'B' && !this.calibrationActive && this.measureMode === 'height' && this.corners[0]) {
-        // HEIGHT: show the live vertical line immediately after Point A.
-        // Point B follows the current aim height, so the user can see the
-        // measurement grow/shrink before committing Point B.
-        const start = this.corners[0];
-        const liveEnd = new THREE.Vector3(start.x, aimPoint.y, start.z);
-        this.updatePreviewLine('height', start, liveEnd);
-        const rawHeight = Math.abs(liveEnd.y - start.y);
-        const heightM = rawHeight * this.calibrationFactor;
-        if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
-        const mid = new THREE.Vector3().addVectors(start, liveEnd).multiplyScalar(0.5);
-        this.setLabel(this.previewLabel, mid, `${heightM.toFixed(2)} m`);
-        this.faceCamera(this.previewLabel);
-      }
-
-      if (this.step === 'B' && this.calibrationActive) {
-        this.updatePreviewLine('calibration', this.calibrationPoints[0], aimPoint);
-        const raw = this.calibrationPoints[0].distanceTo(aimPoint);
-        this.promptText.textContent = `Calibration distance: ${(raw * this.calibrationFactor).toFixed(2)} m`;
-      }
-    },
-
-    startCalibration: function () {
-      this.clearAllMeasurementObjects();
-      this.calibrationActive = true;
-      this.calibrationPoints = [];
+    if (this.step === 'B' && this.activeVerticalBase) {
+      this.promptText.textContent = mode === 'height'
+        ? 'HEIGHT: Aim at the top point, then tap Place'
+        : 'CEILING: Aim at the ceiling point, then tap Place';
+    } else {
       this.step = 'A';
-      this.measurementY = null;
-      this.snapThreshold = 0.12;
-      this.isSnapped = false;
-      this.rawAimPoint = null;
+      if (mode === 'height') this.heightStep = 'A';
+      if (mode === 'ceiling') this.ceilingStep = 'A';
+      this.promptText.textContent = mode === 'height'
+        ? 'HEIGHT: Aim at a floor point, then tap Place'
+        : 'CEILING: Aim at a floor point, then tap Place';
+    }
+  },
+
+  tick: function () {
+    if (this.calibrationActive && this.step === 'DONE') return;
+    if (!this.calibrationActive) {
+      if (this.measureMode === 'floor' && (this.step === 'DONE' || this.closed)) return;
+    }
+
+    const camera = this.el.camera;
+    const groundEl = document.getElementById('ground');
+    this.raycaster.setFromCamera({x: 0, y: 0}, camera);
+
+    let aimPoint = null;
+
+    if (this.step === 'A') {
+      const intersects = this.raycaster.intersectObject(groundEl.object3D, true);
+      if (intersects.length > 0) aimPoint = intersects[0].point.clone();
+    } else if (this.step === 'B' && this.measureMode === 'floor' && this.floorMeasurementY !== null) {
+      aimPoint = this.horizontalPlanePoint(camera, this.floorMeasurementY);
+    } else if (this.step === 'B' && (this.measureMode === 'height' || this.measureMode === 'ceiling') && this.activeVerticalBase) {
+      aimPoint = this.verticalLinePoint(camera, this.activeVerticalBase);
+    }
+
+    this.isSnapped = false;
+    this.snapKind = '';
+
+    // Snap the FLOOR next-point to an existing floor vertex.
+    if (aimPoint && this.measureMode === 'floor' && this.step === 'B' && this.corners.length) {
+      const nearest = this.nearestPoint(this.corners, aimPoint, false);
+      if (nearest && nearest.distance <= this.snapThreshold) {
+        aimPoint = nearest.point.clone();
+        aimPoint.y = this.floorMeasurementY;
+        this.isSnapped = true;
+        this.snapKind = 'floor';
+      }
+    }
+
+    // Snap the HEIGHT/CEILING base to any existing floor vertex.
+    if (aimPoint && this.step === 'A' && (this.measureMode === 'height' || this.measureMode === 'ceiling') && this.corners.length) {
+      const nearest = this.nearestPoint(this.corners, aimPoint, false);
+      if (nearest && nearest.distance <= this.snapThreshold) {
+        aimPoint = nearest.point.clone();
+        this.isSnapped = true;
+        this.snapKind = 'base';
+      }
+    }
+
+    // When measuring a vertical top, snap to an already saved top point if it
+    // is directly above the same base (within the snap radius). This lets users
+    // reuse established height/ceiling levels without resetting anything.
+    if (aimPoint && this.step === 'B' && (this.measureMode === 'height' || this.measureMode === 'ceiling')) {
+      const tops = this.measureMode === 'height'
+        ? this.heightMeasurements.map(m => m.top)
+        : this.ceilingMeasurements.map(m => m.top);
+      const nearestTop = this.nearestPoint(tops, aimPoint, true);
+      if (nearestTop && nearestTop.distance <= this.snapThreshold) {
+        aimPoint.y = nearestTop.point.y;
+        this.isSnapped = true;
+        this.snapKind = 'top';
+      }
+    }
+
+    this.rawAimPoint = aimPoint ? aimPoint.clone() : null;
+    this.snapHint.style.display = this.isSnapped ? 'block' : 'none';
+    if (this.snapKind === 'base') this.snapHint.textContent = 'SNAP • Base point';
+    else if (this.snapKind === 'top') this.snapHint.textContent = 'SNAP • Top point';
+    else this.snapHint.textContent = 'SNAP • Tap Place';
+
+    if (aimPoint) {
+      this.aimHistory.push(aimPoint.clone());
+      if (this.aimHistory.length > this.historyMax) this.aimHistory.shift();
+    } else {
       this.aimHistory = [];
+    }
 
-      this.measureMode = 'floor';
-      this.waitingForContinue = false;
-      this.closed = false;
-      this.areaResult.style.display = 'none';
-      this.floorModeBtn.classList.add('active');
-      this.heightModeBtn.classList.remove('active');
-      this.heightHint.style.display = 'none';
+    if (!aimPoint) return;
 
-      this.calibrationPanel.style.display = 'block';
-      this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
-      this.promptText.textContent = 'CALIBRATION: Aim at first reference point, then tap Place';
-      this.calibrateBtn.textContent = 'Calibrating…';
-      this.calibrateBtn.disabled = true;
-    },
+    if (this.measureMode === 'floor' && this.step === 'B' && !this.waitingForContinue) {
+      const start = this.corners[this.corners.length - 1];
+      this.updatePreviewLine('main', start, aimPoint);
+      this.updateLiveLabel(start, aimPoint);
+      return;
+    }
 
-    finishCalibration: function () {
-      if (!this.calibrationActive || this.calibrationPoints.length !== 2) {
-        this.calibrationStatus.textContent = 'Place two reference points first.';
-        return;
-      }
-
-      const known = parseFloat(this.knownDistanceInput.value);
-      if (!(known > 0)) {
-        this.calibrationStatus.textContent = 'Enter a valid real distance, e.g. 1.00 m.';
-        return;
-      }
-
-      const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
-      if (!(rawDistance > 0.0001)) {
-        this.calibrationStatus.textContent = 'Reference points are too close. Try again.';
-        return;
-      }
-
-      const proposedFactor = known / rawDistance;
-      if (!Number.isFinite(proposedFactor) || proposedFactor < 0.75 || proposedFactor > 1.25) {
-        this.calibrationStatus.textContent =
-          `Large scale correction (${proposedFactor.toFixed(3)}×). Recheck the reference distance and retake the two points.`;
-        return;
-      }
-      this.calibrationFactor = proposedFactor;
-
-      this.calibrationActive = false;
-      this.step = 'A';
-      this.measurementY = null;
-      this.snapThreshold = 0.12;
-      this.isSnapped = false;
-      this.rawAimPoint = null;
-      this.aimHistory = [];
-      this.clearAllMeasurementObjects();
-
-      this.calibrationPanel.style.display = 'none';
-      this.measureMode = 'floor';
-      this.floorModeBtn.classList.add('active');
-      this.heightModeBtn.classList.remove('active');
-      this.heightHint.style.display = 'none';
-      this.calibrateBtn.disabled = false;
-      this.calibrateBtn.textContent = 'Calibrate';
-      this.promptText.textContent = `Calibration applied (${this.calibrationFactor.toFixed(3)}×) for this session. Aim at first point, then tap Place`;
-      this.updateCalibrationStatus();
-    },
-
-    updateCalibrationStatus: function () {
-      this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
-    },
-
-    updateLiveLabel: function (start, end) {
-      if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
-      const raw = start.distanceTo(end);
-      const dist = raw * this.calibrationFactor;
-      const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-      this.setLabel(this.previewLabel, mid, `${dist.toFixed(2)} m`);
-      this.faceCamera(this.previewLabel);
-    },
-
-    createLabelEntity: function () {
-      const wrapper = document.createElement('a-entity');
-      const bg = document.createElement('a-plane');
-      bg.setAttribute('width', 0.34);
-      bg.setAttribute('height', 0.11);
-      bg.setAttribute('color', '#ffffff');
-      bg.setAttribute('opacity', 0.92);
-      bg.setAttribute('position', '0 0 -0.002');
-      wrapper.appendChild(bg);
-
-      const txt = document.createElement('a-text');
-      txt.setAttribute('align', 'center');
-      txt.setAttribute('baseline', 'center');
-      txt.setAttribute('color', '#111111');
-      txt.setAttribute('width', 1.3);
-      wrapper.appendChild(txt);
-      wrapper.textEl = txt;
-
-      this.el.appendChild(wrapper);
-      return wrapper;
-    },
-
-    setLabel: function (wrapper, midpoint, text) {
-      wrapper.setAttribute(
-        'position',
-        `${midpoint.x} ${midpoint.y + 0.10} ${midpoint.z}`
-      );
-      wrapper.textEl.setAttribute('value', text);
-    },
-
-    faceCamera: function (wrapper) {
-      const camPos = new THREE.Vector3();
-      this.el.camera.getWorldPosition(camPos);
-      wrapper.object3D.lookAt(camPos);
-    },
-
-    finalizeLabel: function (start, end, text) {
-      const wrapper = this.createLabelEntity();
-      const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-      this.setLabel(wrapper, mid, text);
-      this.faceCamera(wrapper);
-      this.labels.push(wrapper);
-    },
-
-    removePreviewLabel: function () {
-      if (this.previewLabel && this.previewLabel.parentNode) {
-        this.previewLabel.parentNode.removeChild(this.previewLabel);
-      }
-      this.previewLabel = null;
-    },
-
-    updatePreviewLine: function (key, start, end) {
-      let el = this.previewLines[key];
-      if (!el) {
-        el = document.createElement('a-box');
-        el.setAttribute('height', 0.010);
-        el.setAttribute('depth', 0.010);
-        el.setAttribute('color', '#ffffff');
-        this.el.appendChild(el);
-        this.previewLines[key] = el;
-      }
-      this.orientLineBox(el, start, end);
-    },
-
-    orientLineBox: function (el, start, end) {
-      const direction = new THREE.Vector3().subVectors(end, start);
-      const length = direction.length();
-
-      if (length < 0.0001) return;
-
-      const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-
-      el.object3D.position.copy(midpoint);
-      el.object3D.scale.set(length, 1, 1);
-
-      const unit = direction.clone().normalize();
-      const xAxis = new THREE.Vector3(1, 0, 0);
-      el.object3D.quaternion.setFromUnitVectors(xAxis, unit);
-    },
-
-    clearPreview: function () {
-      Object.values(this.previewLines).forEach(el => {
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-      });
-      this.previewLines = {};
-    },
-
-    getStableAimPoint: function () {
-      if (!this.aimHistory.length) return this.rawAimPoint ? this.rawAimPoint.clone() : null;
-
-      // Coordinate-wise median: robust against occasional tracking spikes.
-      const xs = this.aimHistory.map(p => p.x).sort((a,b) => a-b);
-      const ys = this.aimHistory.map(p => p.y).sort((a,b) => a-b);
-      const zs = this.aimHistory.map(p => p.z).sort((a,b) => a-b);
-      const mid = Math.floor(xs.length / 2);
-      const median = arr => arr.length % 2 ? arr[mid] : (arr[mid-1] + arr[mid]) * 0.5;
-      const p = new THREE.Vector3(median(xs), median(ys), median(zs));
-
-      // B must remain on the locked measurement plane.
-      if (this.step === 'B' && this.measureMode === 'floor' && this.measurementY !== null) p.y = this.measurementY;
-      return p;
-    },
-
-    onPlaceClick: function () {
-      if (!this.rawAimPoint) return;
-
-      const point = this.getStableAimPoint();
-      if (!point) return;
-      this.aimHistory = [];
-
-      if (this.step === 'A') {
-        if (this.calibrationActive) {
-          this.placeCalibrationMarker(point);
-          this.calibrationPoints[0] = point;
-        } else {
-          this.placeMarker(point);
-          this.corners[0] = point;
-        }
-
-        this.measurementY = point.y;
-        this.step = 'B';
-
-        if (!this.calibrationActive && this.measureMode === 'height') {
-          this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
-        }
-
-        if (this.calibrationActive) {
-          this.promptText.textContent = 'CALIBRATION: Aim at second reference point, then tap Place';
-        } else {
-          this.promptText.textContent = this.measureMode === 'height'
-            ? 'HEIGHT: Aim at the top point, then tap Place'
-            : 'FLOOR: Aim at the second point, then tap Place. You can continue after B.';
-        }
-        return;
-      }
-
-      if (this.step === 'B') {
-        if (this.calibrationActive) {
-          this.placeCalibrationMarker(point);
-          this.calibrationPoints[1] = point;
-          this.step = 'DONE';
-          const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
-          this.calibrationStatus.textContent =
-            `Raw distance: ${rawDistance.toFixed(3)} m. Enter the real distance above and tap Apply Calibration.`;
-          this.promptText.textContent = 'Enter the REAL distance, then tap Apply Calibration';
-          this.clearPreview();
-          return;
-        }
-
-        if (this.measureMode === 'floor') {
-          // After A->B, the app waits. A new segment only starts when the
-          // user intentionally taps an existing point (snap required).
-          if (this.waitingForContinue) {
-            if (!this.isSnapped) return;
-
-            const snapped = point.clone();
-            // If the user snaps to the first point and we already have at
-            // least 3 corners, close the polygon instead of adding a duplicate.
-            let nearestIndex = -1;
-            let nearestDist = Infinity;
-            for (let i = 0; i < this.corners.length; i++) {
-              const c = this.corners[i];
-              const d = Math.hypot(snapped.x - c.x, snapped.z - c.z);
-              if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
-            }
-
-            if (nearestIndex === 0 && this.corners.length >= 3) {
-              this.closePolygon();
-              return;
-            }
-
-            // Start a new segment from the clicked/snapped existing point.
-            this.corners.push(snapped);
-            this.placeMarker(snapped);
-            this.waitingForContinue = false;
-            this.aimHistory = [];
-            this.clearPreview();
-            this.removePreviewLabel();
-            this.measurementY = snapped.y;
-            this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
-            return;
-          }
-
-          const start = this.corners[this.corners.length - 1];
-          const end = point;
-          const rawDistance = start.distanceTo(end);
-          if (rawDistance < 0.01) return;
-
-          this.placeMarker(end);
-          this.corners.push(end);
-          this.drawLine(start, end);
-
-          const calibratedDistance = rawDistance * this.calibrationFactor;
-          this.finalizeLabel(start, end, `${calibratedDistance.toFixed(2)} m`);
-
-          this.clearPreview();
-          this.removePreviewLabel();
-          this.waitingForContinue = true;
-          this.promptText.textContent = 'Segment complete. Aim at an existing point, then tap Place to continue';
-          this.snapHint.style.display = 'none';
-          return;
-        }
-
-        // HEIGHT remains a two-point measurement and finishes after Point B.
-        this.placeMarker(point);
-        this.corners[1] = point;
-        this.clearPreview();
-        this.removePreviewLabel();
-
-        this.drawLine(this.corners[0], this.corners[1]);
-
-        const rawDistance = Math.abs(this.corners[1].y - this.corners[0].y);
-        const calibratedDistance = rawDistance * this.calibrationFactor;
-
-        this.finalizeLabel(
-          this.corners[0],
-          this.corners[1],
-          `${calibratedDistance.toFixed(2)} m`
-        );
-
-        this.step = 'DONE';
-        this.snapHint.style.display = 'none';
-        this.promptText.textContent = `Height: ${calibratedDistance.toFixed(2)} m`;
-
-      }
-    },
-
-    closePolygon: function () {
-      if (this.measureMode !== 'floor' || this.corners.length < 3 || this.closed) return;
-
-      const first = this.corners[0];
-      const last = this.corners[this.corners.length - 1];
-      const rawClosing = last.distanceTo(first);
-      if (rawClosing > 0.15) return;
-
-      // Draw the closing edge only once.
+    if (this.measureMode === 'floor' && this.step === 'B' && this.waitingForContinue) {
       this.clearPreview();
       this.removePreviewLabel();
-      if (rawClosing > 0.001) {
-        this.drawLine(last, first);
-        this.finalizeLabel(last, first, `${(rawClosing * this.calibrationFactor).toFixed(2)} m`);
+      return;
+    }
+
+    if ((this.measureMode === 'height' || this.measureMode === 'ceiling') && this.step === 'B' && this.activeVerticalBase) {
+      const base = this.activeVerticalBase;
+      const liveEnd = new THREE.Vector3(base.x, aimPoint.y, base.z);
+      const key = this.measureMode === 'height' ? 'height' : 'ceiling';
+      this.updatePreviewLine(key, base, liveEnd);
+
+      const rawVertical = Math.abs(liveEnd.y - base.y);
+      const value = rawVertical * this.calibrationFactor;
+      if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+      const mid = new THREE.Vector3().addVectors(base, liveEnd).multiplyScalar(0.5);
+      this.setLabel(this.previewLabel, mid, `${value.toFixed(2)} m`);
+      this.faceCamera(this.previewLabel);
+      return;
+    }
+
+    if (this.calibrationActive && this.step === 'B') {
+      this.updatePreviewLine('calibration', this.calibrationPoints[0], aimPoint);
+      const raw = this.calibrationPoints[0].distanceTo(aimPoint);
+      this.promptText.textContent = `Calibration distance: ${(raw * this.calibrationFactor).toFixed(2)} m`;
+    }
+  },
+
+  horizontalPlanePoint: function (camera, y) {
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    camera.getWorldPosition(origin);
+    camera.getWorldDirection(direction);
+    if (Math.abs(direction.y) < 0.0001) return null;
+    const distance = (y - origin.y) / direction.y;
+    if (!(distance > 0) || !Number.isFinite(distance)) return null;
+    const point = origin.clone().add(direction.clone().multiplyScalar(distance));
+    point.y = y;
+    return point;
+  },
+
+  verticalLinePoint: function (camera, base) {
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    camera.getWorldPosition(origin);
+    camera.getWorldDirection(direction);
+
+    const forwardXZ = new THREE.Vector3(direction.x, 0, direction.z);
+    if (forwardXZ.lengthSq() < 0.000001) return null;
+    forwardXZ.normalize();
+    const normal = forwardXZ.clone().negate();
+    const denom = direction.dot(normal);
+    if (Math.abs(denom) < 0.0001) return null;
+
+    const toPlane = base.clone().sub(origin);
+    const distance = toPlane.dot(normal) / denom;
+    if (!(distance > 0) || !Number.isFinite(distance)) return null;
+
+    const hit = origin.clone().add(direction.clone().multiplyScalar(distance));
+    const point = new THREE.Vector3(base.x, hit.y, base.z);
+    if (point.y < base.y) point.y = base.y;
+    return point;
+  },
+
+  nearestPoint: function (points, aimPoint, requireXYZ) {
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const p of points) {
+      if (!p) continue;
+      const d = requireXYZ
+        ? p.distanceTo(aimPoint)
+        : Math.hypot(aimPoint.x - p.x, aimPoint.z - p.z);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = p;
       }
+    }
+    return nearest ? {point: nearest, distance: nearestDist} : null;
+  },
 
-      // Shoelace area on the horizontal X/Z plane, then apply the squared
-      // calibration factor because area is in square meters.
-      let sum = 0;
-      for (let i = 0; i < this.corners.length; i++) {
-        const a = this.corners[i];
-        const b = this.corners[(i + 1) % this.corners.length];
-        sum += a.x * b.z - b.x * a.z;
-      }
-      const areaRaw = Math.abs(sum) * 0.5;
-      const areaM2 = areaRaw * this.calibrationFactor * this.calibrationFactor;
+  startCalibration: function () {
+    this.clearAllMeasurementObjects();
+    this.calibrationActive = true;
+    this.calibrationPoints = [];
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.ceilingStep = 'A';
+    this.heightMeasurements = [];
+    this.ceilingMeasurements = [];
+    this.heightBaseY = null;
+    this.ceilingBaseY = null;
+    this.floorMeasurementY = null;
+    this.measurementY = null;
+    this.measureMode = 'floor';
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.areaResult.style.display = 'none';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+    const ceilingBtn = document.getElementById('ceilingModeBtn');
+    if (ceilingBtn) ceilingBtn.classList.remove('active');
+    this.heightHint.style.display = 'none';
+    this.calibrationPanel.style.display = 'block';
+    this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+    this.promptText.textContent = 'CALIBRATION: Aim at first reference point, then tap Place';
+    this.calibrateBtn.textContent = 'Calibrating…';
+    this.calibrateBtn.disabled = true;
+  },
 
-      this.closed = true;
-      this.waitingForContinue = false;
-      this.step = 'DONE';
-      this.snapHint.style.display = 'none';
-      this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m²`;
-      this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
-      this.areaResult.style.display = 'block';
-    },
+  finishCalibration: function () {
+    if (!this.calibrationActive || this.calibrationPoints.length !== 2) {
+      this.calibrationStatus.textContent = 'Place two reference points first.';
+      return;
+    }
+    const known = parseFloat(this.knownDistanceInput.value);
+    if (!(known > 0)) {
+      this.calibrationStatus.textContent = 'Enter a valid real distance, e.g. 1.00 m.';
+      return;
+    }
+    const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+    if (!(rawDistance > 0.0001)) {
+      this.calibrationStatus.textContent = 'Reference points are too close. Try again.';
+      return;
+    }
+    const proposedFactor = known / rawDistance;
+    if (!Number.isFinite(proposedFactor) || proposedFactor < 0.75 || proposedFactor > 1.25) {
+      this.calibrationStatus.textContent = `Large scale correction (${proposedFactor.toFixed(3)}×). Retake the two points.`;
+      return;
+    }
+    this.calibrationFactor = proposedFactor;
 
-    placeMarker: function (point) {
-      const marker = document.createElement('a-cylinder');
-      marker.setAttribute('radius', 0.035);
-      marker.setAttribute('height', 0.012);
-      marker.setAttribute('color', '#ffffff');
-      marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
-      this.el.appendChild(marker);
-      this.markers.push(marker);
-    },
+    this.calibrationActive = false;
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.ceilingStep = 'A';
+    this.heightMeasurements = [];
+    this.ceilingMeasurements = [];
+    this.heightBaseY = null;
+    this.ceilingBaseY = null;
+    this.floorMeasurementY = null;
+    this.measurementY = null;
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.clearAllMeasurementObjects();
 
-    placeCalibrationMarker: function (point) {
-      const marker = document.createElement('a-cylinder');
-      marker.setAttribute('radius', 0.030);
-      marker.setAttribute('height', 0.012);
-      marker.setAttribute('color', '#00ff88');
-      marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
-      this.el.appendChild(marker);
-      this.markers.push(marker);
-    },
+    this.calibrationPanel.style.display = 'none';
+    this.measureMode = 'floor';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+    const ceilingBtn = document.getElementById('ceilingModeBtn');
+    if (ceilingBtn) ceilingBtn.classList.remove('active');
+    this.heightHint.style.display = 'none';
+    this.calibrateBtn.disabled = false;
+    this.calibrateBtn.textContent = 'Calibrate';
+    this.promptText.textContent = `Calibration applied (${this.calibrationFactor.toFixed(3)}×). Aim at first point, then tap Place`;
+    this.updateCalibrationStatus();
+  },
 
-    drawLine: function (start, end) {
-      const el = document.createElement('a-box');
+  updateCalibrationStatus: function () {
+    this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+  },
+
+  updateLiveLabel: function (start, end) {
+    if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+    const dist = start.distanceTo(end) * this.calibrationFactor;
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    this.setLabel(this.previewLabel, mid, `${dist.toFixed(2)} m`);
+    this.faceCamera(this.previewLabel);
+  },
+
+  createLabelEntity: function () {
+    const wrapper = document.createElement('a-entity');
+    const bg = document.createElement('a-plane');
+    bg.setAttribute('width', 0.34);
+    bg.setAttribute('height', 0.11);
+    bg.setAttribute('color', '#ffffff');
+    bg.setAttribute('opacity', 0.92);
+    bg.setAttribute('position', '0 0 -0.002');
+    wrapper.appendChild(bg);
+
+    const txt = document.createElement('a-text');
+    txt.setAttribute('align', 'center');
+    txt.setAttribute('baseline', 'center');
+    txt.setAttribute('color', '#111111');
+    txt.setAttribute('width', 1.3);
+    wrapper.appendChild(txt);
+    wrapper.textEl = txt;
+    this.el.appendChild(wrapper);
+    return wrapper;
+  },
+
+  setLabel: function (wrapper, midpoint, text) {
+    wrapper.setAttribute('position', `${midpoint.x} ${midpoint.y + 0.10} ${midpoint.z}`);
+    wrapper.textEl.setAttribute('value', text);
+  },
+
+  faceCamera: function (wrapper) {
+    const camPos = new THREE.Vector3();
+    this.el.camera.getWorldPosition(camPos);
+    wrapper.object3D.lookAt(camPos);
+  },
+
+  finalizeLabel: function (start, end, text) {
+    const wrapper = this.createLabelEntity();
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    this.setLabel(wrapper, mid, text);
+    this.faceCamera(wrapper);
+    this.labels.push(wrapper);
+  },
+
+  removePreviewLabel: function () {
+    if (this.previewLabel && this.previewLabel.parentNode) {
+      this.previewLabel.parentNode.removeChild(this.previewLabel);
+    }
+    this.previewLabel = null;
+  },
+
+  updatePreviewLine: function (key, start, end) {
+    let el = this.previewLines[key];
+    if (!el) {
+      el = document.createElement('a-box');
       el.setAttribute('height', 0.010);
       el.setAttribute('depth', 0.010);
       el.setAttribute('color', '#ffffff');
       this.el.appendChild(el);
-      this.orientLineBox(el, start, end);
-      this.lines.push(el);
-    },
+      this.previewLines[key] = el;
+    }
+    this.orientLineBox(el, start, end);
+  },
 
-    clearAllMeasurementObjects: function () {
-      this.clearPreview();
-      this.removePreviewLabel();
+  orientLineBox: function (el, start, end) {
+    const direction = new THREE.Vector3().subVectors(end, start);
+    const length = direction.length();
+    if (length < 0.0001) return;
+    const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    el.object3D.position.copy(midpoint);
+    el.object3D.scale.set(length, 1, 1);
+    const unit = direction.clone().normalize();
+    el.object3D.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), unit);
+  },
 
-      this.labels.forEach(l => l.parentNode && l.parentNode.removeChild(l));
-      this.labels = [];
+  clearPreview: function () {
+    Object.values(this.previewLines).forEach(el => {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    this.previewLines = {};
+  },
 
-      this.markers.forEach(m => m.parentNode && m.parentNode.removeChild(m));
-      this.lines.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+  getStableAimPoint: function () {
+    if (!this.aimHistory.length) return this.rawAimPoint ? this.rawAimPoint.clone() : null;
+    const xs = this.aimHistory.map(p => p.x).sort((a,b) => a-b);
+    const ys = this.aimHistory.map(p => p.y).sort((a,b) => a-b);
+    const zs = this.aimHistory.map(p => p.z).sort((a,b) => a-b);
+    const mid = Math.floor(xs.length / 2);
+    const median = arr => arr.length % 2 ? arr[mid] : (arr[mid-1] + arr[mid]) * 0.5;
+    const p = new THREE.Vector3(median(xs), median(ys), median(zs));
+    if (this.step === 'B' && this.measureMode === 'floor' && this.floorMeasurementY !== null) p.y = this.floorMeasurementY;
+    return p;
+  },
 
-      this.markers = [];
-      this.lines = [];
-      this.corners = [];
-    },
+  onPlaceClick: function () {
+    if (!this.rawAimPoint) return;
+    const point = this.getStableAimPoint();
+    if (!point) return;
+    this.aimHistory = [];
 
-    reset: function () {
-      this.clearAllMeasurementObjects();
-
-      this.step = 'A';
-      this.measurementY = null;
-      this.snapThreshold = 0.12;
-      this.isSnapped = false;
-      this.rawAimPoint = null;
-      this.aimHistory = [];
-
+    if (this.step === 'A') {
       if (this.calibrationActive) {
-        this.calibrationActive = false;
-        this.calibrationPoints = [];
-        this.calibrationPanel.style.display = 'none';
-        this.calibrateBtn.disabled = false;
-        this.calibrateBtn.textContent = 'Calibrate';
+        this.placeCalibrationMarker(point);
+        this.calibrationPoints[0] = point;
+        this.measurementY = point.y;
+        this.step = 'B';
+        this.promptText.textContent = 'CALIBRATION: Aim at second reference point, then tap Place';
+        return;
       }
 
-      this.measureMode = 'floor';
-      this.floorModeBtn.classList.add('active');
-      this.heightModeBtn.classList.remove('active');
-      this.heightHint.style.display = 'none';
-      this.snapHint.style.display = 'none';
+      if (this.measureMode === 'height' || this.measureMode === 'ceiling') {
+        const base = point.clone();
+        this.placeMarker(base);
+        this.activeVerticalBase = base;
+        this.activeVerticalType = this.measureMode;
+        if (this.measureMode === 'height') {
+          this.heightBaseY = base.y;
+          this.heightStep = 'B';
+        } else {
+          this.ceilingBaseY = base.y;
+          this.ceilingStep = 'B';
+        }
+        this.measurementY = base.y;
+        this.step = 'B';
+        this.snapHint.style.display = 'none';
+        this.promptText.textContent = this.measureMode === 'height'
+          ? 'HEIGHT: Aim at the top point, then tap Place'
+          : 'CEILING: Aim at the ceiling point, then tap Place';
+        return;
+      }
 
-      this.promptText.textContent =
-        `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
+      this.placeMarker(point);
+      this.corners[0] = point;
+      this.floorMeasurementY = point.y;
+      this.measurementY = point.y;
+      this.floorStep = 'B';
+      this.step = 'B';
+      this.waitingForContinue = false;
+      this.promptText.textContent = 'FLOOR: Aim at the second point, then tap Place';
+      return;
     }
-  });
+
+    if (this.step === 'B') {
+      if (this.calibrationActive) {
+        this.placeCalibrationMarker(point);
+        this.calibrationPoints[1] = point;
+        this.step = 'DONE';
+        const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+        this.calibrationStatus.textContent = `Raw distance: ${rawDistance.toFixed(3)} m. Enter the real distance above and tap Apply Calibration.`;
+        this.promptText.textContent = 'Enter the REAL distance, then tap Apply Calibration';
+        this.clearPreview();
+        return;
+      }
+
+      if (this.measureMode === 'floor') {
+        if (this.waitingForContinue) {
+          if (!this.isSnapped) return;
+          const snapped = point.clone();
+
+          let nearestIndex = -1;
+          let nearestDist = Infinity;
+          for (let i = 0; i < this.corners.length; i++) {
+            const c = this.corners[i];
+            const d = Math.hypot(snapped.x - c.x, snapped.z - c.z);
+            if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
+          }
+
+          if (nearestIndex === 0 && this.corners.length >= 3) {
+            this.closePolygon();
+            return;
+          }
+
+          // Do not duplicate an existing point marker; the snapped vertex already exists.
+          this.corners.push(snapped);
+          this.waitingForContinue = false;
+          this.measurementY = snapped.y;
+          this.floorMeasurementY = snapped.y;
+          this.floorStep = 'B';
+          this.step = 'B';
+          this.clearPreview();
+          this.removePreviewLabel();
+          this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+          return;
+        }
+
+        const start = this.corners[this.corners.length - 1];
+        const end = point.clone();
+        const rawDistance = start.distanceTo(end);
+        if (rawDistance < 0.01) return;
+
+        this.placeMarker(end);
+        this.corners.push(end);
+        this.drawLine(start, end);
+        this.finalizeLabel(start, end, `${(rawDistance * this.calibrationFactor).toFixed(2)} m`);
+
+        this.clearPreview();
+        this.removePreviewLabel();
+        this.waitingForContinue = true;
+        this.floorStep = 'B';
+        this.promptText.textContent = 'Segment complete. Snap an existing point, then tap Place to continue';
+        this.snapHint.style.display = 'none';
+        return;
+      }
+
+      if (this.measureMode === 'height' || this.measureMode === 'ceiling') {
+        const base = this.activeVerticalBase;
+        if (!base) return;
+
+        const end = new THREE.Vector3(base.x, point.y, base.z);
+        if (end.y < base.y) end.y = base.y;
+
+        // Avoid zero-height measurements.
+        const rawHeight = Math.abs(end.y - base.y);
+        if (rawHeight < 0.01) return;
+
+        this.placeMarker(end);
+        this.drawLine(base, end);
+        const calibrated = rawHeight * this.calibrationFactor;
+        this.finalizeLabel(base, end, `${calibrated.toFixed(2)} m`);
+
+        const record = {base: base.clone(), top: end.clone(), value: calibrated};
+        if (this.measureMode === 'height') this.heightMeasurements.push(record);
+        else this.ceilingMeasurements.push(record);
+
+        // IMPORTANT: one vertical measurement completes, but the mode stays active.
+        // User can snap to another floor point and make another height/ceiling measurement.
+        this.clearPreview();
+        this.removePreviewLabel();
+        this.activeVerticalBase = null;
+        this.measurementY = null;
+        this.step = 'A';
+        if (this.measureMode === 'height') this.heightStep = 'A';
+        else this.ceilingStep = 'A';
+        this.promptText.textContent = this.measureMode === 'height'
+          ? 'HEIGHT: Snap to another floor point, then tap Place for another height'
+          : 'CEILING: Snap to another floor point, then tap Place for another ceiling height';
+        return;
+      }
+    }
+  },
+
+  closePolygon: function () {
+    if (this.measureMode !== 'floor' || this.corners.length < 3 || this.closed) return;
+
+    const first = this.corners[0];
+    const last = this.corners[this.corners.length - 1];
+    const rawClosing = last.distanceTo(first);
+    if (rawClosing > 0.15) return;
+
+    this.clearPreview();
+    this.removePreviewLabel();
+    if (rawClosing > 0.001) {
+      this.drawLine(last, first);
+      this.finalizeLabel(last, first, `${(rawClosing * this.calibrationFactor).toFixed(2)} m`);
+    }
+
+    let sum = 0;
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      sum += a.x * b.z - b.x * a.z;
+    }
+    const areaRaw = Math.abs(sum) * 0.5;
+    const areaM2 = areaRaw * this.calibrationFactor * this.calibrationFactor;
+
+    this.closed = true;
+    this.waitingForContinue = false;
+    this.step = 'DONE';
+    this.floorStep = 'DONE';
+    this.snapHint.style.display = 'none';
+    this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m². You can switch to Height or Ceiling.`;
+    this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
+    this.areaResult.style.display = 'block';
+  },
+
+  placeMarker: function (point) {
+    const marker = document.createElement('a-cylinder');
+    marker.setAttribute('radius', 0.035);
+    marker.setAttribute('height', 0.012);
+    marker.setAttribute('color', '#ffffff');
+    marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+    this.el.appendChild(marker);
+    this.markers.push(marker);
+  },
+
+  placeCalibrationMarker: function (point) {
+    const marker = document.createElement('a-cylinder');
+    marker.setAttribute('radius', 0.030);
+    marker.setAttribute('height', 0.012);
+    marker.setAttribute('color', '#00ff88');
+    marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+    this.el.appendChild(marker);
+    this.markers.push(marker);
+  },
+
+  drawLine: function (start, end) {
+    const el = document.createElement('a-box');
+    el.setAttribute('height', 0.010);
+    el.setAttribute('depth', 0.010);
+    el.setAttribute('color', '#ffffff');
+    this.el.appendChild(el);
+    this.orientLineBox(el, start, end);
+    this.lines.push(el);
+  },
+
+  clearAllMeasurementObjects: function () {
+    this.clearPreview();
+    this.removePreviewLabel();
+    this.labels.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+    this.labels = [];
+    this.markers.forEach(m => m.parentNode && m.parentNode.removeChild(m));
+    this.lines.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+    this.markers = [];
+    this.lines = [];
+    this.corners = [];
+  },
+
+  reset: function () {
+    this.clearAllMeasurementObjects();
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.ceilingStep = 'A';
+    this.heightMeasurements = [];
+    this.ceilingMeasurements = [];
+    this.activeVerticalBase = null;
+    this.activeVerticalType = null;
+    this.floorMeasurementY = null;
+    this.heightBaseY = null;
+    this.ceilingBaseY = null;
+    this.measurementY = null;
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.snapThreshold = 0.12;
+    this.isSnapped = false;
+    this.snapKind = '';
+    this.rawAimPoint = null;
+    this.aimHistory = [];
+
+    if (this.calibrationActive) {
+      this.calibrationActive = false;
+      this.calibrationPoints = [];
+      this.calibrationPanel.style.display = 'none';
+      this.calibrateBtn.disabled = false;
+      this.calibrateBtn.textContent = 'Calibrate';
+    }
+
+    this.measureMode = 'floor';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+    const ceilingBtn = document.getElementById('ceilingModeBtn');
+    if (ceilingBtn) ceilingBtn.classList.remove('active');
+    this.heightHint.style.display = 'none';
+    this.snapHint.style.display = 'none';
+    this.areaResult.style.display = 'none';
+    this.promptText.textContent = `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
+  }
+});
 </script>
 
 </body>
