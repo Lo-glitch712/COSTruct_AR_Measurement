@@ -61,6 +61,58 @@
     display: none !important;
   }
 
+
+  /* Material & Cost Estimation */
+  .appScreen{position:fixed;inset:0;z-index:110;overflow:auto;background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:#111827;padding:20px 14px 36px}
+  .estimationCard{width:min(94vw,760px);margin:0 auto;padding:22px 0}
+  .estimationHeader{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .backBtn{width:42px;height:42px;border:0;border-radius:14px;background:#111827;color:#fff;font-size:30px;line-height:1}
+  .estimateEyebrow{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#22c55e}
+  .estimationHeader h2{margin:2px 0 0;font-size:25px;letter-spacing:-.6px}
+  .progressDots{display:flex;gap:7px;margin:10px 0 18px}
+  .dot{height:5px;width:34px;border-radius:99px;background:#d1d5db}.dot.active{background:#22c55e}
+  .estimateSection{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 8px 25px rgba(15,23,42,.06)}
+  .sectionTitle{font-size:16px;font-weight:850;margin-bottom:13px;display:flex;gap:9px;align-items:center}.sectionTitle span{font-size:11px;color:#22c55e;font-weight:900}
+  .sectionHint{font-size:12px;color:#6b7280;margin:-5px 0 13px}
+  .formGrid,.dimensionGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .formGrid label,.dimensionGrid label{font-size:11px;font-weight:750;color:#4b5563}
+  .formGrid input,.formGrid select,.formGrid textarea,.dimensionGrid input{display:block;width:100%;margin-top:6px;padding:11px 12px;border:1px solid #dbe1e8;border-radius:11px;background:#f9fafb;font:inherit;color:#111827;outline:none}
+  .formGrid textarea{resize:vertical}
+  .measurementChoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .measureChoice{border:1px solid #dbe1e8;background:#f8fafc;border-radius:15px;padding:13px;text-align:left;cursor:pointer}
+  .measureChoice.active{border:2px solid #22c55e;background:#f0fdf4}
+  .measureChoice b,.measureChoice small{display:block}.measureChoice b{font-size:13px}.measureChoice small{font-size:10px;color:#6b7280;margin-top:4px;line-height:1.35}
+  .dimensionPanel{background:#f8fafc;border-radius:15px;padding:13px}.areaPreview{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280}.areaPreview strong{color:#111827}
+  .arInfo{display:flex;gap:12px;align-items:flex-start}.arIcon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:#111827;color:#fff;font-size:24px}.arInfo b{font-size:13px}.arInfo p{margin:4px 0 0;font-size:11px;line-height:1.45;color:#6b7280}
+  .primaryEstimateBtn{width:100%;height:46px;border:0;border-radius:13px;background:#22c55e;color:#fff;font-weight:850;font-size:14px;margin-top:12px;cursor:pointer}
+  .arResult{margin-top:10px;padding:10px 12px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:11px;font-size:12px;font-weight:750}
+  .materialRow{display:grid;grid-template-columns:1.3fr .65fr .65fr 38px;gap:8px;align-items:end;margin-bottom:9px}.materialRow label{font-size:10px;font-weight:750;color:#6b7280}.materialRow input{width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px}.removeMaterial{height:38px;border:0;border-radius:10px;background:#fee2e2;color:#b91c1c;font-weight:900}
+  .addMaterialBtn{width:100%;height:42px;border:1px dashed #9ca3af;border-radius:12px;background:#fff;color:#374151;font-weight:750}
+  .estimateSummary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.estimateSummary div{background:#111827;color:#fff;border-radius:16px;padding:15px}.estimateSummary span{display:block;font-size:10px;color:#cbd5e1}.estimateSummary strong{display:block;margin-top:4px;font-size:19px}
+  @media(max-width:560px){.formGrid,.dimensionGrid,.measurementChoice{grid-template-columns:1fr}.materialRow{grid-template-columns:1.1fr .65fr .65fr 38px}.estimationHeader h2{font-size:21px}}
+
+
+  #bottomSecondary{flex-wrap:wrap}
+  #arCloseBtn{background:rgba(255,255,255,.94);color:#111827}
+  #arBackBtn{background:rgba(255,255,255,.94);color:#111827}
+  #useAreaBtn{background:#22c55e;color:#fff}
+  .savedMeasurement{margin-top:10px;padding:11px 12px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;font-size:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .savedMeasurement b{color:#166534}
+  .savedMeasurement button{border:0;background:#fff;border-radius:8px;padding:6px 9px;font-weight:700;color:#374151}
+
+
+  .arBackTop{position:fixed;top:16px;left:14px;z-index:30;border:0;border-radius:13px;background:rgba(17,24,39,.88);color:#fff;padding:10px 15px;font-size:14px;font-weight:800;box-shadow:0 7px 20px rgba(0,0,0,.22);pointer-events:auto}
+  #arSaveBar{position:absolute;top:16px;right:14px;z-index:100;pointer-events:auto;display:block}
+  .saveMeasurementBtn{border:0;border-radius:13px;background:#22c55e;color:#fff;padding:11px 15px;font-size:13px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.24);cursor:pointer;display:block}
+  .arInputGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:14px}
+  .arInputGrid label{font-size:10px;font-weight:750;color:#6b7280}
+  .arInputGrid input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f3f4f6;color:#111827;font:inherit;font-weight:700}
+  @media(max-width:560px){
+    .arInputGrid{grid-template-columns:1fr}
+    #arSaveBar{top:16px;right:12px}
+    .saveMeasurementBtn{padding:10px 12px;font-size:12px}
+  }
+
 </style>
 </head>
 
@@ -75,12 +127,103 @@
   </div>
 </div>
 
+
+<!-- Material & Cost Estimation -->
+<div id="estimationScreen" class="appScreen" style="display:none;">
+  <div class="estimationCard">
+    <div class="estimationHeader">
+      <button id="backToHomeBtn" class="backBtn">‹</button>
+      <div>
+        <div class="estimateEyebrow">COSTruct</div>
+        <h2>Material & Cost Estimation</h2>
+      </div>
+    </div>
+
+    <div class="progressDots">
+      <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+
+    <section class="estimateSection">
+      <div class="sectionTitle"><span>01</span> Project Details</div>
+      <div class="formGrid">
+        <label>Project Name<input id="projectName" type="text" placeholder="e.g. Living Room"></label>
+        <label>Project Type
+          <select id="projectType">
+            <option>Flooring</option>
+            <option>Room Renovation</option>
+            <option>Construction</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>Location<input id="projectLocation" type="text" placeholder="Project location"></label>
+        <label>Notes<textarea id="projectNotes" rows="2" placeholder="Additional project details"></textarea></label>
+      </div>
+    </section>
+
+    <section class="estimateSection">
+      <div class="sectionTitle"><span>02</span> Floor Dimension</div>
+      <p class="sectionHint">Choose how you want to get the floor measurements.</p>
+
+      <div class="measurementChoice">
+        <button class="measureChoice active" data-method="manual">
+          <b>⌨ Manual Input</b><small>Enter length, width and height yourself.</small>
+        </button>
+        <button class="measureChoice" data-method="ar">
+          <b>📱 AR Measurement</b><small>Use the existing COSTruct AR measuring tool.</small>
+        </button>
+      </div>
+
+      <div id="manualDimensionPanel" class="dimensionPanel">
+        <div class="dimensionGrid">
+          <label>Length (m)<input id="manualLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Width (m)<input id="manualWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+          <label>Height (m)<input id="manualHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+        </div>
+        <div class="areaPreview">Floor Area <strong id="manualArea">0.00 m²</strong></div>
+      </div>
+
+      <div id="arDimensionPanel" class="dimensionPanel" style="display:none;">
+        <div class="arInfo">
+          <div class="arIcon">⌁</div>
+          <div>
+            <b>AR Measurement</b>
+            <p>Use AR to get the floor measurements. Your saved measurement will automatically appear in the fields below.</p>
+          </div>
+        </div>
+
+        <div class="arInputGrid">
+          <label>Length (m)<input id="arLength" type="number" step="0.01" readonly placeholder="0.00"></label>
+          <label>Width (m)<input id="arWidth" type="number" step="0.01" readonly placeholder="0.00"></label>
+          <label>Height (m)<input id="arHeight" type="number" step="0.01" readonly placeholder="0.00"></label>
+        </div>
+        <div class="areaPreview"><span>Floor Area</span><strong id="arAreaField">0.00 m²</strong></div>
+
+        <button id="openArBtn" class="primaryEstimateBtn">Open AR Measurement</button>
+        <div id="arMeasurementResult" class="arResult" style="display:none;"></div>
+      </div>
+    </section>
+
+    <section class="estimateSection">
+      <div class="sectionTitle"><span>03</span> Materials & Pricing</div>
+      <div id="materialsList"></div>
+      <button id="addMaterialBtn" class="addMaterialBtn">+ Add Material</button>
+    </section>
+
+    <section class="estimateSummary">
+      <div><span>Floor Area</span><strong id="summaryArea">0.00 m²</strong></div>
+      <div><span>Estimated Cost</span><strong id="summaryCost">₱0.00</strong></div>
+    </section>
+
+    <button id="calculateEstimateBtn" class="primaryEstimateBtn">Calculate Estimate</button>
+  </div>
+</div>
+
 <div id="hud" class="isHidden">
+  <button id="arBackBtn" class="arBackTop" style="display:none">← Back</button>
   <div id="topBar"><div id="promptText">FLOOR: Aim at the first point, then tap Place.</div></div>
   <div id="modeBar">
     <button id="floorModeBtn" class="modeBtn active">Floor</button>
     <button id="heightModeBtn" class="modeBtn">Height</button>
-    <button id="ceilingModeBtn" class="modeBtn">Ceiling</button>
   </div>
   <div id="areaResult"></div>
   <div id="crosshair">+</div>
@@ -95,6 +238,7 @@
     <button id="applyCalibration">Apply Calibration</button>
     <div id="calibrationStatus"></div>
   </div>
+  <div id="arSaveBar" style="display:none"><button id="useAreaBtn" class="saveMeasurementBtn">✓ Save Dimensions</button></div>
   <div id="bottomControls">
     <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
     <div id="bottomSecondary">
@@ -180,7 +324,191 @@
   }
 })();
 
-AFRAME.registerComponent('distance-measure', {
+
+  /* Estimation workflow */
+  (function(){
+    const homeScreen = document.getElementById('homeScreen');
+    const estimationScreen = document.getElementById('estimationScreen');
+    const hud = document.getElementById('hud');
+    const startBtn = document.getElementById('startMeasureBtn');
+    const backHome = document.getElementById('backToHomeBtn');
+    const openAr = document.getElementById('openArBtn');
+    const arBackBtn = document.getElementById('arBackBtn');
+    const arSaveBar = document.getElementById('arSaveBar');
+    const useAreaBtn = document.getElementById('useAreaBtn');
+    const arLength = document.getElementById('arLength');
+    const arWidth = document.getElementById('arWidth');
+    const arHeight = document.getElementById('arHeight');
+    const arAreaField = document.getElementById('arAreaField');
+    const savedMeasurementList = document.getElementById('savedMeasurementList');
+    let savedMeasurements = [];
+    const manualPanel = document.getElementById('manualDimensionPanel');
+    const arPanel = document.getElementById('arDimensionPanel');
+    const manualLength = document.getElementById('manualLength');
+    const manualWidth = document.getElementById('manualWidth');
+    const manualHeight = document.getElementById('manualHeight');
+    const manualArea = document.getElementById('manualArea');
+    const summaryArea = document.getElementById('summaryArea');
+    const summaryCost = document.getElementById('summaryCost');
+    const materialsList = document.getElementById('materialsList');
+    let currentMethod = 'manual';
+    let materialCount = 0;
+    let arArea = 0;
+
+    function showEstimation(){
+      homeScreen.style.display='none';
+      hud.classList.add('isHidden');
+      estimationScreen.style.display='block';
+      document.body.classList.remove('home-active');
+    }
+    function showHome(){
+      estimationScreen.style.display='none';
+      hud.classList.add('isHidden');
+      homeScreen.style.display='flex';
+      document.body.classList.add('home-active');
+    }
+    function updateArea(){
+      const area = currentMethod === 'ar' ? arArea :
+        (parseFloat(manualLength.value)||0) * (parseFloat(manualWidth.value)||0);
+      manualArea.textContent = area.toFixed(2) + ' m²';
+      summaryArea.textContent = area.toFixed(2) + ' m²';
+      return area;
+    }
+    function addMaterial(name='',qty='',price=''){
+      materialCount++;
+      const row=document.createElement('div');
+      row.className='materialRow';
+      row.innerHTML=`
+        <label>Material<input class="matName" value="${name}" placeholder="e.g. Floor Tiles"></label>
+        <label>Qty<input class="matQty" type="number" min="0" step="0.01" value="${qty}" placeholder="0"></label>
+        <label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${price}" placeholder="₱"></label>
+        <button class="removeMaterial" type="button">×</button>`;
+      row.querySelector('.removeMaterial').onclick=()=>{row.remove();calculateCost();};
+      row.querySelectorAll('input').forEach(i=>i.addEventListener('input',calculateCost));
+      materialsList.appendChild(row);
+    }
+    function calculateCost(){
+      let total=0;
+      materialsList.querySelectorAll('.materialRow').forEach(r=>{
+        total+=(parseFloat(r.querySelector('.matQty').value)||0)*(parseFloat(r.querySelector('.matPrice').value)||0);
+      });
+      summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+      updateArea();
+    }
+
+    startBtn.addEventListener('click',showEstimation);
+    backHome.addEventListener('click',showHome);
+
+    document.querySelectorAll('.measureChoice').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.measureChoice').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMethod=btn.dataset.method;
+        manualPanel.style.display=currentMethod==='manual'?'block':'none';
+        arPanel.style.display=currentMethod==='ar'?'block':'none';
+        updateArea();
+      });
+    });
+    [manualLength,manualWidth,manualHeight].forEach(i=>i.addEventListener('input',updateArea));
+
+    openAr.addEventListener('click',()=>{
+      estimationScreen.style.display='none';
+      hud.classList.remove('isHidden');
+      arBackBtn.style.display='inline-block';
+      document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.';
+    });
+
+    function leaveAR(saveMeasurement){
+      if(saveMeasurement && window.COSTructEstimation){
+        const dim = window.COSTructEstimation.getLastARDimensions ? window.COSTructEstimation.getLastARDimensions() : {
+          area: window.COSTructEstimation.getLastARArea ? window.COSTructEstimation.getLastARArea() : 0
+        };
+        if(dim.area > 0) window.COSTructEstimation.receiveARDimensions(dim);
+        else {
+          hud.classList.add('isHidden');
+          estimationScreen.style.display='block';
+        }
+      }else{
+        hud.classList.add('isHidden');
+        estimationScreen.style.display='block';
+      }
+      arBackBtn.style.display='none';
+    }
+
+    arBackBtn.addEventListener('click',()=>leaveAR(false));
+    useAreaBtn.addEventListener('click',()=>leaveAR(true));
+
+    document.getElementById('addMaterialBtn').addEventListener('click',()=>addMaterial());
+    document.getElementById('calculateEstimateBtn').addEventListener('click',()=>{
+      calculateCost();
+      alert('Estimate updated. You can review the project details, floor area, materials, and estimated cost above.');
+    });
+
+    // Start with one material row.
+    addMaterial('Floor Tiles','','');
+    updateArea();
+
+    function renderSavedMeasurements(){
+      savedMeasurementList.innerHTML='';
+      savedMeasurements.forEach((m,index)=>{
+        const item=document.createElement('div');
+        item.className='savedMeasurement';
+        item.innerHTML=`<span><b>Saved Measurement</b><br>Floor Area: ${m.area.toFixed(2)} m² · ${m.time}</span>
+          <button type="button">Use</button>`;
+        item.querySelector('button').onclick=()=>{
+          arArea=m.area;
+          currentMethod='ar';
+          updateArea();
+        };
+        savedMeasurementList.appendChild(item);
+      });
+    }
+
+    window.COSTructEstimation = {
+      getLastARArea: function(){
+        return Number(window.__COSTructLastArea)||0;
+      },
+      getLastARDimensions: function(){
+        return {
+          length: Number(window.__COSTructLastLength)||0,
+          width: Number(window.__COSTructLastWidth)||0,
+          height: Number(window.__COSTructLastHeight)||0,
+          area: Number(window.__COSTructLastArea)||0
+        };
+      },
+      receiveARDimensions: function(dim){
+        dim = dim || {};
+        arArea=Number(dim.area)||0;
+        window.__COSTructLastArea=arArea;
+        window.__COSTructLastLength=Number(dim.length)||0;
+        window.__COSTructLastWidth=Number(dim.width)||0;
+        window.__COSTructLastHeight=Number(dim.height)||0;
+
+        // Populate ALL AR estimation fields with the saved measurement.
+        arAreaField.textContent=arArea.toFixed(2)+' m²';
+        arLength.value=(window.__COSTructLastLength).toFixed(2);
+        arWidth.value=(window.__COSTructLastWidth).toFixed(2);
+        arHeight.value=(window.__COSTructLastHeight).toFixed(2);
+        currentMethod='ar';
+        document.querySelectorAll('.measureChoice').forEach(b=>b.classList.toggle('active',b.dataset.method==='ar'));
+        manualPanel.style.display='none';
+        arPanel.style.display='block';
+        document.getElementById('arMeasurementResult').style.display='block';
+        document.getElementById('arMeasurementResult').textContent='Saved AR Floor Area: '+arArea.toFixed(2)+' m²';
+        arAreaField.textContent=arArea.toFixed(2)+' m²';
+        savedMeasurements.push({area: arArea, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+        renderSavedMeasurements();
+        estimationScreen.style.display='block';
+        hud.classList.add('isHidden');
+        arBackBtn.style.display='none';
+        arSaveBar.style.display='none';
+        updateArea();
+      }
+    };
+  })();
+
+
+  AFRAME.registerComponent('distance-measure', {
   init: function () {
     this.corners = [];
     this.markers = [];
@@ -193,17 +521,16 @@ AFRAME.registerComponent('distance-measure', {
     this.step = 'A';
     this.floorStep = 'A';
     this.heightStep = 'A';
-    this.ceilingStep = 'A';
     this.waitingForContinue = false;
     this.closed = false;
 
     this.floorMeasurementY = null;
     this.heightBaseY = null;
-    this.ceilingBaseY = null;
     this.measurementY = null;
 
     this.heightMeasurements = [];
-    this.ceilingMeasurements = [];
+    this.extrusionWalls = [];
+    this.extrudedHeight = 0;
 
     this.activeVerticalBase = null;
     this.activeVerticalType = null;
@@ -223,6 +550,7 @@ AFRAME.registerComponent('distance-measure', {
     this.resetBtn = document.getElementById('resetBtn');
     this.placeBtn = document.getElementById('placeBtn');
     this.calibrateBtn = document.getElementById('calibrateBtn');
+     this.useAreaBtn = document.getElementById('useAreaBtn');
     this.calibrationPanel = document.getElementById('calibrationPanel');
     this.knownDistanceInput = document.getElementById('knownDistance');
     this.applyCalibrationBtn = document.getElementById('applyCalibration');
@@ -241,26 +569,24 @@ AFRAME.registerComponent('distance-measure', {
     this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
     this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
     this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
+     this.useAreaBtn.addEventListener('click', () => {
+       if (this._lastFloorArea > 0 && window.COSTructEstimation) window.COSTructEstimation.receiveARDimensions({area:this._lastFloorArea, length:window.__COSTructLastLength||0, width:window.__COSTructLastWidth||0, height:window.__COSTructLastHeight||0});
+     });
     this.floorModeBtn.addEventListener('click', () => this.setMeasureMode('floor'));
     this.heightModeBtn.addEventListener('click', () => this.setMeasureMode('height'));
 
-    // Add a third mode without breaking the existing UI if the button is present.
-    const ceilingBtn = document.getElementById('ceilingModeBtn');
-    if (ceilingBtn) ceilingBtn.addEventListener('click', () => this.setMeasureMode('ceiling'));
   },
 
   setMeasureMode: function (mode) {
-    if (this.calibrationActive || !['floor', 'height', 'ceiling'].includes(mode)) return;
+    if (this.calibrationActive || !['floor', 'height'].includes(mode)) return;
     if (mode === this.measureMode) return;
 
-    // Save current mode's step state before switching.
+    // Save current mode state before switching. Floor and Height remain independent.
     if (this.measureMode === 'floor') this.floorStep = this.step;
     if (this.measureMode === 'height') this.heightStep = this.step;
-    if (this.measureMode === 'ceiling') this.ceilingStep = this.step;
 
     this.measureMode = mode;
-    this.step = mode === 'floor' ? this.floorStep : mode === 'height' ? this.heightStep : this.ceilingStep;
-    this.waitingForContinue = mode === 'floor' && this.waitingForContinue;
+    this.step = mode === 'floor' ? this.floorStep : this.heightStep;
     this.clearPreview();
     this.removePreviewLabel();
     this.isSnapped = false;
@@ -268,18 +594,14 @@ AFRAME.registerComponent('distance-measure', {
 
     this.floorModeBtn.classList.toggle('active', mode === 'floor');
     this.heightModeBtn.classList.toggle('active', mode === 'height');
-    const ceilingBtn = document.getElementById('ceilingModeBtn');
-    if (ceilingBtn) ceilingBtn.classList.toggle('active', mode === 'ceiling');
-
-    this.heightHint.style.display = mode === 'floor' ? 'none' : 'block';
-    if (mode === 'height') this.heightHint.textContent = 'Height • snap to floor point, then aim at top';
-    if (mode === 'ceiling') this.heightHint.textContent = 'Ceiling • snap to floor point, then aim at ceiling';
+    this.heightHint.style.display = mode === 'height' ? 'block' : 'none';
+    if (mode === 'height') this.heightHint.textContent = 'Height • measure one wall, then extrude all floor points';
     this.snapHint.style.display = 'none';
 
     if (mode === 'floor') {
       this.measurementY = this.floorMeasurementY;
       if (this.closed) {
-        this.promptText.textContent = 'Floor area complete. You can switch to Height or Ceiling.';
+        this.promptText.textContent = 'Floor area complete. You can switch to Height.';
       } else if (this.waitingForContinue) {
         this.promptText.textContent = 'FLOOR: Aim at an existing point to continue';
       } else if (this.corners.length === 0) {
@@ -290,21 +612,14 @@ AFRAME.registerComponent('distance-measure', {
       return;
     }
 
-    this.activeVerticalType = mode;
-    if (mode === 'height') this.measurementY = this.heightBaseY;
-    if (mode === 'ceiling') this.measurementY = this.ceilingBaseY;
-
+    this.activeVerticalType = 'height';
+    this.measurementY = this.heightBaseY;
     if (this.step === 'B' && this.activeVerticalBase) {
-      this.promptText.textContent = mode === 'height'
-        ? 'HEIGHT: Aim at the top point, then tap Place'
-        : 'CEILING: Aim at the ceiling point, then tap Place';
+      this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
     } else {
       this.step = 'A';
-      if (mode === 'height') this.heightStep = 'A';
-      if (mode === 'ceiling') this.ceilingStep = 'A';
-      this.promptText.textContent = mode === 'height'
-        ? 'HEIGHT: Aim at a floor point, then tap Place'
-        : 'CEILING: Aim at a floor point, then tap Place';
+      this.heightStep = 'A';
+      this.promptText.textContent = 'HEIGHT: Aim at a floor point, then tap Place';
     }
   },
 
@@ -325,7 +640,7 @@ AFRAME.registerComponent('distance-measure', {
       if (intersects.length > 0) aimPoint = intersects[0].point.clone();
     } else if (this.step === 'B' && this.measureMode === 'floor' && this.floorMeasurementY !== null) {
       aimPoint = this.horizontalPlanePoint(camera, this.floorMeasurementY);
-    } else if (this.step === 'B' && (this.measureMode === 'height' || this.measureMode === 'ceiling') && this.activeVerticalBase) {
+    } else if (this.step === 'B' && (this.measureMode === 'height') && this.activeVerticalBase) {
       aimPoint = this.verticalLinePoint(camera, this.activeVerticalBase);
     }
 
@@ -343,8 +658,8 @@ AFRAME.registerComponent('distance-measure', {
       }
     }
 
-    // Snap the HEIGHT/CEILING base to any existing floor vertex.
-    if (aimPoint && this.step === 'A' && (this.measureMode === 'height' || this.measureMode === 'ceiling') && this.corners.length) {
+    // Snap the HEIGHT base to any existing floor vertex.
+    if (aimPoint && this.step === 'A' && (this.measureMode === 'height') && this.corners.length) {
       const nearest = this.nearestPoint(this.corners, aimPoint, false);
       if (nearest && nearest.distance <= this.snapThreshold) {
         aimPoint = nearest.point.clone();
@@ -355,11 +670,9 @@ AFRAME.registerComponent('distance-measure', {
 
     // When measuring a vertical top, snap to an already saved top point if it
     // is directly above the same base (within the snap radius). This lets users
-    // reuse established height/ceiling levels without resetting anything.
-    if (aimPoint && this.step === 'B' && (this.measureMode === 'height' || this.measureMode === 'ceiling')) {
-      const tops = this.measureMode === 'height'
-        ? this.heightMeasurements.map(m => m.top)
-        : this.ceilingMeasurements.map(m => m.top);
+    // reuse established height levels without resetting anything.
+    if (aimPoint && this.step === 'B' && (this.measureMode === 'height')) {
+      const tops = this.heightMeasurements.map(m => m.top);
       const nearestTop = this.nearestPoint(tops, aimPoint, true);
       if (nearestTop && nearestTop.distance <= this.snapThreshold) {
         aimPoint.y = nearestTop.point.y;
@@ -396,10 +709,10 @@ AFRAME.registerComponent('distance-measure', {
       return;
     }
 
-    if ((this.measureMode === 'height' || this.measureMode === 'ceiling') && this.step === 'B' && this.activeVerticalBase) {
+    if ((this.measureMode === 'height') && this.step === 'B' && this.activeVerticalBase) {
       const base = this.activeVerticalBase;
       const liveEnd = new THREE.Vector3(base.x, aimPoint.y, base.z);
-      const key = this.measureMode === 'height' ? 'height' : 'ceiling';
+      const key = 'height';
       this.updatePreviewLine(key, base, liveEnd);
 
       const rawVertical = Math.abs(liveEnd.y - base.y);
@@ -477,11 +790,8 @@ AFRAME.registerComponent('distance-measure', {
     this.step = 'A';
     this.floorStep = 'A';
     this.heightStep = 'A';
-    this.ceilingStep = 'A';
     this.heightMeasurements = [];
-    this.ceilingMeasurements = [];
     this.heightBaseY = null;
-    this.ceilingBaseY = null;
     this.floorMeasurementY = null;
     this.measurementY = null;
     this.measureMode = 'floor';
@@ -490,9 +800,7 @@ AFRAME.registerComponent('distance-measure', {
     this.areaResult.style.display = 'none';
     this.floorModeBtn.classList.add('active');
     this.heightModeBtn.classList.remove('active');
-    const ceilingBtn = document.getElementById('ceilingModeBtn');
-    if (ceilingBtn) ceilingBtn.classList.remove('active');
-    this.heightHint.style.display = 'none';
+        this.heightHint.style.display = 'none';
     this.calibrationPanel.style.display = 'block';
     this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
     this.promptText.textContent = 'CALIBRATION: Aim at first reference point, then tap Place';
@@ -526,11 +834,8 @@ AFRAME.registerComponent('distance-measure', {
     this.step = 'A';
     this.floorStep = 'A';
     this.heightStep = 'A';
-    this.ceilingStep = 'A';
     this.heightMeasurements = [];
-    this.ceilingMeasurements = [];
     this.heightBaseY = null;
-    this.ceilingBaseY = null;
     this.floorMeasurementY = null;
     this.measurementY = null;
     this.waitingForContinue = false;
@@ -541,9 +846,7 @@ AFRAME.registerComponent('distance-measure', {
     this.measureMode = 'floor';
     this.floorModeBtn.classList.add('active');
     this.heightModeBtn.classList.remove('active');
-    const ceilingBtn = document.getElementById('ceilingModeBtn');
-    if (ceilingBtn) ceilingBtn.classList.remove('active');
-    this.heightHint.style.display = 'none';
+        this.heightHint.style.display = 'none';
     this.calibrateBtn.disabled = false;
     this.calibrateBtn.textContent = 'Calibrate';
     this.promptText.textContent = `Calibration applied (${this.calibrationFactor.toFixed(3)}×). Aim at first point, then tap Place`;
@@ -565,8 +868,8 @@ AFRAME.registerComponent('distance-measure', {
   createLabelEntity: function () {
     const wrapper = document.createElement('a-entity');
     const bg = document.createElement('a-plane');
-    bg.setAttribute('width', 0.34);
-    bg.setAttribute('height', 0.11);
+    bg.setAttribute('width', 0.28);
+    bg.setAttribute('height', 0.085);
     bg.setAttribute('color', '#ffffff');
     bg.setAttribute('opacity', 0.92);
     bg.setAttribute('position', '0 0 -0.002');
@@ -576,7 +879,7 @@ AFRAME.registerComponent('distance-measure', {
     txt.setAttribute('align', 'center');
     txt.setAttribute('baseline', 'center');
     txt.setAttribute('color', '#111111');
-    txt.setAttribute('width', 1.3);
+    txt.setAttribute('width', 1.05);
     wrapper.appendChild(txt);
     wrapper.textEl = txt;
     this.el.appendChild(wrapper);
@@ -584,7 +887,7 @@ AFRAME.registerComponent('distance-measure', {
   },
 
   setLabel: function (wrapper, midpoint, text) {
-    wrapper.setAttribute('position', `${midpoint.x} ${midpoint.y + 0.10} ${midpoint.z}`);
+    wrapper.setAttribute('position', `${midpoint.x} ${midpoint.y + 0.08} ${midpoint.z}`);
     wrapper.textEl.setAttribute('value', text);
   },
 
@@ -668,7 +971,7 @@ AFRAME.registerComponent('distance-measure', {
         return;
       }
 
-      if (this.measureMode === 'height' || this.measureMode === 'ceiling') {
+      if (this.measureMode === 'height') {
         const base = point.clone();
         this.placeMarker(base);
         this.activeVerticalBase = base;
@@ -676,16 +979,11 @@ AFRAME.registerComponent('distance-measure', {
         if (this.measureMode === 'height') {
           this.heightBaseY = base.y;
           this.heightStep = 'B';
-        } else {
-          this.ceilingBaseY = base.y;
-          this.ceilingStep = 'B';
         }
         this.measurementY = base.y;
         this.step = 'B';
         this.snapHint.style.display = 'none';
-        this.promptText.textContent = this.measureMode === 'height'
-          ? 'HEIGHT: Aim at the top point, then tap Place'
-          : 'CEILING: Aim at the ceiling point, then tap Place';
+        this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
         return;
       }
 
@@ -762,7 +1060,7 @@ AFRAME.registerComponent('distance-measure', {
         return;
       }
 
-      if (this.measureMode === 'height' || this.measureMode === 'ceiling') {
+      if (this.measureMode === 'height') {
         const base = this.activeVerticalBase;
         if (!base) return;
 
@@ -779,24 +1077,94 @@ AFRAME.registerComponent('distance-measure', {
         this.finalizeLabel(base, end, `${calibrated.toFixed(2)} m`);
 
         const record = {base: base.clone(), top: end.clone(), value: calibrated};
-        if (this.measureMode === 'height') this.heightMeasurements.push(record);
-        else this.ceilingMeasurements.push(record);
+        this.heightMeasurements.push(record);
+        this._lastMeasuredHeight = calibrated;
+        window.__COSTructLastHeight = calibrated;
+
+        // Use the measured wall height to extrude every existing floor point.
+        // The height measurement itself remains exactly as measured.
+        this.extrudeFloorToHeight(calibrated);
 
         // IMPORTANT: one vertical measurement completes, but the mode stays active.
-        // User can snap to another floor point and make another height/ceiling measurement.
+        // User can snap to another floor point and make another height measurement.
         this.clearPreview();
         this.removePreviewLabel();
         this.activeVerticalBase = null;
         this.measurementY = null;
         this.step = 'A';
-        if (this.measureMode === 'height') this.heightStep = 'A';
-        else this.ceilingStep = 'A';
-        this.promptText.textContent = this.measureMode === 'height'
-          ? 'HEIGHT: Snap to another floor point, then tap Place for another height'
-          : 'CEILING: Snap to another floor point, then tap Place for another ceiling height';
+        this.heightStep = 'A';
+        this.promptText.textContent = 'HEIGHT: Snap to another floor point, then tap Place for another height';
         return;
       }
     }
+  },
+
+
+  // Extrude every measured floor corner using the measured wall height.
+  // This creates vertical edges, top points, and wall panels from the same
+  // height measurement so the floor footprint becomes a simple 3D room shape.
+  extrudeFloorToHeight: function (heightValue) {
+    if (!this.corners || this.corners.length < 2 || !(heightValue > 0)) return;
+
+    // Remove a previous extrusion while keeping the original floor measurement.
+    this.clearExtrusionObjects();
+    this.extrudedHeight = heightValue;
+
+    const topCorners = this.corners.map(p => new THREE.Vector3(p.x, p.y + heightValue / this.calibrationFactor, p.z));
+
+    // Vertical edges and top corner markers.
+    topCorners.forEach((top, i) => {
+      const base = this.corners[i];
+      const vertical = new THREE.Vector3(top.x, top.y, top.z);
+      this.drawLine(base, top);
+      this.placeMarker(top);
+    });
+
+    // Connect the elevated corners to form the top perimeter.
+    for (let i = 0; i < topCorners.length; i++) {
+      const a = topCorners[i];
+      const b = topCorners[(i + 1) % topCorners.length];
+      this.drawLine(a, b);
+    }
+
+    // Add lightweight wall panels between each pair of floor corners.
+    // They are translucent so the measured floor remains visible.
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.01) continue;
+
+      const wall = document.createElement('a-box');
+      wall.setAttribute('width', length);
+      wall.setAttribute('height', heightValue / this.calibrationFactor);
+      wall.setAttribute('depth', '0.018');
+      wall.setAttribute('color', '#ffffff');
+      wall.setAttribute('opacity', '0.18');
+      wall.setAttribute('transparent', 'true');
+
+      const mid = new THREE.Vector3(
+        (a.x + b.x) * 0.5,
+        a.y + (heightValue / this.calibrationFactor) * 0.5,
+        (a.z + b.z) * 0.5
+      );
+      wall.object3D.position.copy(mid);
+      wall.object3D.rotation.y = -Math.atan2(dz, dx);
+      this.el.appendChild(wall);
+      this.extrusionWalls.push(wall);
+    }
+
+    this.promptText.textContent =
+      `3D wall height applied: ${heightValue.toFixed(2)} m. Dimensions ready — tap Save Dimensions.`;
+  },
+
+  clearExtrusionObjects: function () {
+    if (Array.isArray(this.extrusionWalls)) {
+      this.extrusionWalls.forEach(w => w.parentNode && w.parentNode.removeChild(w));
+    }
+    this.extrusionWalls = [];
   },
 
   closePolygon: function () {
@@ -828,9 +1196,22 @@ AFRAME.registerComponent('distance-measure', {
     this.step = 'DONE';
     this.floorStep = 'DONE';
     this.snapHint.style.display = 'none';
-    this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m². You can switch to Height or Ceiling.`;
+    this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m². You can switch to Height.`;
     this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
     this.areaResult.style.display = 'block';
+    this.useAreaBtn.style.display = 'inline-block';
+    document.getElementById('arSaveBar').style.display = 'block';
+
+    // Send the completed AR floor area back to Material & Cost Estimation.
+    this._lastFloorArea = areaM2;
+    // For the estimation form, derive length and width from the measured floor polygon.
+    if (window.COSTructEstimation && this.corners.length >= 3) {
+      const xs = this.corners.map(p => p.x), zs = this.corners.map(p => p.z);
+      const measuredLength = (Math.max(...xs)-Math.min(...xs)) * this.calibrationFactor;
+      const measuredWidth = (Math.max(...zs)-Math.min(...zs)) * this.calibrationFactor;
+      window.__COSTructLastLength = measuredLength;
+      window.__COSTructLastWidth = measuredWidth;
+    }
   },
 
   placeMarker: function (point) {
@@ -865,6 +1246,7 @@ AFRAME.registerComponent('distance-measure', {
 
   clearAllMeasurementObjects: function () {
     this.clearPreview();
+    this.clearExtrusionObjects();
     this.removePreviewLabel();
     this.labels.forEach(l => l.parentNode && l.parentNode.removeChild(l));
     this.labels = [];
@@ -880,14 +1262,14 @@ AFRAME.registerComponent('distance-measure', {
     this.step = 'A';
     this.floorStep = 'A';
     this.heightStep = 'A';
-    this.ceilingStep = 'A';
     this.heightMeasurements = [];
-    this.ceilingMeasurements = [];
+    this.extrudedHeight = 0;
+    this._lastMeasuredHeight = 0;
+    window.__COSTructLastHeight = 0;
     this.activeVerticalBase = null;
     this.activeVerticalType = null;
     this.floorMeasurementY = null;
     this.heightBaseY = null;
-    this.ceilingBaseY = null;
     this.measurementY = null;
     this.waitingForContinue = false;
     this.closed = false;
@@ -908,11 +1290,11 @@ AFRAME.registerComponent('distance-measure', {
     this.measureMode = 'floor';
     this.floorModeBtn.classList.add('active');
     this.heightModeBtn.classList.remove('active');
-    const ceilingBtn = document.getElementById('ceilingModeBtn');
-    if (ceilingBtn) ceilingBtn.classList.remove('active');
-    this.heightHint.style.display = 'none';
+        this.heightHint.style.display = 'none';
     this.snapHint.style.display = 'none';
     this.areaResult.style.display = 'none';
+    this.useAreaBtn.style.display = 'none';
+    document.getElementById('arSaveBar').style.display = 'none';
     this.promptText.textContent = `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
   }
 });
