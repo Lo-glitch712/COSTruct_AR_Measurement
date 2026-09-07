@@ -54,10 +54,11 @@
   #hud.isHidden { display:none; }
   @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
 
-  /* Keep 8th Wall coaching instructions hidden on the home page.
-     They are revealed only after Start Measuring is pressed. */
-  body.home-active .coaching-overlay,
-  body.home-active [class*='coaching-overlay'] {
+  /* 8th Wall coaching is hidden everywhere except the actual AR Measurement screen.
+     This prevents "Move your phone forward and back" from appearing on
+     Material & Cost Estimation / Floor Dimension screens. */
+  body:not(.ar-active) .coaching-overlay,
+  body:not(.ar-active) [class*='coaching-overlay'] {
     display: none !important;
   }
 
@@ -311,15 +312,13 @@
 </a-scene>
 
 <script>
+/* The Start Measuring button is handled by the estimation workflow below.
+   Do not open the AR HUD directly from the home screen. */
 (function () {
-  const homeScreen = document.getElementById('homeScreen');
   const startBtn = document.getElementById('startMeasureBtn');
-  const hud = document.getElementById('hud');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
-      homeScreen.style.display = 'none';
-      document.body.classList.remove('home-active');
-      hud.classList.remove('isHidden');
+      /* Intentionally left empty here; the estimation workflow owns this click. */
     });
   }
 })();
@@ -340,8 +339,6 @@
     const arWidth = document.getElementById('arWidth');
     const arHeight = document.getElementById('arHeight');
     const arAreaField = document.getElementById('arAreaField');
-    const savedMeasurementList = document.getElementById('savedMeasurementList');
-    let savedMeasurements = [];
     const manualPanel = document.getElementById('manualDimensionPanel');
     const arPanel = document.getElementById('arDimensionPanel');
     const manualLength = document.getElementById('manualLength');
@@ -351,51 +348,150 @@
     const summaryArea = document.getElementById('summaryArea');
     const summaryCost = document.getElementById('summaryCost');
     const materialsList = document.getElementById('materialsList');
+
     let currentMethod = 'manual';
-    let materialCount = 0;
     let arArea = 0;
+
+    /* Default prices requested by the user. Quantities are computed automatically
+       from floor area, perimeter and wall height. */
+    const MATERIALS = [
+      { name:'Sand', unit:'m³', price:1350 },
+      { name:'Portland Cement', unit:'bag', price:245 },
+      { name:'Gravel', unit:'m³', price:1700 },
+      { name:'CHB - 4"', unit:'pc', price:17 },
+      { name:'CHB - 5"', unit:'pc', price:20 }
+    ];
+
+    /*
+      Starter estimating factors:
+      - Sand: 0.05 m³ per m² of floor area
+      - Portland Cement: 0.35 bag per m² of floor area
+      - Gravel: 0.04 m³ per m² of floor area
+      - CHB: 12.5 pcs per m² of wall area
+      Wall area = perimeter × wall height.
+
+      These are app estimating factors, not a structural/construction design.
+      They can be adjusted later if your project uses a specific BOQ standard.
+    */
+    const FACTORS = {
+      sandPerFloorM2: 0.05,
+      cementBagsPerFloorM2: 0.35,
+      gravelM3PerFloorM2: 0.04,
+      chbPiecesPerWallM2: 12.5
+    };
+
+    function getDimensions(){
+      if(currentMethod === 'ar'){
+        return {
+          length: Number(arLength.value)||0,
+          width: Number(arWidth.value)||0,
+          height: Number(arHeight.value)||0,
+          area: arArea || ((Number(arLength.value)||0) * (Number(arWidth.value)||0))
+        };
+      }
+      const length = Number(manualLength.value)||0;
+      const width = Number(manualWidth.value)||0;
+      const height = Number(manualHeight.value)||0;
+      return {length, width, height, area:length*width};
+    }
 
     function showEstimation(){
       homeScreen.style.display='none';
       hud.classList.add('isHidden');
       estimationScreen.style.display='block';
       document.body.classList.remove('home-active');
+      document.body.classList.remove('ar-active');
+
+      /* Always start the estimation page at Floor Dimension → Manual Input.
+         AR opens only after the user explicitly taps AR Measurement. */
+      currentMethod='manual';
+      document.querySelectorAll('.measureChoice').forEach(b=>{
+        b.classList.toggle('active', b.dataset.method==='manual');
+      });
+      manualPanel.style.display='block';
+      arPanel.style.display='none';
+      updateArea();
+      calculateMaterials();
     }
+
     function showHome(){
       estimationScreen.style.display='none';
       hud.classList.add('isHidden');
       homeScreen.style.display='flex';
       document.body.classList.add('home-active');
+      document.body.classList.remove('ar-active');
     }
+
     function updateArea(){
-      const area = currentMethod === 'ar' ? arArea :
-        (parseFloat(manualLength.value)||0) * (parseFloat(manualWidth.value)||0);
-      manualArea.textContent = area.toFixed(2) + ' m²';
-      summaryArea.textContent = area.toFixed(2) + ' m²';
-      return area;
+      const d=getDimensions();
+      manualArea.textContent=d.area.toFixed(2)+' m²';
+      summaryArea.textContent=d.area.toFixed(2)+' m²';
+      return d.area;
     }
-    function addMaterial(name='',qty='',price=''){
-      materialCount++;
+
+    function createMaterialRow(material){
       const row=document.createElement('div');
       row.className='materialRow';
+      row.dataset.material=material.name;
       row.innerHTML=`
-        <label>Material<input class="matName" value="${name}" placeholder="e.g. Floor Tiles"></label>
-        <label>Qty<input class="matQty" type="number" min="0" step="0.01" value="${qty}" placeholder="0"></label>
-        <label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${price}" placeholder="₱"></label>
-        <button class="removeMaterial" type="button">×</button>`;
-      row.querySelector('.removeMaterial').onclick=()=>{row.remove();calculateCost();};
-      row.querySelectorAll('input').forEach(i=>i.addEventListener('input',calculateCost));
+        <label>Material<input class="matName" value="${material.name}" readonly></label>
+        <label>Qty<input class="matQty" type="number" min="0" step="0.01" value="0" readonly></label>
+        <label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${material.price}" readonly></label>
+        <div style="height:38px"></div>`;
       materialsList.appendChild(row);
     }
-    function calculateCost(){
+
+    function buildMaterialsTable(){
+      materialsList.innerHTML='';
+      MATERIALS.forEach(createMaterialRow);
+    }
+
+    function roundUpQuantity(value, unit){
+      if(!(value>0)) return 0;
+      /* Materials bought by piece/bag are rounded up to a whole unit.
+         Sand/gravel remain at 2-decimal m³ precision. */
+      if(unit==='pc' || unit==='bag') return Math.ceil(value);
+      return Math.ceil(value*100)/100;
+    }
+
+    function calculateMaterials(){
+      const d=getDimensions();
+      const floorArea=d.area;
+      const perimeter=2*(d.length+d.width);
+      const wallArea=perimeter*d.height;
+
+      const quantities={
+        'Sand': roundUpQuantity(floorArea*FACTORS.sandPerFloorM2,'m³'),
+        'Portland Cement': roundUpQuantity(floorArea*FACTORS.cementBagsPerFloorM2,'bag'),
+        'Gravel': roundUpQuantity(floorArea*FACTORS.gravelM3PerFloorM2,'m³'),
+        'CHB - 4"': roundUpQuantity(wallArea*FACTORS.chbPiecesPerWallM2,'pc'),
+        'CHB - 5"': roundUpQuantity(wallArea*FACTORS.chbPiecesPerWallM2,'pc')
+      };
+
       let total=0;
-      materialsList.querySelectorAll('.materialRow').forEach(r=>{
-        total+=(parseFloat(r.querySelector('.matQty').value)||0)*(parseFloat(r.querySelector('.matPrice').value)||0);
+      materialsList.querySelectorAll('.materialRow').forEach(row=>{
+        const name=row.dataset.material;
+        const material=MATERIALS.find(m=>m.name===name);
+        const qty=quantities[name]||0;
+        const price=material ? material.price : 0;
+        row.querySelector('.matQty').value=qty.toFixed(material && material.unit==='m³' ? 2 : 0);
+        row.querySelector('.matPrice').value=price.toFixed(2);
+        total += qty*price;
       });
-      summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+      summaryCost.textContent='₱'+total.toLocaleString('en-PH',{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+      });
       updateArea();
     }
 
+    function refreshEstimate(){
+      updateArea();
+      calculateMaterials();
+    }
+
+    /* Only this handler controls the Home → Estimation transition. */
     startBtn.addEventListener('click',showEstimation);
     backHome.addEventListener('click',showHome);
 
@@ -404,109 +500,110 @@
         document.querySelectorAll('.measureChoice').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         currentMethod=btn.dataset.method;
+
         manualPanel.style.display=currentMethod==='manual'?'block':'none';
         arPanel.style.display=currentMethod==='ar'?'block':'none';
-        updateArea();
+
+        if(currentMethod==='manual'){
+          document.body.classList.remove('ar-active');
+        }
+        refreshEstimate();
       });
     });
-    [manualLength,manualWidth,manualHeight].forEach(i=>i.addEventListener('input',updateArea));
+
+    [manualLength,manualWidth,manualHeight].forEach(i=>{
+      i.addEventListener('input',refreshEstimate);
+    });
 
     openAr.addEventListener('click',()=>{
       estimationScreen.style.display='none';
       hud.classList.remove('isHidden');
+      document.body.classList.add('ar-active');
+      document.body.classList.remove('home-active');
       arBackBtn.style.display='inline-block';
+      arSaveBar.style.display='none';
       document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.';
     });
 
     function leaveAR(saveMeasurement){
       if(saveMeasurement && window.COSTructEstimation){
-        const dim = window.COSTructEstimation.getLastARDimensions ? window.COSTructEstimation.getLastARDimensions() : {
-          area: window.COSTructEstimation.getLastARArea ? window.COSTructEstimation.getLastARArea() : 0
-        };
-        if(dim.area > 0) window.COSTructEstimation.receiveARDimensions(dim);
-        else {
-          hud.classList.add('isHidden');
-          estimationScreen.style.display='block';
+        const dim = window.COSTructEstimation.getLastARDimensions ?
+          window.COSTructEstimation.getLastARDimensions() : {area:0};
+
+        if(dim.area > 0){
+          window.COSTructEstimation.receiveARDimensions(dim);
+          return;
         }
-      }else{
-        hud.classList.add('isHidden');
-        estimationScreen.style.display='block';
       }
+
+      hud.classList.add('isHidden');
+      document.body.classList.remove('ar-active');
+      estimationScreen.style.display='block';
       arBackBtn.style.display='none';
+      arSaveBar.style.display='none';
+      refreshEstimate();
     }
 
     arBackBtn.addEventListener('click',()=>leaveAR(false));
     useAreaBtn.addEventListener('click',()=>leaveAR(true));
 
-    document.getElementById('addMaterialBtn').addEventListener('click',()=>addMaterial());
     document.getElementById('calculateEstimateBtn').addEventListener('click',()=>{
-      calculateCost();
-      alert('Estimate updated. You can review the project details, floor area, materials, and estimated cost above.');
+      refreshEstimate();
+      alert('Estimate updated using the current floor dimensions and wall height.');
     });
 
-    // Start with one material row.
-    addMaterial('Floor Tiles','','');
+    buildMaterialsTable();
     updateArea();
-
-    function renderSavedMeasurements(){
-      savedMeasurementList.innerHTML='';
-      savedMeasurements.forEach((m,index)=>{
-        const item=document.createElement('div');
-        item.className='savedMeasurement';
-        item.innerHTML=`<span><b>Saved Measurement</b><br>Floor Area: ${m.area.toFixed(2)} m² · ${m.time}</span>
-          <button type="button">Use</button>`;
-        item.querySelector('button').onclick=()=>{
-          arArea=m.area;
-          currentMethod='ar';
-          updateArea();
-        };
-        savedMeasurementList.appendChild(item);
-      });
-    }
+    calculateMaterials();
 
     window.COSTructEstimation = {
-      getLastARArea: function(){
+      getLastARArea:function(){
         return Number(window.__COSTructLastArea)||0;
       },
-      getLastARDimensions: function(){
+      getLastARDimensions:function(){
         return {
-          length: Number(window.__COSTructLastLength)||0,
-          width: Number(window.__COSTructLastWidth)||0,
-          height: Number(window.__COSTructLastHeight)||0,
-          area: Number(window.__COSTructLastArea)||0
+          length:Number(window.__COSTructLastLength)||0,
+          width:Number(window.__COSTructLastWidth)||0,
+          height:Number(window.__COSTructLastHeight)||0,
+          area:Number(window.__COSTructLastArea)||0
         };
       },
-      receiveARDimensions: function(dim){
-        dim = dim || {};
+      receiveARDimensions:function(dim){
+        dim=dim||{};
         arArea=Number(dim.area)||0;
         window.__COSTructLastArea=arArea;
         window.__COSTructLastLength=Number(dim.length)||0;
         window.__COSTructLastWidth=Number(dim.width)||0;
         window.__COSTructLastHeight=Number(dim.height)||0;
 
-        // Populate ALL AR estimation fields with the saved measurement.
         arAreaField.textContent=arArea.toFixed(2)+' m²';
-        arLength.value=(window.__COSTructLastLength).toFixed(2);
-        arWidth.value=(window.__COSTructLastWidth).toFixed(2);
-        arHeight.value=(window.__COSTructLastHeight).toFixed(2);
+        arLength.value=window.__COSTructLastLength.toFixed(2);
+        arWidth.value=window.__COSTructLastWidth.toFixed(2);
+        arHeight.value=window.__COSTructLastHeight.toFixed(2);
+
         currentMethod='ar';
-        document.querySelectorAll('.measureChoice').forEach(b=>b.classList.toggle('active',b.dataset.method==='ar'));
+        document.querySelectorAll('.measureChoice').forEach(b=>{
+          b.classList.toggle('active',b.dataset.method==='ar');
+        });
         manualPanel.style.display='none';
         arPanel.style.display='block';
-        document.getElementById('arMeasurementResult').style.display='block';
-        document.getElementById('arMeasurementResult').textContent='Saved AR Floor Area: '+arArea.toFixed(2)+' m²';
-        arAreaField.textContent=arArea.toFixed(2)+' m²';
-        savedMeasurements.push({area: arArea, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
-        renderSavedMeasurements();
+
+        const result=document.getElementById('arMeasurementResult');
+        result.style.display='block';
+        result.textContent='Saved AR Dimensions: '+
+          window.__COSTructLastLength.toFixed(2)+' m × '+
+          window.__COSTructLastWidth.toFixed(2)+' m × '+
+          window.__COSTructLastHeight.toFixed(2)+' m';
+
         estimationScreen.style.display='block';
         hud.classList.add('isHidden');
+        document.body.classList.remove('ar-active');
         arBackBtn.style.display='none';
         arSaveBar.style.display='none';
-        updateArea();
+        refreshEstimate();
       }
     };
   })();
-
 
   AFRAME.registerComponent('distance-measure', {
   init: function () {
