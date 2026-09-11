@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const [metric, setMetric] = useState(true)
   const [arEnabled, setArEnabled] = useState(false)
   const [alerts, setAlerts] = useState(false)
+  const isSupplier = session?.role === "supplier"
 
   function signOut() {
     clearSession()
@@ -48,7 +49,9 @@ export default function SettingsPage() {
       </section>
 
       <section>
-        <h2 className="section-title">Measurement</h2>
+        <h2 className="section-title">
+          {isSupplier ? "Catalog" : "Measurement"}
+        </h2>
         <div className="list" style={{ marginTop: 12 }}>
           <div className="list-row">
             <span className="list-row-title">Metric units (m, m², m³)</span>
@@ -61,30 +64,42 @@ export default function SettingsPage() {
               onClick={() => setMetric((value) => !value)}
             />
           </div>
-          <div className="list-row">
-            <div>
-              <div className="list-row-title">Show AR measurement option</div>
-              <div className="tiny">
-                Experimental camera capture, off by default
+
+          {isSupplier ? null : (
+            <div className="list-row">
+              <div>
+                <div className="list-row-title">Show AR measurement option</div>
+                <div className="tiny">
+                  Experimental camera capture, off by default
+                </div>
               </div>
+              <button
+                type="button"
+                className="switch"
+                role="switch"
+                aria-checked={arEnabled}
+                aria-label="Show AR measurement option"
+                onClick={() => setArEnabled((value) => !value)}
+              />
             </div>
-            <button
-              type="button"
-              className="switch"
-              role="switch"
-              aria-checked={arEnabled}
-              aria-label="Show AR measurement option"
-              onClick={() => setArEnabled((value) => !value)}
-            />
-          </div>
+          )}
+
           <div className="list-row">
-            <span className="list-row-title">Supplier price alerts</span>
+            <span className="list-row-title">
+              {isSupplier
+                ? "Notify me of new procurement requests"
+                : "Supplier price alerts"}
+            </span>
             <button
               type="button"
               className="switch"
               role="switch"
               aria-checked={alerts}
-              aria-label="Supplier price alerts"
+              aria-label={
+                isSupplier
+                  ? "Notify me of new procurement requests"
+                  : "Supplier price alerts"
+              }
               onClick={() => setAlerts((value) => !value)}
             />
           </div>

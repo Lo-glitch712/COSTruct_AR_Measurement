@@ -600,16 +600,9 @@ textarea {
   );
 }
 
-.landing-card {
+.landing-content {
   position: relative;
   width: min(92vw, 460px);
-  padding: 44px 34px 30px;
-  border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   text-align: center;
 }
 
@@ -673,20 +666,12 @@ textarea {
 }
 
 @media (max-width: 420px) {
-  .landing-card {
-    padding: 34px 22px 24px;
-  }
-
   .landing-brand {
     font-size: 42px;
   }
 }
 
 @media (max-height: 700px) {
-  .landing-card {
-    padding: 28px 24px 22px;
-  }
-
   .landing-brand {
     margin: 10px 0 14px;
     font-size: 38px;
@@ -1039,6 +1024,71 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Supplier catalog
+   -------------------------------------------------------------------------- */
+
+.catalog-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 108px auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.catalog-form .btn {
+  height: 48px;
+}
+
+@media (max-width: 780px) {
+  .catalog-form {
+    grid-template-columns: minmax(0, 1fr) 108px;
+  }
+
+  .catalog-form .field:first-child,
+  .catalog-form .btn {
+    grid-column: 1 / -1;
+  }
+}
+
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 16px center, right 11px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.catalog-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.icon-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--label-tertiary);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #c0271c;
 }
 
 .supplier-meta {

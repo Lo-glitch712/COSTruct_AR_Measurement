@@ -16,6 +16,7 @@ export type IconName =
   | "arrowLeft"
   | "arrowRight"
   | "check"
+  | "trash"
 
 const PATHS: Record<IconName, ReactElement> = {
   ruler: (
@@ -69,6 +70,12 @@ const PATHS: Record<IconName, ReactElement> = {
   arrowLeft: <path d="M19 12H5m0 0 6-6m-6 6 6 6" />,
   arrowRight: <path d="M5 12h14m0 0-6-6m6 6-6 6" />,
   check: <path d="m4.5 12.5 5 5 10-11" />,
+  trash: (
+    <>
+      <path d="M4 6.5h16M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13" />
+      <path d="M10.5 10v6M13.5 10v6" />
+    </>
+  ),
 }
 
 type IconProps = SVGProps<SVGSVGElement> & {

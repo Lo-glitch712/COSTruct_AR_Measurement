@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import TopNav from "@/components/TopNav"
 import { useSession } from "@/lib/session"
+
+/** Measuring, projects, and browsing suppliers only apply to a buyer. */
+const BUYER_ONLY = ["/measurements", "/projects", "/supplier"]
 
 export default function AppLayout({
   children,
@@ -11,13 +14,19 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { session, loaded } = useSession()
 
-  useEffect(() => {
-    if (loaded && !session) router.replace("/login")
-  }, [loaded, session, router])
+  const blocked =
+    session?.role === "supplier" && BUYER_ONLY.includes(pathname)
 
-  if (!session) return null
+  useEffect(() => {
+    if (!loaded) return
+    if (!session) router.replace("/login")
+    else if (blocked) router.replace("/home")
+  }, [loaded, session, blocked, router])
+
+  if (!session || blocked) return null
 
   return (
     <div className="shell">

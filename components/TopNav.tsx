@@ -6,10 +6,17 @@ import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { clearSession, initials, type Session } from "@/lib/session"
 
-const LINKS = [
-  { href: "/supplier", label: "Supplier" },
+const BUYER_LINKS = [
   { href: "/measurements", label: "Measurements" },
   { href: "/projects", label: "Projects" },
+  { href: "/supplier", label: "Suppliers" },
+  { href: "/about", label: "About" },
+  { href: "/settings", label: "Settings" },
+]
+
+/** A supplier manages their catalog on the dashboard, so /home is enough. */
+const SUPPLIER_LINKS = [
+  { href: "/home", label: "Dashboard" },
   { href: "/about", label: "About" },
   { href: "/settings", label: "Settings" },
 ]
@@ -18,6 +25,7 @@ export default function TopNav({ session }: { session: Session }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const links = session.role === "supplier" ? SUPPLIER_LINKS : BUYER_LINKS
 
   function signOut() {
     clearSession()
@@ -42,7 +50,7 @@ export default function TopNav({ session }: { session: Session }) {
         </button>
 
         <nav className="nav-links" data-open={open}>
-          {LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

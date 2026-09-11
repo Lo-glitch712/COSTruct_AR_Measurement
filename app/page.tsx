@@ -13,7 +13,7 @@ export default function LandingPage() {
     <main className="landing">
       <div className="landing-glow" aria-hidden />
 
-      <section className="landing-card">
+      <section className="landing-content">
         <p className="landing-eyebrow">Construction estimating platform</p>
         <h1 className="landing-brand">COSTruct</h1>
         <p className="landing-title">
