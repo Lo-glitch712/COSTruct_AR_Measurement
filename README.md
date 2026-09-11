@@ -28,10 +28,3 @@ served as a static page at `/ar/index.html`, linked from the Measurements page.
 Its `distance-measure` component and estimation screens are byte-for-byte the
 same as before the Next.js port. The camera only works over `localhost` or
 HTTPS.
-
-## exFAT note
-
-`scripts/patch-readlink.cjs` is loaded by `scripts/next.mjs` before the Next
-CLI. exFAT volumes return `EISDIR` from `readlink()` on ordinary files where
-resolvers expect `EINVAL`, which otherwise breaks `next build`. The shim is a
-no-op on NTFS, APFS, and ext4.
