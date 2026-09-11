@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COSTruct AR Measurement</title>
+
+  <script crossorigin="anonymous" src="./external/scripts/8frame-1.5.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/coaching-overlay@1/dist/coaching-overlay.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" crossorigin="anonymous" async="true" data-preload-chunks="slam"></script>
+
+  <style>
+  :root { --panel: rgba(17, 24, 39, .78); --glass: rgba(255,255,255,.92); --muted: rgba(255,255,255,.72); --accent:#22c55e; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+  body { background:#111827; }
+  #hud { position:fixed; inset:0; z-index:20; pointer-events:none; }
+  #topBar { position:absolute; top:14px; left:12px; right:12px; display:flex; justify-content:center; pointer-events:none; }
+  #promptText { max-width:92vw; padding:10px 15px; border-radius:18px; background:rgba(17,24,39,.72); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; font-size:14px; line-height:1.25; text-align:center; text-shadow:none; box-shadow:0 6px 22px rgba(0,0,0,.18); }
+  #modeBar { position:absolute; top:62px; left:50%; transform:translateX(-50%); display:flex; gap:2px; padding:4px; border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 6px 18px rgba(0,0,0,.18); pointer-events:auto; }
+  .modeBtn { border:0; background:transparent; color:#374151; border-radius:14px; padding:7px 12px; font-size:12px; font-weight:700; }
+  .modeBtn.active { background:#111827; color:#fff; }
+  #areaResult { position:absolute; top:108px; left:50%; transform:translateX(-50%); padding:7px 13px; border-radius:10px; background:rgba(255,255,255,.94); color:#111827; font-size:13px; font-weight:700; box-shadow:0 5px 16px rgba(0,0,0,.14); }
+  #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:34px; font-weight:300; line-height:1; text-shadow:0 1px 5px rgba(0,0,0,.75); }
+  #snapHint, #heightHint { position:absolute; top:calc(50% + 22px); left:50%; transform:translateX(-50%); padding:6px 10px; border-radius:10px; background:rgba(17,24,39,.78); color:#fff; font-size:11px; font-weight:600; white-space:nowrap; }
+  #bottomControls { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(94vw,380px); display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:auto; }
+  .controlBtn { border:0; font-weight:700; box-shadow:0 8px 22px rgba(0,0,0,.20); }
+  #placeBtn { width:74px; height:74px; padding:0; border-radius:50%; background:#22c55e; color:#fff; font-size:13px; line-height:1.1; border:4px solid rgba(255,255,255,.92); box-shadow:0 7px 24px rgba(0,0,0,.28), inset 0 0 0 2px rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; text-align:center; }
+  #placeBtn:active { transform:scale(.95); }
+  #bottomSecondary { display:flex; align-items:center; justify-content:center; gap:10px; }
+  #resetBtn, #calibrateBtn, #editBtn { width:auto; min-width:96px; height:42px; border-radius:14px; font-size:14px; padding:0 16px; }
+  #resetBtn { background:rgba(17,24,39,.88); color:#fff; }
+  #calibrateBtn { background:rgba(255,255,255,.94); color:#111827; }
+  #editBtn { background:rgba(255,255,255,.94); color:#111827; }
+  #undoBtn { width:48px; height:48px; border:0; border-radius:50%; background:rgba(255,255,255,.94); color:#111827; font-size:28px; font-weight:800; line-height:1; box-shadow:0 8px 22px rgba(0,0,0,.20); }
+  #undoBtn:active { transform:scale(.95); }
+  #calibrationPanel { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); z-index:21; display:none; width:min(88vw,360px); padding:16px; border-radius:18px; background:rgba(255,255,255,.96); color:#111827; box-shadow:0 12px 34px rgba(0,0,0,.22); pointer-events:auto; }
+  #calibrationPanel input { width:100px; padding:9px 10px; font-size:17px; border:1px solid #d1d5db; border-radius:10px; }
+  #calibrationPanel button { border:0; border-radius:10px; padding:10px 14px; font-weight:700; }
+  #applyCalibration { background:#111827; color:#fff; }
+  #calibrationStatus { font-size:12px; color:#4b5563; line-height:1.4; margin-top:8px; }
+  @media (min-width: 600px) { #bottomControls { width:360px; } }
+
+  /* Home screen */
+  #homeScreen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,#0f172a 0%,#1e293b 55%,#334155 100%); color:#fff; }
+  #homeCard { width:min(92vw,420px); padding:32px 24px 26px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
+  #homeCard { width:min(92vw,420px); padding:40px 26px 28px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
+  #homeBrand { margin:0 auto 12px; color:#fff; font-size:48px; line-height:1; font-weight:900; letter-spacing:-2px; }
+  #homeTitle { margin:0; font-size:15px; line-height:1.3; font-weight:600; color:rgba(255,255,255,.68); letter-spacing:.2px; }
+  #homeSubtitle { margin:16px auto 28px; max-width:300px; color:rgba(255,255,255,.78); font-size:14px; line-height:1.55; }
+  #startMeasureBtn { width:100%; height:56px; border:0; border-radius:18px; background:#22c55e; color:#fff; font-size:17px; font-weight:800; box-shadow:0 10px 26px rgba(0,0,0,.24); }
+  #startMeasureBtn:active { transform:scale(.985); }
+  #homeNote { margin-top:12px; color:rgba(255,255,255,.50); font-size:10px; }
+  #hud.isHidden { display:none; }
+  @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
+
+  /* Keep 8th Wall coaching instructions hidden on the home page.
+     They are revealed only after Start Measuring is pressed. */
+  body.home-active .coaching-overlay,
+  body.home-active [class*='coaching-overlay'] {
+    display: none !important;
+  }
+
+
+  /* Material & Cost Estimation */
+  .appScreen{position:fixed;inset:0;z-index:110;overflow:auto;background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:#111827;padding:20px 14px 36px}
+  .estimationCard{width:min(94vw,760px);margin:0 auto;padding:22px 0}
+  .estimationHeader{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .backBtn{width:42px;height:42px;border:0;border-radius:14px;background:#111827;color:#fff;font-size:30px;line-height:1}
+  .estimateEyebrow{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#22c55e}
+  .estimationHeader h2{margin:2px 0 0;font-size:25px;letter-spacing:-.6px}
+  .progressDots{display:flex;gap:7px;margin:10px 0 18px}
+  .dot{height:5px;width:34px;border-radius:99px;background:#d1d5db}.dot.active{background:#22c55e}
+  .estimateSection{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 8px 25px rgba(15,23,42,.06)}
+  .sectionTitle{font-size:16px;font-weight:850;margin-bottom:13px;display:flex;gap:9px;align-items:center}.sectionTitle span{font-size:11px;color:#22c55e;font-weight:900}
+  .sectionHint{font-size:12px;color:#6b7280;margin:-5px 0 13px}
+  .formGrid,.dimensionGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .formGrid label,.dimensionGrid label{font-size:11px;font-weight:750;color:#4b5563}
+  .formGrid input,.formGrid select,.formGrid textarea,.dimensionGrid input{display:block;width:100%;margin-top:6px;padding:11px 12px;border:1px solid #dbe1e8;border-radius:11px;background:#f9fafb;font:inherit;color:#111827;outline:none}
+  .formGrid textarea{resize:vertical}
+  .measurementChoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .measureChoice{border:1px solid #dbe1e8;background:#f8fafc;border-radius:15px;padding:13px;text-align:left;cursor:pointer}
+  .measureChoice.active{border:2px solid #22c55e;background:#f0fdf4}
+  .measureChoice b,.measureChoice small{display:block}.measureChoice b{font-size:13px}.measureChoice small{font-size:10px;color:#6b7280;margin-top:4px;line-height:1.35}
+  .dimensionPanel{background:#f8fafc;border-radius:15px;padding:13px}.areaPreview{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280}.areaPreview strong{color:#111827}
+  .arInfo{display:flex;gap:12px;align-items:flex-start}.arIcon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:#111827;color:#fff;font-size:24px}.arInfo b{font-size:13px}.arInfo p{margin:4px 0 0;font-size:11px;line-height:1.45;color:#6b7280}
+  .primaryEstimateBtn{width:100%;height:46px;border:0;border-radius:13px;background:#22c55e;color:#fff;font-weight:850;font-size:14px;margin-top:12px;cursor:pointer}
+  .arResult{margin-top:10px;padding:10px 12px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:11px;font-size:12px;font-weight:750}
+  .materialRow{display:grid;grid-template-columns:1.3fr .65fr .65fr 38px;gap:8px;align-items:end;margin-bottom:9px}.materialRow label{font-size:10px;font-weight:750;color:#6b7280}.materialRow input{width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px}.removeMaterial{height:38px;border:0;border-radius:10px;background:#fee2e2;color:#b91c1c;font-weight:900}
+  .addMaterialBtn{width:100%;height:42px;border:1px dashed #9ca3af;border-radius:12px;background:#fff;color:#374151;font-weight:750}
+  .estimateSummary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.estimateSummary div{background:#111827;color:#fff;border-radius:16px;padding:15px}.estimateSummary span{display:block;font-size:10px;color:#cbd5e1}.estimateSummary strong{display:block;margin-top:4px;font-size:19px}
+  @media(max-width:560px){.formGrid,.dimensionGrid,.measurementChoice{grid-template-columns:1fr}.materialRow{grid-template-columns:1.1fr .65fr .65fr 38px}.estimationHeader h2{font-size:21px}}
+
+
+  #bottomSecondary{flex-wrap:wrap}
+  #arCloseBtn{background:rgba(255,255,255,.94);color:#111827}
+  #arBackBtn{background:rgba(255,255,255,.94);color:#111827}
+  #useAreaBtn{background:#22c55e;color:#fff}
+  .savedMeasurement{margin-top:10px;padding:11px 12px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;font-size:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .savedMeasurement b{color:#166534}
+  .savedMeasurement button{border:0;background:#fff;border-radius:8px;padding:6px 9px;font-weight:700;color:#374151}
+
+
+  .arBackTop{position:fixed;top:16px;left:14px;z-index:30;border:0;border-radius:13px;background:rgba(17,24,39,.88);color:#fff;padding:10px 15px;font-size:14px;font-weight:800;box-shadow:0 7px 20px rgba(0,0,0,.22);pointer-events:auto}
+  #arSaveBar{position:absolute;top:16px;right:14px;z-index:100;pointer-events:auto;display:block}
+  #arDimensionEditor{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.38);pointer-events:auto;color:#111827}
+  #arDimensionEditor .arEditCard{width:min(92vw,390px);padding:18px;border-radius:18px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(0,0,0,.30)}
+  #arDimensionEditor .arEditTitle{font-size:14px;font-weight:850;margin-bottom:12px}
+  #arDimensionEditor .arEditGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  #arDimensionEditor label{font-size:9px;font-weight:750;color:#6b7280}
+  #arDimensionEditor input{width:100%;margin-top:4px;padding:10px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#111827;font:inherit;font-weight:700}
+  #arDimensionEditor .arEditActions{display:flex;gap:8px;margin-top:12px}
+  #arDimensionEditor .arEditActions button{flex:1;height:42px;border:0;border-radius:11px;font-weight:800}
+  #applyAREdit{background:#22c55e;color:#fff}
+  #cancelAREdit{background:#e5e7eb;color:#111827}
+  .componentMethod.active{border-color:#22c55e;background:#f0fdf4}
+  .componentMeasurements.ar-readonly input{background:#eef2f7;color:#4b5563;cursor:not-allowed}
+  .saveMeasurementBtn{border:0;border-radius:13px;background:#22c55e;color:#fff;padding:11px 15px;font-size:13px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.24);cursor:pointer;display:block}
+  .arInputGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:14px}
+  .arInputGrid label{font-size:10px;font-weight:750;color:#6b7280}
+  .arInputGrid input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f3f4f6;color:#111827;font:inherit;font-weight:700}
+  @media(max-width:560px){
+    .arInputGrid{grid-template-columns:1fr}
+    #arSaveBar{top:16px;right:12px}
+    .saveMeasurementBtn{padding:10px 12px;font-size:12px}
+  }
+
+
+  body.estimation-active .coaching-overlay, body.estimation-active [class*="coaching-overlay"] { display:none !important; }
+  .componentCard{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
+  .componentTitle{display:flex;gap:10px;align-items:center}.componentNum{width:30px;height:30px;border-radius:10px;background:#111827;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:900}.componentTitle b{display:block;font-size:15px}.componentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:2px}
+  .methodToggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.componentMethod{border:1px solid #dbe1e8;background:#f8fafc;border-radius:11px;padding:10px;font-size:11px;font-weight:800;color:#374151}.componentMethod.active{border:2px solid #22c55e;background:#f0fdf4;color:#166534}
+  .componentInputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.componentInputs label{font-size:10px;font-weight:750;color:#6b7280}.componentInputs input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f9fafb;font:inherit}.componentArea{margin-top:9px;padding-top:9px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280}.componentArea strong{color:#111827}.componentAR{margin-top:10px}.openComponentAR{width:100%;height:42px;border:0;border-radius:12px;background:#22c55e;color:#fff;font-weight:850}.componentARStatus{margin-top:7px;font-size:10px;color:#6b7280}.componentCard.ar-selected{border-color:#86efac;box-shadow:0 0 0 2px rgba(34,197,94,.12)}
+  @media(max-width:560px){.componentInputs{grid-template-columns:1fr 1fr}.componentInputs label:last-child{grid-column:1/-1}}
+
+  /* Materials & Pricing receipt page */
+  #materialsPricingScreen{position:fixed;inset:0;z-index:115;display:none;overflow:auto;background:#eef2f7;color:#111827;padding:18px 12px 42px}
+  .receiptWrap{width:min(94vw,760px);margin:0 auto}
+  .receiptTop{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .receiptTop h2{margin:0;font-size:24px;letter-spacing:-.5px}
+  .receiptPaper{background:#fff;width:100%;border-radius:8px;padding:22px 18px 26px;box-shadow:0 12px 35px rgba(15,23,42,.12);border:1px solid #e5e7eb}
+  .receiptHead{text-align:center;border-bottom:1px dashed #9ca3af;padding-bottom:15px;margin-bottom:16px}
+  .receiptBrand{font-size:24px;font-weight:950;letter-spacing:-1px}.receiptSubtitle{font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1.2px;text-transform:uppercase}
+  .receiptMeta{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#4b5563;margin:8px 0 16px}
+  .receiptComponent{border-top:1px dashed #cbd5e1;padding:15px 0 13px}
+  .receiptComponent:first-of-type{border-top:0}
+  .receiptComponentTitle{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+  .receiptComponentTitle b{font-size:14px}.receiptComponentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:3px}
+  .receiptTable{width:100%;border-collapse:collapse;font-size:11px}
+  .receiptTable th{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 3px}
+  .receiptTable th:not(:first-child),.receiptTable td:not(:first-child){text-align:right}
+  .receiptTable td{padding:7px 3px;border-bottom:1px dotted #e5e7eb}.receiptTable td:first-child{font-weight:700}
+  .receiptDim{font-size:10px;color:#6b7280;margin-bottom:7px}.receiptDim strong{color:#374151}
+  .componentSubtotal{display:flex;justify-content:flex-end;gap:10px;font-size:11px;font-weight:850;padding-top:8px}
+  .receiptGrand{border-top:2px dashed #111827;margin-top:12px;padding-top:15px;display:flex;justify-content:space-between;align-items:end}.receiptGrand span{font-size:11px;font-weight:800}.receiptGrand strong{font-size:25px;letter-spacing:-.5px}
+  .receiptNote{margin-top:14px;padding-top:12px;border-top:1px dashed #9ca3af;font-size:9px;line-height:1.5;color:#6b7280;text-align:center}
+  .emptyReceipt{text-align:center;padding:35px 15px;color:#6b7280;font-size:13px}
+  @media(max-width:560px){#materialsPricingScreen{padding:12px 9px 30px}.receiptPaper{padding:18px 12px 22px}.receiptTop h2{font-size:20px}.receiptTable{font-size:10px}.receiptTable th{font-size:8px}.receiptGrand strong{font-size:22px}}
+</style>
+</head>
+
+<body class="home-active">
+<div id="homeScreen">
+  <div id="homeCard">
+    <div id="homeBrand">COSTruct</div>
+    <h1 id="homeTitle">AR Measurement</h1>
+    <p id="homeSubtitle">Measure floor dimensions, area, and height with your phone camera.</p>
+    <button id="startMeasureBtn">Start Measuring</button>
+    <div id="homeNote">For better tracking, use the app in a well-lit area.</div>
+  </div>
+</div>
+
+
+<!-- Material & Cost Estimation -->
+<div id="estimationScreen" class="appScreen" style="display:none;">
+ <div class="estimationCard">
+  <div class="estimationHeader"><button id="backToHomeBtn" class="backBtn">‹</button><div><div class="estimateEyebrow">COSTruct</div><h2>Material & Cost Estimation</h2></div></div>
+  <div class="progressDots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+  <section class="estimateSection"><div class="sectionTitle"><span>01</span> Project Details</div>
+   <div class="formGrid">
+    <label>Project Name<input id="projectName" type="text" placeholder="e.g. Living Room"></label>
+    <label>Project Type<select id="projectType"><option>Flooring</option><option>Room Renovation</option><option>Construction</option><option>Other</option></select></label>
+    <label>Location<input id="projectLocation" type="text" placeholder="Project location"></label>
+    <label>Notes<textarea id="projectNotes" rows="2" placeholder="Additional project details"></textarea></label>
+   </div>
+  </section>
+  <section class="estimateSection"><div class="sectionTitle"><span>02</span> Components & Measurements</div>
+   <p class="sectionHint">Each component has its own measurements. You can use Manual or AR independently for every component.</p>
+   <div id="componentsList"><div class="componentCard" data-component="Column">
+  <div class="componentTitle"><span class="componentNum">1</span><div><b>Column</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Beam">
+  <div class="componentTitle"><span class="componentNum">2</span><div><b>Beam</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Ground Floor Slab">
+  <div class="componentTitle"><span class="componentNum">3</span><div><b>Ground Floor Slab</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Slab">
+  <div class="componentTitle"><span class="componentNum">4</span><div><b>Slab</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Mortar">
+  <div class="componentTitle"><span class="componentNum">5</span><div><b>Mortar</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Plastering">
+  <div class="componentTitle"><span class="componentNum">6</span><div><b>Plastering</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div><div class="componentCard" data-component="Walls">
+  <div class="componentTitle"><span class="componentNum">7</span><div><b>Walls</b><small>Enter the dimensions for this component.</small></div></div>
+  <div class="methodToggle">
+    <button type="button" class="componentMethod active" data-method="manual">Manual Input</button>
+    <button type="button" class="componentMethod" data-method="ar">AR Measurement</button>
+  </div>
+  <div class="componentMeasurements">
+    <div class="componentInputs">
+      <label>Length (m)<input class="compLength" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Width (m)<input class="compWidth" type="number" min="0" step="0.01" placeholder="0.00"></label>
+      <label>Height (m)<input class="compHeight" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    </div>
+    <div class="componentArea">Computed: <strong class="compResult">0.00</strong> m²</div>
+  </div>
+  <div class="componentAR" style="display:none">
+    <button type="button" class="openComponentAR">Open AR Measurement</button>
+    <div class="componentARStatus">No AR measurement saved yet.</div>
+  </div>
+</div></div>
+  </section>
+  <div style="display:none" aria-hidden="true">
+  <section class="estimateSection"><div class="sectionTitle"><span>03</span> Materials & Pricing</div>
+   <div id="materialsList"></div>
+   <button id="addMaterialBtn" class="addMaterialBtn">+ Add Material</button>
+  </section>
+  <section class="estimateSummary"><div><span>Measured Components</span><strong id="summaryComponents">0 / 7</strong></div><div><span>Estimated Cost</span><strong id="summaryCost">₱0.00</strong></div></section>
+ </div>
+ <button id="calculateEstimateBtn" class="primaryEstimateBtn">Calculate Estimate →</button>
+ </div>
+</div>
+
+
+<!-- Materials & Pricing receipt page -->
+<div id="materialsPricingScreen">
+  <div class="receiptWrap">
+    <div class="receiptTop">
+      <button id="backToMeasurementsBtn" class="backBtn" type="button">‹</button>
+      <div><div class="estimateEyebrow">COSTruct</div><h2>Materials & Pricing</h2></div>
+    </div>
+    <div class="receiptPaper">
+      <div class="receiptHead">
+        <div class="receiptBrand">COSTruct</div>
+        <div class="receiptSubtitle">Material Cost Estimate</div>
+      </div>
+      <div class="receiptMeta"><span id="receiptProjectName">Project</span><span id="receiptDate"></span></div>
+      <div id="receiptComponents"></div>
+      <div class="receiptGrand"><span>ESTIMATED TOTAL</span><strong id="receiptGrandTotal">₱0.00</strong></div>
+      <div class="receiptNote">Quantities are automatically estimated from the dimensions entered or measured by AR. Material factors are starter estimating factors and should be verified against your project specifications.</div>
+    </div>
+  </div>
+</div>
+
+<div id="hud" class="isHidden">
+  <button id="arBackBtn" class="arBackTop" style="display:none">← Back</button>
+  <div id="arDimensionEditor">
+    <div class="arEditCard">
+      <div class="arEditTitle">Edit AR Measurement</div>
+      <div class="arEditGrid">
+        <label>Length (m)<input id="arEditLength" type="number" min="0" step="0.01" value="0.00"></label>
+        <label>Width (m)<input id="arEditWidth" type="number" min="0" step="0.01" value="0.00"></label>
+        <label>Height (m)<input id="arEditHeight" type="number" min="0" step="0.01" value="0.00"></label>
+      </div>
+      <div class="arEditActions">
+        <button id="cancelAREdit" type="button">Cancel</button>
+        <button id="applyAREdit" type="button">Apply Changes</button>
+      </div>
+    </div>
+  </div>
+  <div id="topBar"><div id="promptText">FLOOR: Aim at the first point, then tap Place.</div></div>
+  <div id="modeBar">
+    <button id="floorModeBtn" class="modeBtn active">Floor</button>
+    <button id="heightModeBtn" class="modeBtn">Height</button>
+  </div>
+  <div id="areaResult"></div>
+  <div id="crosshair">+</div>
+  <div id="snapHint" style="display:none">SNAP • Tap Place</div>
+  <div id="heightHint" style="display:none">Vertical height • Aim at top</div>
+  <div id="calibrationPanel">
+    <div style="font-weight:800;font-size:15px;margin-bottom:8px">Calibrate measurement</div>
+    <div style="font-size:12px;color:#4b5563;margin-bottom:10px">Place two points on a known distance.</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <input id="knownDistance" type="number" min="0.01" step="0.01" value="1.00"> <span>m</span>
+    </div>
+    <button id="applyCalibration">Apply Calibration</button>
+    <div id="calibrationStatus"></div>
+  </div>
+  <div id="arSaveBar" style="display:none"><button id="useAreaBtn" class="saveMeasurementBtn">Save Dimensions</button></div>
+  <div id="bottomControls">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button id="undoBtn" class="controlBtn" type="button" aria-label="Undo last point" title="Undo">←</button>
+      <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
+    </div>
+    <div id="bottomSecondary">
+      <button id="calibrateBtn" class="controlBtn secondary">Calibrate</button>
+      <button id="resetBtn" class="controlBtn reset">Reset</button>
+      <button id="editBtn" class="controlBtn" type="button">Edit</button>
+    </div>
+  </div>
+</div>
+
+<a-scene
+  distance-measure
+  coaching-overlay
+  landing-page
+  xrextras-loading
+  xrextras-runtime-error
+  xrextras-almost-there
+  renderer="colorManagement:true"
+  xrweb="
+    allowedDevices: any;
+    defaultEnvironmentFogIntensity: 0.5; 
+    defaultEnvironmentFloorTexture: #groundTex; 
+    defaultEnvironmentFloorColor: #FFF;
+    defaultEnvironmentSkyBottomColor: #B4C4CC; 
+    defaultEnvironmentSkyTopColor: #5ac8fa;
+    defaultEnvironmentSkyGradientStrength: 0.5;
+    scale: absolute;">
+
+  <a-assets>
+    <img id="groundTex" src="assets/sand.jpg">
+  </a-assets>
+
+  <a-camera
+    id="camera"
+    position="0 1.75 5"
+    raycaster="objects: .cantap"
+    cursor="
+      fuse: false;
+      rayOrigin: mouse;">
+  </a-camera>
+
+  <a-entity
+    light="
+      type: directional;
+      intensity: 0.8;
+      castShadow: true;
+      shadowMapHeight:2048;
+      shadowMapWidth:2048;
+      shadowCameraTop: 40;
+      shadowCameraBottom: -40;
+      shadowCameraRight: 40;
+      shadowCameraLeft: -40;
+      target: #camera"
+    xrextras-attach="target: camera; offset: 8 15 4"
+    position="1 4.3 2.5"
+    shadow>
+  </a-entity>
+
+  <a-light type="ambient" intensity="0.5"></a-light>
+
+  <a-box
+    id="ground"
+    class="cantap"
+    scale="1000 2 1000"
+    position="0 -0.99 0"
+    material="shader: shadow; transparent: true; opacity: 0.4"
+    shadow>
+  </a-box>
+
+  
+</a-scene>
+
+<script>
+(function () {
+  const startBtn = document.getElementById('startMeasureBtn');
+  if (startBtn) startBtn.addEventListener('click', () => window.COSTructEstimation && window.COSTructEstimation.showEstimation());
+})();
+
+
+  /* Estimation workflow - UI only. The original AR measurement component below is preserved unchanged. */
+  (function(){
+    const homeScreen=document.getElementById('homeScreen');
+    const estimationScreen=document.getElementById('estimationScreen');
+    const hud=document.getElementById('hud');
+    const arBackBtn=document.getElementById('arBackBtn');
+    const arSaveBar=document.getElementById('arSaveBar');
+    const arDimensionEditor=document.getElementById('arDimensionEditor');
+    const arEditLength=document.getElementById('arEditLength');
+    const arEditWidth=document.getElementById('arEditWidth');
+    const arEditHeight=document.getElementById('arEditHeight');
+    const materialsList=document.getElementById('materialsList');
+    const summaryCost=document.getElementById('summaryCost');
+    const summaryComponents=document.getElementById('summaryComponents');
+    const components=[...document.querySelectorAll('.componentCard')];
+    let activeComponent=null;
+    let materials=[];
+    const defaults=[['Sand',1350,'m³'],['Portland Cement',245,'bag'],['Gravel',1700,'m³'],['CHB - 4"',17,'pc'],['CHB - 5"',20,'pc']];
+
+    function showEstimation(){ homeScreen.style.display='none'; hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.remove('home-active'); document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+    function showHome(){ estimationScreen.style.display='none'; document.getElementById('materialsPricingScreen').style.display='none'; hud.classList.add('isHidden'); homeScreen.style.display='flex'; document.body.classList.add('home-active'); document.body.classList.remove('estimation-active'); }
+    function componentData(card){ return {length:+card.querySelector('.compLength').value||0,width:+card.querySelector('.compWidth').value||0,height:+card.querySelector('.compHeight').value||0}; }
+    function updateCard(card){ const d=componentData(card); const area=d.length*d.width; card.querySelector('.compResult').textContent=area.toFixed(2); return d; }
+    function updateAll(){ let count=0; components.forEach(c=>{ const d=updateCard(c); if(d.length>0&&d.width>0&&d.height>0) count++; }); summaryComponents.textContent=count+' / 7'; calculateCost(); }
+    function addMaterial(name='',price=0,unit=''){ const row=document.createElement('div'); row.className='materialRow'; row.innerHTML=`<label>Material<input class="matName" value="${name}"></label><label>Qty<input class="matQty" type="number" min="0" step="0.01" value="0"></label><label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${price}"></label><button class="removeMaterial" type="button">×</button>`; row.dataset.unit=unit; row.querySelector('.removeMaterial').onclick=()=>{row.remove();calculateCost()}; row.querySelectorAll('input').forEach(i=>i.addEventListener('input',calculateCost)); materialsList.appendChild(row); return row; }
+    function calculateCost(){ let total=0; materialsList.querySelectorAll('.materialRow').forEach(r=>total+=(+r.querySelector('.matQty').value||0)*(+r.querySelector('.matPrice').value||0)); summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none';
+      const d=componentData(card); arEditLength.value=d.length.toFixed(2); arEditWidth.value=d.width.toFixed(2); arEditHeight.value=d.height.toFixed(2);
+      document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.'; }
+    function leaveAR(){ hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+
+    document.querySelectorAll('.componentCard').forEach(card=>{
+      const methods=card.querySelectorAll('.componentMethod');
+      const manual=card.querySelector('.componentMeasurements'); const ar=card.querySelector('.componentAR');
+      methods.forEach(btn=>btn.addEventListener('click',()=>{ methods.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const isAR=btn.dataset.method==='ar'; manual.style.display='block'; manual.classList.toggle('ar-readonly',isAR); manual.querySelectorAll('input').forEach(i=>i.readOnly=isAR); ar.style.display=isAR?'block':'none'; }));
+      card.querySelectorAll('input').forEach(i=>i.addEventListener('input',updateAll));
+      card.querySelector('.openComponentAR').addEventListener('click',()=>openAR(card));
+    });
+    document.getElementById('backToHomeBtn').addEventListener('click',showHome);
+    arBackBtn.addEventListener('click',leaveAR);
+    editBtn.addEventListener('click',()=>{
+      const inst=document.querySelector('a-scene').components['distance-measure'];
+      if(!inst || !inst.closed) { alert('Finish the floor measurement first before editing.'); return; }
+      const l=+window.__COSTructLastLength||0,w=+window.__COSTructLastWidth||0,h=+window.__COSTructLastHeight||0;
+      arEditLength.value=l.toFixed(2); arEditWidth.value=w.toFixed(2); arEditHeight.value=h.toFixed(2);
+      arDimensionEditor.style.display='flex';
+    });
+    cancelAREdit.addEventListener('click',()=>arDimensionEditor.style.display='none');
+    applyAREdit.addEventListener('click',()=>{
+      const inst=document.querySelector('a-scene').components['distance-measure'];
+      if(!inst) return;
+      const l=+arEditLength.value||0,w=+arEditWidth.value||0,h=+arEditHeight.value||0;
+      if(!(l>0&&w>0)) { alert('Length and Width must be greater than 0.'); return; }
+      inst.applyEditedDimensions(l,w,h);
+      arDimensionEditor.style.display='none';
+    });
+    function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function qty(v, decimals=2){ return v.toLocaleString('en-PH',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
+    function componentEstimate(name,d){
+      const L=d.length,W=d.width,H=d.height;
+      const floorArea=L*W;
+      const wallArea=2*(L+W)*H;
+      const concreteVol=L*W*H;
+      const out=[];
+      if(!(L>0&&W>0&&H>0)) return out;
+      if(['Column','Beam','Ground Floor Slab','Slab'].includes(name)){
+        out.push(['Sand',concreteVol*0.50,1350,'m³']);
+        out.push(['Portland Cement',concreteVol*9,245,'bag']);
+        out.push(['Gravel',concreteVol*0.80,1700,'m³']);
+      } else if(name==='Mortar'){
+        out.push(['Sand',concreteVol*1.00,1350,'m³']);
+        out.push(['Portland Cement',concreteVol*6,245,'bag']);
+      } else if(name==='Plastering'){
+        out.push(['Sand',wallArea*0.02,1350,'m³']);
+        out.push(['Portland Cement',wallArea*0.18,245,'bag']);
+      } else if(name==='Walls'){
+        out.push(['CHB - 4\"',wallArea*12.5,17,'pc']);
+        out.push(['Sand (Mortar)',wallArea*0.015,1350,'m³']);
+        out.push(['Portland Cement',wallArea*0.14,245,'bag']);
+      }
+      return out;
+    }
+    function renderReceipt(){
+      const box=document.getElementById('receiptComponents'); box.innerHTML='';
+      document.getElementById('receiptProjectName').textContent=document.getElementById('projectName').value.trim()||'Project Estimate';
+      document.getElementById('receiptDate').textContent=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});
+      let grand=0, count=0;
+      components.forEach(card=>{
+        const d=componentData(card); if(!(d.length>0&&d.width>0&&d.height>0)) return;
+        count++;
+        const rows=componentEstimate(card.dataset.component,d); if(!rows.length) return;
+        const section=document.createElement('div'); section.className='receiptComponent';
+        const dim=`${qty(d.length)} × ${qty(d.width)} × ${qty(d.height)} m`;
+        let subtotal=0;
+        const tr=rows.map(r=>{const amount=r[1]*r[2]; subtotal+=amount; grand+=amount; return `<tr><td>${r[0]}</td><td>${qty(r[1])} ${r[3]}</td><td>${peso(r[2])}</td><td>${peso(amount)}</td></tr>`;}).join('');
+        section.innerHTML=`<div class="receiptComponentTitle"><div><b>${card.dataset.component}</b><small>${card.querySelector('.componentMethod.active')?.textContent?.replace(/^[^A-Za-z]+/,'')||'Manual Input'}</small></div><b>${peso(subtotal)}</b></div><div class="receiptDim">Dimensions: <strong>${dim}</strong> · Floor/Plan Area: <strong>${floorAreaFor(card,d).toFixed(2)} m²</strong></div><table class="receiptTable"><thead><tr><th>Material</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr></thead><tbody>${tr}</tbody></table><div class="componentSubtotal">Component Total: ${peso(subtotal)}</div>`;
+        box.appendChild(section);
+      });
+      if(!count){ box.innerHTML='<div class="emptyReceipt">No complete component dimensions yet.<br>Enter or measure Length, Width, and Height first.</div>'; }
+      document.getElementById('receiptGrandTotal').textContent=peso(grand);
+    }
+    function floorAreaFor(card,d){ return d.length*d.width; }
+    function showReceipt(){ updateAll(); renderReceipt(); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); document.getElementById('materialsPricingScreen').style.display='block'; }
+    document.getElementById('calculateEstimateBtn').addEventListener('click',showReceipt);
+    document.getElementById('backToMeasurementsBtn').addEventListener('click',()=>{document.getElementById('materialsPricingScreen').style.display='none'; estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); updateAll();});
+    document.getElementById('addMaterialBtn').addEventListener('click',()=>addMaterial());
+
+    defaults.forEach(d=>addMaterial(d[0],d[1],d[2]));
+
+    window.COSTructEstimation={
+      showEstimation,
+      getLastARDimensions:()=>({length:+window.__COSTructLastLength||0,width:+window.__COSTructLastWidth||0,height:+window.__COSTructLastHeight||0,area:+window.__COSTructLastArea||0}),
+      getLastARArea:()=>+window.__COSTructLastArea||0,
+      receiveARDimensions:function(dim){
+        if(!activeComponent) return;
+        dim=dim||{}; const l=+arEditLength.value||+dim.length||0,w=+arEditWidth.value||+dim.width||0,h=+arEditHeight.value||+dim.height||0,a=+dim.area||l*w;
+        activeComponent.querySelector('.compLength').value=l.toFixed(2); activeComponent.querySelector('.compWidth').value=w.toFixed(2); activeComponent.querySelector('.compHeight').value=h.toFixed(2); activeComponent.querySelector('.componentARStatus').textContent=`Saved: ${l.toFixed(2)} × ${w.toFixed(2)} × ${h.toFixed(2)} m • Area ${a.toFixed(2)} m²`;
+        updateCard(activeComponent); leaveAR();
+      }
+    };
+  })();
+
+  AFRAME.registerComponent('distance-measure', {
+  init: function () {
+    this.corners = [];
+    this.markers = [];
+    this.lines = [];
+    this.previewLines = {};
+    this.labels = [];
+    this.previewLabel = null;
+
+    this.measureMode = 'floor';
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.waitingForContinue = false;
+    this.closed = false;
+
+    this.floorMeasurementY = null;
+    this.heightBaseY = null;
+    this.measurementY = null;
+
+    this.heightMeasurements = [];
+    this.extrusionWalls = [];
+    this.extrudedHeight = 0;
+
+    this.activeVerticalBase = null;
+    this.activeVerticalType = null;
+
+    this.snapThreshold = 0.12;
+    this.isSnapped = false;
+    this.snapKind = '';
+    this.rawAimPoint = null;
+    this.aimHistory = [];
+    this.historyMax = 8;
+
+    this.calibrationActive = false;
+    this.calibrationPoints = [];
+    this.calibrationFactor = 1;
+
+    this.promptText = document.getElementById('promptText');
+    this.resetBtn = document.getElementById('resetBtn');
+    this.undoBtn = document.getElementById('undoBtn');
+    this.editBtn = document.getElementById('editBtn');
+    this.placeBtn = document.getElementById('placeBtn');
+    this.calibrateBtn = document.getElementById('calibrateBtn');
+     this.useAreaBtn = document.getElementById('useAreaBtn');
+    this.calibrationPanel = document.getElementById('calibrationPanel');
+    this.knownDistanceInput = document.getElementById('knownDistance');
+    this.applyCalibrationBtn = document.getElementById('applyCalibration');
+    this.calibrationStatus = document.getElementById('calibrationStatus');
+
+    this.floorModeBtn = document.getElementById('floorModeBtn');
+    this.heightModeBtn = document.getElementById('heightModeBtn');
+    this.heightHint = document.getElementById('heightHint');
+    this.snapHint = document.getElementById('snapHint');
+    this.areaResult = document.getElementById('areaResult');
+
+    this.raycaster = new THREE.Raycaster();
+    this.updateCalibrationStatus();
+
+    this.resetBtn.addEventListener('click', this.reset.bind(this));
+    this.undoBtn.addEventListener('click', this.undoLast.bind(this));
+    this.placeBtn.addEventListener('click', this.onPlaceClick.bind(this));
+    this.calibrateBtn.addEventListener('click', this.startCalibration.bind(this));
+    this.applyCalibrationBtn.addEventListener('click', this.finishCalibration.bind(this));
+     this.useAreaBtn.addEventListener('click', () => {
+       if (this._lastFloorArea > 0 && window.COSTructEstimation) window.COSTructEstimation.receiveARDimensions({area:this._lastFloorArea, length:window.__COSTructLastLength||0, width:window.__COSTructLastWidth||0, height:window.__COSTructLastHeight||0});
+     });
+    this.floorModeBtn.addEventListener('click', () => this.setMeasureMode('floor'));
+    this.heightModeBtn.addEventListener('click', () => this.setMeasureMode('height'));
+
+  },
+
+  setMeasureMode: function (mode) {
+    if (this.calibrationActive || !['floor', 'height'].includes(mode)) return;
+    if (mode === this.measureMode) return;
+
+    // Save current mode state before switching. Floor and Height remain independent.
+    if (this.measureMode === 'floor') this.floorStep = this.step;
+    if (this.measureMode === 'height') this.heightStep = this.step;
+
+    this.measureMode = mode;
+    this.step = mode === 'floor' ? this.floorStep : this.heightStep;
+    this.clearPreview();
+    this.removePreviewLabel();
+    this.isSnapped = false;
+    this.snapKind = '';
+
+    this.floorModeBtn.classList.toggle('active', mode === 'floor');
+    this.heightModeBtn.classList.toggle('active', mode === 'height');
+    this.heightHint.style.display = mode === 'height' ? 'block' : 'none';
+    if (mode === 'height') this.heightHint.textContent = 'Height • measure one wall, then extrude all floor points';
+    this.snapHint.style.display = 'none';
+
+    if (mode === 'floor') {
+      this.measurementY = this.floorMeasurementY;
+      if (this.closed) {
+        this.promptText.textContent = 'Floor area complete. You can switch to Height.';
+      } else if (this.waitingForContinue) {
+        this.promptText.textContent = 'FLOOR: Aim at an existing point to continue';
+      } else if (this.corners.length === 0) {
+        this.promptText.textContent = 'FLOOR: Aim at the first point, then tap Place';
+      } else {
+        this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+      }
+      return;
+    }
+
+    this.activeVerticalType = 'height';
+    this.measurementY = this.heightBaseY;
+    if (this.step === 'B' && this.activeVerticalBase) {
+      this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
+    } else {
+      this.step = 'A';
+      this.heightStep = 'A';
+      this.promptText.textContent = 'HEIGHT: Aim at a floor point, then tap Place';
+    }
+  },
+
+  tick: function () {
+    if (this.calibrationActive && this.step === 'DONE') return;
+    if (!this.calibrationActive) {
+      if (this.measureMode === 'floor' && (this.step === 'DONE' || this.closed)) return;
+    }
+
+    const camera = this.el.camera;
+    const groundEl = document.getElementById('ground');
+    this.raycaster.setFromCamera({x: 0, y: 0}, camera);
+
+    let aimPoint = null;
+
+    if (this.step === 'A') {
+      const intersects = this.raycaster.intersectObject(groundEl.object3D, true);
+      if (intersects.length > 0) aimPoint = intersects[0].point.clone();
+    } else if (this.step === 'B' && this.measureMode === 'floor' && this.floorMeasurementY !== null) {
+      aimPoint = this.horizontalPlanePoint(camera, this.floorMeasurementY);
+    } else if (this.step === 'B' && (this.measureMode === 'height') && this.activeVerticalBase) {
+      aimPoint = this.verticalLinePoint(camera, this.activeVerticalBase);
+    }
+
+    this.isSnapped = false;
+    this.snapKind = '';
+
+    // Snap the FLOOR next-point to an existing floor vertex.
+    if (aimPoint && this.measureMode === 'floor' && this.step === 'B' && this.corners.length) {
+      const nearest = this.nearestPoint(this.corners, aimPoint, false);
+      if (nearest && nearest.distance <= this.snapThreshold) {
+        aimPoint = nearest.point.clone();
+        aimPoint.y = this.floorMeasurementY;
+        this.isSnapped = true;
+        this.snapKind = 'floor';
+      }
+    }
+
+    // Snap the HEIGHT base to any existing floor vertex.
+    if (aimPoint && this.step === 'A' && (this.measureMode === 'height') && this.corners.length) {
+      const nearest = this.nearestPoint(this.corners, aimPoint, false);
+      if (nearest && nearest.distance <= this.snapThreshold) {
+        aimPoint = nearest.point.clone();
+        this.isSnapped = true;
+        this.snapKind = 'base';
+      }
+    }
+
+    // When measuring a vertical top, snap to an already saved top point if it
+    // is directly above the same base (within the snap radius). This lets users
+    // reuse established height levels without resetting anything.
+    if (aimPoint && this.step === 'B' && (this.measureMode === 'height')) {
+      const tops = this.heightMeasurements.map(m => m.top);
+      const nearestTop = this.nearestPoint(tops, aimPoint, true);
+      if (nearestTop && nearestTop.distance <= this.snapThreshold) {
+        aimPoint.y = nearestTop.point.y;
+        this.isSnapped = true;
+        this.snapKind = 'top';
+      }
+    }
+
+    this.rawAimPoint = aimPoint ? aimPoint.clone() : null;
+    this.snapHint.style.display = this.isSnapped ? 'block' : 'none';
+    if (this.snapKind === 'base') this.snapHint.textContent = 'SNAP • Base point';
+    else if (this.snapKind === 'top') this.snapHint.textContent = 'SNAP • Top point';
+    else this.snapHint.textContent = 'SNAP • Tap Place';
+
+    if (aimPoint) {
+      this.aimHistory.push(aimPoint.clone());
+      if (this.aimHistory.length > this.historyMax) this.aimHistory.shift();
+    } else {
+      this.aimHistory = [];
+    }
+
+    if (!aimPoint) return;
+
+    if (this.measureMode === 'floor' && this.step === 'B' && !this.waitingForContinue) {
+      const start = this.corners[this.corners.length - 1];
+      this.updatePreviewLine('main', start, aimPoint);
+      this.updateLiveLabel(start, aimPoint);
+      return;
+    }
+
+    if (this.measureMode === 'floor' && this.step === 'B' && this.waitingForContinue) {
+      this.clearPreview();
+      this.removePreviewLabel();
+      return;
+    }
+
+    if ((this.measureMode === 'height') && this.step === 'B' && this.activeVerticalBase) {
+      const base = this.activeVerticalBase;
+      const liveEnd = new THREE.Vector3(base.x, aimPoint.y, base.z);
+      const key = 'height';
+      this.updatePreviewLine(key, base, liveEnd);
+
+      const rawVertical = Math.abs(liveEnd.y - base.y);
+      const value = rawVertical * this.calibrationFactor;
+      if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+      const mid = new THREE.Vector3().addVectors(base, liveEnd).multiplyScalar(0.5);
+      this.setLabel(this.previewLabel, mid, `${value.toFixed(2)} m`);
+      this.faceCamera(this.previewLabel);
+      return;
+    }
+
+    if (this.calibrationActive && this.step === 'B') {
+      this.updatePreviewLine('calibration', this.calibrationPoints[0], aimPoint);
+      const raw = this.calibrationPoints[0].distanceTo(aimPoint);
+      this.promptText.textContent = `Calibration distance: ${(raw * this.calibrationFactor).toFixed(2)} m`;
+    }
+  },
+
+  horizontalPlanePoint: function (camera, y) {
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    camera.getWorldPosition(origin);
+    camera.getWorldDirection(direction);
+    if (Math.abs(direction.y) < 0.0001) return null;
+    const distance = (y - origin.y) / direction.y;
+    if (!(distance > 0) || !Number.isFinite(distance)) return null;
+    const point = origin.clone().add(direction.clone().multiplyScalar(distance));
+    point.y = y;
+    return point;
+  },
+
+  verticalLinePoint: function (camera, base) {
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    camera.getWorldPosition(origin);
+    camera.getWorldDirection(direction);
+
+    const forwardXZ = new THREE.Vector3(direction.x, 0, direction.z);
+    if (forwardXZ.lengthSq() < 0.000001) return null;
+    forwardXZ.normalize();
+    const normal = forwardXZ.clone().negate();
+    const denom = direction.dot(normal);
+    if (Math.abs(denom) < 0.0001) return null;
+
+    const toPlane = base.clone().sub(origin);
+    const distance = toPlane.dot(normal) / denom;
+    if (!(distance > 0) || !Number.isFinite(distance)) return null;
+
+    const hit = origin.clone().add(direction.clone().multiplyScalar(distance));
+    const point = new THREE.Vector3(base.x, hit.y, base.z);
+    if (point.y < base.y) point.y = base.y;
+    return point;
+  },
+
+  nearestPoint: function (points, aimPoint, requireXYZ) {
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const p of points) {
+      if (!p) continue;
+      const d = requireXYZ
+        ? p.distanceTo(aimPoint)
+        : Math.hypot(aimPoint.x - p.x, aimPoint.z - p.z);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = p;
+      }
+    }
+    return nearest ? {point: nearest, distance: nearestDist} : null;
+  },
+
+  startCalibration: function () {
+    this.clearAllMeasurementObjects();
+    this.calibrationActive = true;
+    this.calibrationPoints = [];
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.heightMeasurements = [];
+    this.heightBaseY = null;
+    this.floorMeasurementY = null;
+    this.measurementY = null;
+    this.measureMode = 'floor';
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.areaResult.style.display = 'none';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+        this.heightHint.style.display = 'none';
+    this.calibrationPanel.style.display = 'block';
+    this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+    this.promptText.textContent = 'CALIBRATION: Aim at first reference point, then tap Place';
+    this.calibrateBtn.textContent = 'Calibrating…';
+    this.calibrateBtn.disabled = true;
+  },
+
+  finishCalibration: function () {
+    if (!this.calibrationActive || this.calibrationPoints.length !== 2) {
+      this.calibrationStatus.textContent = 'Place two reference points first.';
+      return;
+    }
+    const known = parseFloat(this.knownDistanceInput.value);
+    if (!(known > 0)) {
+      this.calibrationStatus.textContent = 'Enter a valid real distance, e.g. 1.00 m.';
+      return;
+    }
+    const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+    if (!(rawDistance > 0.0001)) {
+      this.calibrationStatus.textContent = 'Reference points are too close. Try again.';
+      return;
+    }
+    const proposedFactor = known / rawDistance;
+    if (!Number.isFinite(proposedFactor) || proposedFactor < 0.75 || proposedFactor > 1.25) {
+      this.calibrationStatus.textContent = `Large scale correction (${proposedFactor.toFixed(3)}×). Retake the two points.`;
+      return;
+    }
+    this.calibrationFactor = proposedFactor;
+
+    this.calibrationActive = false;
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.heightMeasurements = [];
+    this.heightBaseY = null;
+    this.floorMeasurementY = null;
+    this.measurementY = null;
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.clearAllMeasurementObjects();
+
+    this.calibrationPanel.style.display = 'none';
+    this.measureMode = 'floor';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+        this.heightHint.style.display = 'none';
+    this.calibrateBtn.disabled = false;
+    this.calibrateBtn.textContent = 'Calibrate';
+    this.promptText.textContent = `Calibration applied (${this.calibrationFactor.toFixed(3)}×). Aim at first point, then tap Place`;
+    this.updateCalibrationStatus();
+  },
+
+  updateCalibrationStatus: function () {
+    this.calibrationStatus.textContent = `Current scale: ${this.calibrationFactor.toFixed(3)}×`;
+  },
+
+  updateLiveLabel: function (start, end) {
+    if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
+    const dist = start.distanceTo(end) * this.calibrationFactor;
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    this.setLabel(this.previewLabel, mid, `${dist.toFixed(2)} m`);
+    this.faceCamera(this.previewLabel);
+  },
+
+  createLabelEntity: function () {
+    const wrapper = document.createElement('a-entity');
+    const bg = document.createElement('a-plane');
+    bg.setAttribute('width', 0.28);
+    bg.setAttribute('height', 0.085);
+    bg.setAttribute('color', '#ffffff');
+    bg.setAttribute('opacity', 0.92);
+    bg.setAttribute('position', '0 0 -0.002');
+    wrapper.appendChild(bg);
+
+    const txt = document.createElement('a-text');
+    txt.setAttribute('align', 'center');
+    txt.setAttribute('baseline', 'center');
+    txt.setAttribute('color', '#111111');
+    txt.setAttribute('width', 1.05);
+    wrapper.appendChild(txt);
+    wrapper.textEl = txt;
+    this.el.appendChild(wrapper);
+    return wrapper;
+  },
+
+  setLabel: function (wrapper, midpoint, text) {
+    wrapper.setAttribute('position', `${midpoint.x} ${midpoint.y + 0.08} ${midpoint.z}`);
+    wrapper.textEl.setAttribute('value', text);
+  },
+
+  faceCamera: function (wrapper) {
+    const camPos = new THREE.Vector3();
+    this.el.camera.getWorldPosition(camPos);
+    wrapper.object3D.lookAt(camPos);
+  },
+
+  finalizeLabel: function (start, end, text) {
+    const wrapper = this.createLabelEntity();
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    this.setLabel(wrapper, mid, text);
+    this.faceCamera(wrapper);
+    this.labels.push(wrapper);
+  },
+
+  removePreviewLabel: function () {
+    if (this.previewLabel && this.previewLabel.parentNode) {
+      this.previewLabel.parentNode.removeChild(this.previewLabel);
+    }
+    this.previewLabel = null;
+  },
+
+  updatePreviewLine: function (key, start, end) {
+    let el = this.previewLines[key];
+    if (!el) {
+      el = document.createElement('a-box');
+      el.setAttribute('height', 0.010);
+      el.setAttribute('depth', 0.010);
+      el.setAttribute('color', '#ffffff');
+      this.el.appendChild(el);
+      this.previewLines[key] = el;
+    }
+    this.orientLineBox(el, start, end);
+  },
+
+  orientLineBox: function (el, start, end) {
+    const direction = new THREE.Vector3().subVectors(end, start);
+    const length = direction.length();
+    if (length < 0.0001) return;
+    const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    el.object3D.position.copy(midpoint);
+    el.object3D.scale.set(length, 1, 1);
+    const unit = direction.clone().normalize();
+    el.object3D.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), unit);
+  },
+
+  clearPreview: function () {
+    Object.values(this.previewLines).forEach(el => {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    this.previewLines = {};
+  },
+
+  getStableAimPoint: function () {
+    if (!this.aimHistory.length) return this.rawAimPoint ? this.rawAimPoint.clone() : null;
+    const xs = this.aimHistory.map(p => p.x).sort((a,b) => a-b);
+    const ys = this.aimHistory.map(p => p.y).sort((a,b) => a-b);
+    const zs = this.aimHistory.map(p => p.z).sort((a,b) => a-b);
+    const mid = Math.floor(xs.length / 2);
+    const median = arr => arr.length % 2 ? arr[mid] : (arr[mid-1] + arr[mid]) * 0.5;
+    const p = new THREE.Vector3(median(xs), median(ys), median(zs));
+    if (this.step === 'B' && this.measureMode === 'floor' && this.floorMeasurementY !== null) p.y = this.floorMeasurementY;
+    return p;
+  },
+
+  onPlaceClick: function () {
+    if (!this.rawAimPoint) return;
+    const point = this.getStableAimPoint();
+    if (!point) return;
+    this.aimHistory = [];
+
+    if (this.step === 'A') {
+      if (this.calibrationActive) {
+        this.placeCalibrationMarker(point);
+        this.calibrationPoints[0] = point;
+        this.measurementY = point.y;
+        this.step = 'B';
+        this.promptText.textContent = 'CALIBRATION: Aim at second reference point, then tap Place';
+        return;
+      }
+
+      if (this.measureMode === 'height') {
+        const base = point.clone();
+        this.placeMarker(base);
+        this.activeVerticalBase = base;
+        this.activeVerticalType = this.measureMode;
+        if (this.measureMode === 'height') {
+          this.heightBaseY = base.y;
+          this.heightStep = 'B';
+        }
+        this.measurementY = base.y;
+        this.step = 'B';
+        this.snapHint.style.display = 'none';
+        this.promptText.textContent = 'HEIGHT: Aim at the top point, then tap Place';
+        return;
+      }
+
+      this.placeMarker(point);
+      this.corners[0] = point;
+      this.floorMeasurementY = point.y;
+      this.measurementY = point.y;
+      this.floorStep = 'B';
+      this.step = 'B';
+      this.waitingForContinue = false;
+      this.promptText.textContent = 'FLOOR: Aim at the second point, then tap Place';
+      return;
+    }
+
+    if (this.step === 'B') {
+      if (this.calibrationActive) {
+        this.placeCalibrationMarker(point);
+        this.calibrationPoints[1] = point;
+        this.step = 'DONE';
+        const rawDistance = this.calibrationPoints[0].distanceTo(this.calibrationPoints[1]);
+        this.calibrationStatus.textContent = `Raw distance: ${rawDistance.toFixed(3)} m. Enter the real distance above and tap Apply Calibration.`;
+        this.promptText.textContent = 'Enter the REAL distance, then tap Apply Calibration';
+        this.clearPreview();
+        return;
+      }
+
+      if (this.measureMode === 'floor') {
+        if (this.waitingForContinue) {
+          if (!this.isSnapped) return;
+          const snapped = point.clone();
+
+          let nearestIndex = -1;
+          let nearestDist = Infinity;
+          for (let i = 0; i < this.corners.length; i++) {
+            const c = this.corners[i];
+            const d = Math.hypot(snapped.x - c.x, snapped.z - c.z);
+            if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
+          }
+
+          if (nearestIndex === 0 && this.corners.length >= 3) {
+            this.closePolygon();
+            return;
+          }
+
+          // Do not duplicate an existing point marker; the snapped vertex already exists.
+          this.corners.push(snapped);
+          this.waitingForContinue = false;
+          this.measurementY = snapped.y;
+          this.floorMeasurementY = snapped.y;
+          this.floorStep = 'B';
+          this.step = 'B';
+          this.clearPreview();
+          this.removePreviewLabel();
+          this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+          return;
+        }
+
+        const start = this.corners[this.corners.length - 1];
+        const end = point.clone();
+        const rawDistance = start.distanceTo(end);
+        if (rawDistance < 0.01) return;
+
+        this.placeMarker(end);
+        this.corners.push(end);
+        this.drawLine(start, end);
+        this.finalizeLabel(start, end, `${(rawDistance * this.calibrationFactor).toFixed(2)} m`);
+
+        this.clearPreview();
+        this.removePreviewLabel();
+        this.waitingForContinue = true;
+        this.floorStep = 'B';
+        this.promptText.textContent = 'Segment complete. Snap an existing point, then tap Place to continue';
+        this.snapHint.style.display = 'none';
+        return;
+      }
+
+      if (this.measureMode === 'height') {
+        const base = this.activeVerticalBase;
+        if (!base) return;
+
+        const end = new THREE.Vector3(base.x, point.y, base.z);
+        if (end.y < base.y) end.y = base.y;
+
+        // Avoid zero-height measurements.
+        const rawHeight = Math.abs(end.y - base.y);
+        if (rawHeight < 0.01) return;
+
+        this.placeMarker(end);
+        this.drawLine(base, end);
+        const calibrated = rawHeight * this.calibrationFactor;
+        this.finalizeLabel(base, end, `${calibrated.toFixed(2)} m`);
+
+        const record = {base: base.clone(), top: end.clone(), value: calibrated};
+        this.heightMeasurements.push(record);
+        this._lastMeasuredHeight = calibrated;
+        window.__COSTructLastHeight = calibrated;
+        const edH = document.getElementById('arEditHeight'); if (edH) edH.value = calibrated.toFixed(2);
+
+        // Use the measured wall height to extrude every existing floor point.
+        // The height measurement itself remains exactly as measured.
+        this.extrudeFloorToHeight(calibrated);
+
+        // IMPORTANT: one vertical measurement completes, but the mode stays active.
+        // User can snap to another floor point and make another height measurement.
+        this.clearPreview();
+        this.removePreviewLabel();
+        this.activeVerticalBase = null;
+        this.measurementY = null;
+        this.step = 'A';
+        this.heightStep = 'A';
+        this.promptText.textContent = 'HEIGHT: Snap to another floor point, then tap Place for another height';
+        return;
+      }
+    }
+  },
+
+
+  // Extrude every measured floor corner using the measured wall height.
+  // This creates vertical edges, top points, and wall panels from the same
+  // height measurement so the floor footprint becomes a simple 3D room shape.
+  extrudeFloorToHeight: function (heightValue) {
+    if (!this.corners || this.corners.length < 2 || !(heightValue > 0)) return;
+
+    // Remove a previous extrusion while keeping the original floor measurement.
+    this.clearExtrusionObjects();
+    this.extrudedHeight = heightValue;
+
+    const topCorners = this.corners.map(p => new THREE.Vector3(p.x, p.y + heightValue / this.calibrationFactor, p.z));
+
+    // Vertical edges and top corner markers.
+    topCorners.forEach((top, i) => {
+      const base = this.corners[i];
+      const vertical = new THREE.Vector3(top.x, top.y, top.z);
+      this.drawLine(base, top);
+      this.placeMarker(top);
+    });
+
+    // Connect the elevated corners to form the top perimeter.
+    for (let i = 0; i < topCorners.length; i++) {
+      const a = topCorners[i];
+      const b = topCorners[(i + 1) % topCorners.length];
+      this.drawLine(a, b);
+    }
+
+    // Add lightweight wall panels between each pair of floor corners.
+    // They are translucent so the measured floor remains visible.
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.01) continue;
+
+      const wall = document.createElement('a-box');
+      wall.setAttribute('width', length);
+      wall.setAttribute('height', heightValue / this.calibrationFactor);
+      wall.setAttribute('depth', '0.018');
+      wall.setAttribute('color', '#ffffff');
+      wall.setAttribute('opacity', '0.18');
+      wall.setAttribute('transparent', 'true');
+
+      const mid = new THREE.Vector3(
+        (a.x + b.x) * 0.5,
+        a.y + (heightValue / this.calibrationFactor) * 0.5,
+        (a.z + b.z) * 0.5
+      );
+      wall.object3D.position.copy(mid);
+      wall.object3D.rotation.y = -Math.atan2(dz, dx);
+      this.el.appendChild(wall);
+      this.extrusionWalls.push(wall);
+    }
+
+    this.promptText.textContent =
+      `3D wall height applied: ${heightValue.toFixed(2)} m. Dimensions ready — tap Save Dimensions.`;
+  },
+
+  clearExtrusionObjects: function () {
+    if (Array.isArray(this.extrusionWalls)) {
+      this.extrusionWalls.forEach(w => w.parentNode && w.parentNode.removeChild(w));
+    }
+    this.extrusionWalls = [];
+  },
+
+  closePolygon: function () {
+    if (this.measureMode !== 'floor' || this.corners.length < 3 || this.closed) return;
+
+    const first = this.corners[0];
+    const last = this.corners[this.corners.length - 1];
+    const rawClosing = last.distanceTo(first);
+    if (rawClosing > 0.15) return;
+
+    this.clearPreview();
+    this.removePreviewLabel();
+    if (rawClosing > 0.001) {
+      this.drawLine(last, first);
+      this.finalizeLabel(last, first, `${(rawClosing * this.calibrationFactor).toFixed(2)} m`);
+    }
+
+    let sum = 0;
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      sum += a.x * b.z - b.x * a.z;
+    }
+    const areaRaw = Math.abs(sum) * 0.5;
+    const areaM2 = areaRaw * this.calibrationFactor * this.calibrationFactor;
+
+    this.closed = true;
+    this.waitingForContinue = false;
+    this.step = 'DONE';
+    this.floorStep = 'DONE';
+    this.snapHint.style.display = 'none';
+    this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m². You can switch to Height.`;
+    this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
+    this.areaResult.style.display = 'block';
+    this.useAreaBtn.style.display = 'inline-block';
+    document.getElementById('arSaveBar').style.display = 'block';
+    // Send the completed AR floor area back to Material & Cost Estimation.
+    this._lastFloorArea = areaM2;
+    window.__COSTructLastArea = areaM2;
+    // For the estimation form, derive length and width from the measured floor polygon.
+    if (window.COSTructEstimation && this.corners.length >= 3) {
+      const xs = this.corners.map(p => p.x), zs = this.corners.map(p => p.z);
+      const measuredLength = (Math.max(...xs)-Math.min(...xs)) * this.calibrationFactor;
+      const measuredWidth = (Math.max(...zs)-Math.min(...zs)) * this.calibrationFactor;
+      window.__COSTructLastLength = measuredLength;
+      window.__COSTructLastWidth = measuredWidth;
+    }
+  },
+
+  placeMarker: function (point) {
+    const marker = document.createElement('a-cylinder');
+    marker.setAttribute('radius', 0.035);
+    marker.setAttribute('height', 0.012);
+    marker.setAttribute('color', '#ffffff');
+    marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+    this.el.appendChild(marker);
+    this.markers.push(marker);
+  },
+
+  placeCalibrationMarker: function (point) {
+    const marker = document.createElement('a-cylinder');
+    marker.setAttribute('radius', 0.030);
+    marker.setAttribute('height', 0.012);
+    marker.setAttribute('color', '#00ff88');
+    marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
+    this.el.appendChild(marker);
+    this.markers.push(marker);
+  },
+
+  drawLine: function (start, end) {
+    const el = document.createElement('a-box');
+    el.setAttribute('height', 0.010);
+    el.setAttribute('depth', 0.010);
+    el.setAttribute('color', '#ffffff');
+    this.el.appendChild(el);
+    this.orientLineBox(el, start, end);
+    this.lines.push(el);
+  },
+
+  clearAllMeasurementObjects: function () {
+    this.clearPreview();
+    this.clearExtrusionObjects();
+    this.removePreviewLabel();
+    this.labels.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+    this.labels = [];
+    this.markers.forEach(m => m.parentNode && m.parentNode.removeChild(m));
+    this.lines.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+    this.markers = [];
+    this.lines = [];
+    this.corners = [];
+  },
+
+  undoLast: function () {
+    // Undo the most recent floor placement/closure without touching the
+    // underlying AR tracking or raycasting.
+    if (this.calibrationActive) return;
+
+    if (this.measureMode !== 'floor') {
+      this.promptText.textContent = 'Undo is available while measuring the floor.';
+      return;
+    }
+
+    if (this.closed) {
+      // Remove only the closing segment and reopen the polygon.
+      if (this.lines.length) { const el=this.lines.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+      if (this.labels.length) { const el=this.labels.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+      this.closed=false;
+      this.step='B'; this.floorStep='B'; this.waitingForContinue=true;
+      this.areaResult.style.display='none';
+      this.useAreaBtn.style.display='none';
+      document.getElementById('arSaveBar').style.display='none';
+      this.promptText.textContent='FLOOR: Snap an existing point, then tap Place to close or continue.';
+      return;
+    }
+
+    if (!this.corners.length) return;
+
+    // If the last action was a completed segment, remove its endpoint, line,
+    // and label. The first point has only a marker, so it is handled naturally.
+    const lastCorner=this.corners.pop();
+    if (this.markers.length) { const el=this.markers.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    if (this.corners.length>=1 && this.lines.length) { const el=this.lines.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    if (this.labels.length) { const el=this.labels.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
+    this.clearPreview(); this.removePreviewLabel();
+    this.waitingForContinue=false;
+    this.step=this.corners.length ? 'B' : 'A';
+    this.floorStep=this.step;
+    if (!this.corners.length) {
+      this.floorMeasurementY=null; this.measurementY=null;
+      this.promptText.textContent='FLOOR: Aim at the first point, then tap Place.';
+    } else {
+      this.promptText.textContent='FLOOR: Aim at the next point, then tap Place.';
+    }
+  },
+
+  applyEditedDimensions: function (newLength, newWidth, newHeight) {
+    if (!this.corners || this.corners.length < 3 || !this.closed) return;
+    const xs=this.corners.map(p=>p.x), zs=this.corners.map(p=>p.z);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minZ=Math.min(...zs), maxZ=Math.max(...zs);
+    const oldL=(maxX-minX)*this.calibrationFactor, oldW=(maxZ-minZ)*this.calibrationFactor;
+    if (!(oldL>0 && oldW>0)) return;
+    const sx=(newLength/oldL), sz=(newWidth/oldW);
+    const anchor=this.corners[0].clone();
+    this.corners.forEach(p=>{
+      p.x=anchor.x + (p.x-anchor.x)*sx;
+      p.z=anchor.z + (p.z-anchor.z)*sz;
+    });
+
+    // Rebuild floor lines/labels from the edited vertices.
+    this.lines.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.lines=[];
+    this.labels.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.labels=[];
+    for(let i=0;i<this.corners.length;i++){
+      const a=this.corners[i], b=this.corners[(i+1)%this.corners.length];
+      this.drawLine(a,b);
+      this.finalizeLabel(a,b,`${(a.distanceTo(b)*this.calibrationFactor).toFixed(2)} m`);
+    }
+
+    // Move markers to edited floor vertices.
+    this.markers.slice(0,this.corners.length).forEach((m,i)=>m.setAttribute('position',`${this.corners[i].x} ${this.corners[i].y} ${this.corners[i].z}`));
+
+    // Update height geometry/measurement when supplied.
+    if (newHeight>0) {
+      const oldBase=this.heightMeasurements.length ? this.heightMeasurements[0].base : null;
+      this.heightMeasurements=[];
+      this._lastMeasuredHeight=newHeight;
+      window.__COSTructLastHeight=newHeight;
+      this.clearExtrusionObjects();
+      this.extrudeFloorToHeight(newHeight);
+      if(oldBase){
+        // Existing height line/marker may be among the last objects; keep the
+        // saved numeric height authoritative for the estimation module.
+      }
+    }
+
+    const area=newLength*newWidth;
+    this._lastFloorArea=area;
+    window.__COSTructLastLength=newLength;
+    window.__COSTructLastWidth=newWidth;
+    window.__COSTructLastArea=area;
+    this.areaResult.textContent=`Area: ${area.toFixed(2)} m²`;
+    this.areaResult.style.display='block';
+    this.useAreaBtn.style.display='inline-block';
+    document.getElementById('arSaveBar').style.display='block';
+    this.promptText.textContent=`Dimensions updated — Area: ${area.toFixed(2)} m². Tap Save Dimensions.`;
+  },
+
+  reset: function () {
+    this.clearAllMeasurementObjects();
+    this.step = 'A';
+    this.floorStep = 'A';
+    this.heightStep = 'A';
+    this.heightMeasurements = [];
+    this.extrudedHeight = 0;
+    this._lastMeasuredHeight = 0;
+    window.__COSTructLastHeight = 0;
+    this.activeVerticalBase = null;
+    this.activeVerticalType = null;
+    this.floorMeasurementY = null;
+    this.heightBaseY = null;
+    this.measurementY = null;
+    this.waitingForContinue = false;
+    this.closed = false;
+    this.snapThreshold = 0.12;
+    this.isSnapped = false;
+    this.snapKind = '';
+    this.rawAimPoint = null;
+    this.aimHistory = [];
+
+    if (this.calibrationActive) {
+      this.calibrationActive = false;
+      this.calibrationPoints = [];
+      this.calibrationPanel.style.display = 'none';
+      this.calibrateBtn.disabled = false;
+      this.calibrateBtn.textContent = 'Calibrate';
+    }
+
+    this.measureMode = 'floor';
+    this.floorModeBtn.classList.add('active');
+    this.heightModeBtn.classList.remove('active');
+        this.heightHint.style.display = 'none';
+    this.snapHint.style.display = 'none';
+    this.areaResult.style.display = 'none';
+    this.useAreaBtn.style.display = 'none';
+    document.getElementById('arSaveBar').style.display = 'none';
+    const arEditor = document.getElementById('arDimensionEditor'); if (arEditor) arEditor.style.display='none';
+    this.promptText.textContent = `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
+  }
+});
+</script>
+
+</body>
+</html>
