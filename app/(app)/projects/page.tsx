@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Icon from "@/components/Icon"
 
 export default function ProjectsPage() {
   return (
@@ -16,17 +17,13 @@ export default function ProjectsPage() {
         className="card"
         style={{ textAlign: "center", padding: "52px 24px" }}
       >
-        <div
-          className="card-icon"
-          aria-hidden
-          style={{ margin: "0 auto 16px" }}
-        >
-          🗂️
-        </div>
+        <span className="card-icon" style={{ margin: "0 auto 16px" }}>
+          <Icon name="folder" size={20} />
+        </span>
         <h3>No projects yet</h3>
         <p style={{ maxWidth: "42ch", margin: "0 auto" }}>
-          Create your first project by measuring a space. COSTruct will save the
-          dimensions, quantities, and estimate together.
+          Create your first project by entering the dimensions of a space.
+          COSTruct will save the dimensions, quantities, and estimate together.
         </p>
         <div
           className="hero-actions"

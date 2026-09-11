@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import Icon from "@/components/Icon"
 import { clearSession, initials, type Session } from "@/lib/session"
 
 const LINKS = [
@@ -37,7 +38,7 @@ export default function TopNav({ session }: { session: Session }) {
           aria-label="Toggle navigation"
           onClick={() => setOpen((value) => !value)}
         >
-          ☰
+          <Icon name="menu" size={20} />
         </button>
 
         <nav className="nav-links" data-open={open}>

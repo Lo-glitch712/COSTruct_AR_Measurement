@@ -8,7 +8,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const { session } = useSession()
   const [metric, setMetric] = useState(true)
-  const [arSnap, setArSnap] = useState(true)
+  const [arEnabled, setArEnabled] = useState(false)
   const [alerts, setAlerts] = useState(false)
 
   function signOut() {
@@ -62,14 +62,19 @@ export default function SettingsPage() {
             />
           </div>
           <div className="list-row">
-            <span className="list-row-title">Snap to existing AR points</span>
+            <div>
+              <div className="list-row-title">Show AR measurement option</div>
+              <div className="tiny">
+                Experimental camera capture, off by default
+              </div>
+            </div>
             <button
               type="button"
               className="switch"
               role="switch"
-              aria-checked={arSnap}
-              aria-label="Snap to existing AR points"
-              onClick={() => setArSnap((value) => !value)}
+              aria-checked={arEnabled}
+              aria-label="Show AR measurement option"
+              onClick={() => setArEnabled((value) => !value)}
             />
           </div>
           <div className="list-row">

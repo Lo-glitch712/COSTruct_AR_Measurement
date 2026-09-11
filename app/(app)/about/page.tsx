@@ -2,7 +2,7 @@ const FLOW = [
   {
     step: "01",
     title: "Measure",
-    body: "Capture length, width, and height on site with AR, or enter them manually per component.",
+    body: "Enter length, width, and height per component. Manual entry is the primary input and needs nothing but a tape measure.",
   },
   {
     step: "02",
@@ -17,7 +17,7 @@ const FLOW = [
   {
     step: "04",
     title: "Procure",
-    body: "Send the bill of materials to suppliers and compare their responses side by side.",
+    body: "Send the bill of materials to hardware suppliers and compare their responses side by side.",
   },
 ]
 
@@ -38,10 +38,10 @@ export default function AboutPage() {
         <p>
           Estimating a small construction job usually means measuring by hand,
           transferring numbers into a spreadsheet, guessing quantities from
-          memory, and calling suppliers one at a time. COSTruct collapses that
-          into a single flow: measure the space, get the quantities and cost
-          automatically, then reach suppliers with a bill of materials that is
-          already priced.
+          memory, and calling hardware stores one at a time. COSTruct collapses
+          that into a single flow: record the dimensions, get the quantities and
+          cost automatically, then reach suppliers with a bill of materials that
+          is already priced.
         </p>
       </div>
 
@@ -62,10 +62,25 @@ export default function AboutPage() {
       </section>
 
       <div className="card">
+        <h3>
+          AR measurement <span className="badge badge-muted">Optional</span>
+        </h3>
+        <p>
+          Alongside manual entry, COSTruct ships an experimental augmented
+          reality tool that captures the same dimensions with a phone camera. It
+          is a secondary option kept for innovation and future IT development —
+          the system is fully usable without it, and both paths feed the same
+          estimating factors, so the resulting quantities and cost are
+          identical.
+        </p>
+      </div>
+
+      <div className="card">
         <h3>Built with</h3>
         <p>
-          Next.js and React for the application shell, and 8th Wall with A-Frame
-          for the camera-based AR measurement experience.
+          Next.js and React for the application shell and the manual
+          measurement, estimation, and procurement modules. The optional AR tool
+          uses 8th Wall with A-Frame.
         </p>
       </div>
     </>

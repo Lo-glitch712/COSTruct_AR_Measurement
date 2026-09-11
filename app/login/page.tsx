@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Icon from "@/components/Icon"
 import { nameFromEmail, writeSession, type Role } from "@/lib/session"
 
 const ROLE_HINT: Record<Role, string> = {
   buyer:
-    "Measure your site, generate material quantities and cost estimates, then send requests to suppliers.",
+    "Record your site dimensions, generate material quantities and cost estimates, then send requests to hardware suppliers.",
   supplier:
     "Publish your material catalog and pricing, and respond to buyer procurement requests.",
 }
@@ -100,8 +101,11 @@ export default function LoginPage() {
 
         <div className="auth-footer">
           New to COSTruct? <Link href="/login">Create an account</Link>
-          <div className="tiny" style={{ marginTop: 10 }}>
-            <Link href="/">← Back</Link>
+          <div className="tiny back-link" style={{ marginTop: 10 }}>
+            <Link href="/">
+              <Icon name="arrowLeft" size={14} />
+              Back
+            </Link>
           </div>
         </div>
       </div>

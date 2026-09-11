@@ -1,40 +1,46 @@
 "use client"
 
 import Link from "next/link"
+import Icon, { type IconName } from "@/components/Icon"
 import { ROLE_LABEL, useSession } from "@/lib/session"
 
-const PILLARS = [
+const PILLARS: {
+  icon: IconName
+  title: string
+  body: string
+  href: string
+}[] = [
   {
-    icon: "📐",
+    icon: "ruler",
     title: "Measurement",
-    body: "Capture floor dimensions, area, and height on site using your phone camera with AR, or type them in manually.",
+    body: "Enter length, width, and height for each structural component and COSTruct computes the areas and volumes for you.",
     href: "/measurements",
   },
   {
-    icon: "🧮",
+    icon: "calculator",
     title: "Material Quantity & Cost Estimation",
-    body: "Turn measured dimensions into material quantities and a priced estimate for every structural component.",
+    body: "Dimensions become material quantities and a priced bill of materials for every component, updated as you type.",
     href: "/measurements",
   },
   {
-    icon: "🚚",
+    icon: "truck",
     title: "Procurement",
-    body: "Match your bill of materials with registered suppliers and send requests without leaving the platform.",
+    body: "Match your bill of materials with registered hardware suppliers and send requests without leaving the platform.",
     href: "/supplier",
   },
   {
-    icon: "🧭",
+    icon: "compass",
     title: "Decision Support",
-    body: "Compare supplier offers on price, availability, and distance so you can choose with confidence.",
+    body: "Compare hardware suppliers on price, availability, and lead time so you can choose with confidence.",
     href: "/supplier",
   },
 ]
 
 const STATS = [
   { value: "7", label: "Structural components" },
-  { value: "AR", label: "On-site measurement" },
+  { value: "5", label: "Priced materials" },
   { value: "₱", label: "Live cost estimate" },
-  { value: "24/7", label: "Supplier catalog" },
+  { value: "6", label: "Hardware suppliers" },
 ]
 
 export default function HomePage() {
@@ -50,14 +56,13 @@ export default function HomePage() {
         <p className="hero-full-title">
           <strong>COSTruct</strong> is a web-based measurement, material
           quantity cost estimation and procurement system with decision support
-          for construction projects. It brings site measurement, quantity
-          take-off, pricing, and supplier sourcing into one simple workflow — so
-          you can go from a room you just measured to a costed bill of materials
-          and a supplier request in minutes.
+          for construction projects. Enter your dimensions, get a costed bill of
+          materials, and reach hardware suppliers — all in one workflow.
         </p>
         <div className="hero-actions">
           <Link href="/measurements" className="btn btn-primary">
             Start a measurement
+            <Icon name="arrowRight" size={18} />
           </Link>
           <Link href="/projects" className="btn btn-secondary">
             View projects
@@ -68,9 +73,9 @@ export default function HomePage() {
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
           <Link key={pillar.title} href={pillar.href} className="card card-link">
-            <div className="card-icon" aria-hidden>
-              {pillar.icon}
-            </div>
+            <span className="card-icon">
+              <Icon name={pillar.icon} size={20} />
+            </span>
             <h3>{pillar.title}</h3>
             <p>{pillar.body}</p>
           </Link>
