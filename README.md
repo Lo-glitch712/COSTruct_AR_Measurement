@@ -3,6 +3,8 @@
 A web-based measurement, material quantity cost estimation and procurement
 system with decision support for construction projects.
 
+Live at <https://costructar.vercel.app>. Vercel deploys every push to `main`.
+
 ## Running
 
 ```bash
