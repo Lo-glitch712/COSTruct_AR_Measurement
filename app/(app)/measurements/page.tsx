@@ -14,6 +14,7 @@ import {
   type Dimensions,
 } from "@/lib/estimate"
 import { saveDraft } from "@/lib/project"
+import { SUPPLIERS } from "@/lib/suppliers"
 
 type DimensionInput = { length: string; width: string; height: string }
 
@@ -40,6 +41,7 @@ function isComplete({ length, width, height }: Dimensions) {
 export default function MeasurementsPage() {
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
+  const [supplierId, setSupplierId] = useState<string | null>(null)
   const [inputs, setInputs] = useState<Record<string, DimensionInput>>(() =>
     Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])),
   )
@@ -52,11 +54,6 @@ export default function MeasurementsPage() {
     }))
   }
 
-  function reset() {
-    setInputs(Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])))
-    setProjectName("")
-  }
-
   const rows = useMemo(
     () =>
       COMPONENTS.map(({ name, hint }) => {
@@ -67,11 +64,13 @@ export default function MeasurementsPage() {
   )
 
   const measured = rows.filter((row) => row.measured)
+  const ready = measured.length > 0 && supplierId !== null
 
   function calculate() {
     saveDraft({
       name: projectName.trim(),
       savedAt: new Date().toISOString(),
+      supplierId,
       components: measured.map((row) => ({
         name: row.name,
         dimensions: row.dimensions,
@@ -86,8 +85,8 @@ export default function MeasurementsPage() {
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">Measure and estimate</h1>
         <p className="page-subtitle">
-          Enter the length, width, and height of each structural component, then
-          calculate the project to see the material quantities and cost.
+          Name the project, pick the hardware you are sourcing from, then enter
+          the dimensions of each structural component.
         </p>
       </header>
 
@@ -103,18 +102,64 @@ export default function MeasurementsPage() {
         </label>
       </div>
 
+      <section>
+        <h2 className="section-title">Choose a hardware</h2>
+        <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
+          Swipe through the registered hardware stores and pick the one you want
+          to source from.
+        </p>
+
+        <div
+          className="carousel"
+          role="radiogroup"
+          aria-label="Hardware supplier"
+        >
+          {SUPPLIERS.map((supplier) => {
+            const selected = supplier.id === supplierId
+            return (
+              <button
+                key={supplier.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className="carousel-item"
+                onClick={() => setSupplierId(supplier.id)}
+              >
+                <div className="card-head">
+                  <span className="card-icon">
+                    <Icon name="store" size={20} />
+                  </span>
+                  <h3>{supplier.name}</h3>
+                  {selected ? (
+                    <span className="carousel-check">
+                      <Icon name="check" size={15} />
+                    </span>
+                  ) : null}
+                </div>
+                <p>
+                  {supplier.location} · {supplier.items}
+                </p>
+                <div className="supplier-meta">
+                  <span className="badge badge-muted">
+                    Lead time {supplier.lead}
+                  </span>
+                  <span className="badge badge-muted">
+                    {supplier.priceIndex}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
       <section className="stack">
-        <div className="section-heading">
-          <div>
-            <h2 className="section-title">Components</h2>
-            <p className="muted" style={{ fontSize: 14 }}>
-              Fill in only the components your project needs. Leave the rest
-              blank.
-            </p>
-          </div>
-          <button type="button" className="btn btn-secondary" onClick={reset}>
-            Clear all
-          </button>
+        <div>
+          <h2 className="section-title">Components</h2>
+          <p className="muted" style={{ fontSize: 14 }}>
+            Fill in only the components your project needs. Leave the rest
+            blank.
+          </p>
         </div>
 
         {rows.map((row, index) => (
@@ -182,23 +227,25 @@ export default function MeasurementsPage() {
       <section className="card calculate">
         <div>
           <h3>
-            {measured.length === 0
-              ? "No components measured yet"
-              : `${measured.length} component${
+            {ready
+              ? `${measured.length} component${
                   measured.length === 1 ? "" : "s"
-                } ready`}
+                } ready`
+              : "Not ready yet"}
           </h3>
           <p>
-            {measured.length === 0
-              ? "Enter length, width, and height for at least one component to continue."
-              : "Calculate the project to see the full bill of materials and the estimated cost."}
+            {supplierId === null
+              ? "Choose a hardware above to continue."
+              : measured.length === 0
+                ? "Enter length, width, and height for at least one component."
+                : "Calculate the project to see the full bill of materials and the estimated cost."}
           </p>
         </div>
         <button
           type="button"
           className="btn btn-primary btn-lg"
           onClick={calculate}
-          disabled={measured.length === 0}
+          disabled={!ready}
         >
           Calculate project
           <Icon name="arrowRight" size={18} />

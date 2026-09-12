@@ -1,56 +1,6 @@
 import Icon from "@/components/Icon"
 import { MATERIAL_PRICES, peso } from "@/lib/estimate"
-
-const SUPPLIERS = [
-  {
-    name: "Northgate Aggregates",
-    location: "Quezon City",
-    items: "Sand, Gravel, CHB",
-    lead: "1–2 days",
-    priceIndex: "Below reference",
-    best: true,
-  },
-  {
-    name: "Pacific Cement Depot",
-    location: "Caloocan",
-    items: "Portland Cement, Mortar mix",
-    lead: "Same day",
-    priceIndex: "At reference",
-    best: false,
-  },
-  {
-    name: "Southline Hardware",
-    location: "Parañaque",
-    items: 'CHB 4", CHB 5", Rebar',
-    lead: "2–3 days",
-    priceIndex: "Below reference",
-    best: false,
-  },
-  {
-    name: "Metro Builders Supply",
-    location: "Mandaluyong",
-    items: "Full range",
-    lead: "1 day",
-    priceIndex: "Above reference",
-    best: false,
-  },
-  {
-    name: "Eastbay Construction Supply",
-    location: "Antipolo",
-    items: "Sand, Gravel, Cement",
-    lead: "2 days",
-    priceIndex: "At reference",
-    best: false,
-  },
-  {
-    name: "Riverside Hardware & Trading",
-    location: "Marikina",
-    items: "CHB, Rebar, Finishing materials",
-    lead: "3–4 days",
-    priceIndex: "Below reference",
-    best: false,
-  },
-]
+import { SUPPLIERS } from "@/lib/suppliers"
 
 const CRITERIA = [
   {
@@ -82,7 +32,7 @@ export default function SupplierPage() {
 
       <section className="grid grid-2">
         {SUPPLIERS.map((supplier) => (
-          <div key={supplier.name} className="card">
+          <div key={supplier.id} className="card">
             <div className="card-head">
               <span className="card-icon">
                 <Icon name="store" size={20} />

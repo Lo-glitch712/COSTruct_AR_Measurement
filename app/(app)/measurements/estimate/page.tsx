@@ -10,6 +10,7 @@ import {
   type MaterialLine,
 } from "@/lib/estimate"
 import { readDraft, type ProjectDraft } from "@/lib/project"
+import { supplierById } from "@/lib/suppliers"
 
 export default function EstimatePage() {
   const [draft, setDraft] = useState<ProjectDraft | null>(null)
@@ -76,6 +77,7 @@ export default function EstimatePage() {
   }
 
   const savedAt = draft?.savedAt ? new Date(draft.savedAt) : new Date()
+  const supplier = supplierById(draft?.supplierId)
 
   return (
     <>
@@ -101,6 +103,7 @@ export default function EstimatePage() {
               })}{" "}
               · {components.length} component
               {components.length === 1 ? "" : "s"}
+              {supplier ? ` · ${supplier.name}` : ""}
             </p>
           </div>
           <div className="receipt-total">

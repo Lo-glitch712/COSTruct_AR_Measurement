@@ -9,6 +9,7 @@ import type { ComponentName, Dimensions } from "@/lib/estimate"
 export type ProjectDraft = {
   name: string
   savedAt: string
+  supplierId: string | null
   components: { name: ComponentName; dimensions: Dimensions }[]
 }
 
