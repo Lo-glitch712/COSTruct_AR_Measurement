@@ -513,8 +513,17 @@
        the estimation form — and hands the reading back through localStorage. */
     const directComponent=new URLSearchParams(location.search).get('component');
     function returnToApp(){ location.href='/measurements'; }
+    /* Only hand back what the camera actually measured. Measuring the floor
+       alone leaves height at 0, and sending that would wipe a height the user
+       had already typed on the measurements page. */
     function handBackToApp(d){
-      try{ localStorage.setItem('costruct.ar-result',JSON.stringify({component:directComponent,length:d.length,width:d.width,height:d.height,savedAt:new Date().toISOString()})); }catch(err){}
+      try{
+        const payload={component:directComponent,savedAt:new Date().toISOString()};
+        if(d.length>0) payload.length=d.length;
+        if(d.width>0) payload.width=d.width;
+        if(d.height>0) payload.height=d.height;
+        localStorage.setItem('costruct.ar-result',JSON.stringify(payload));
+      }catch(err){}
       returnToApp();
     }
 

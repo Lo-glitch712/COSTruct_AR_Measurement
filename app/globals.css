@@ -1251,6 +1251,37 @@ select.input {
   color: #ff8f86;
 }
 
+/* Confirms what came back from the AR tool, since the trip leaves the app. */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--accent-tint);
+  border: 1px solid rgba(52, 199, 89, 0.32);
+  color: var(--label);
+}
+
+.notice p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  color: var(--label);
+}
+
+.notice-close {
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.notice-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--label);
+}
+
 .supplier-contact {
   display: flex;
   flex-wrap: wrap;

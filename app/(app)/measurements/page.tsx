@@ -14,12 +14,7 @@ import {
   type ComponentName,
   type Dimensions,
 } from "@/lib/estimate"
-import {
-  readWorkspace,
-  saveDraft,
-  saveWorkspace,
-  takeArResult,
-} from "@/lib/project"
+import { mergeArResult, saveDraft, saveWorkspace } from "@/lib/project"
 import { SUPPLIERS } from "@/lib/suppliers"
 
 type DimensionInput = { length: string; width: string; height: string }
@@ -44,6 +39,11 @@ function isComplete({ length, width, height }: Dimensions) {
   return length > 0 && width > 0 && height > 0
 }
 
+function listFields(fields: string[]) {
+  if (fields.length === 1) return fields[0]
+  return `${fields.slice(0, -1).join(", ")} and ${fields[fields.length - 1]}`
+}
+
 export default function MeasurementsPage() {
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
@@ -52,29 +52,24 @@ export default function MeasurementsPage() {
     Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])),
   )
   const [restored, setRestored] = useState(false)
+  const [arNote, setArNote] = useState<string | null>(null)
 
   // Opening the AR tool unloads this page, so the form is parked in
   // localStorage and picked back up here, along with anything AR measured.
   useEffect(() => {
-    const workspace = readWorkspace()
+    const { workspace, applied } = mergeArResult()
     if (workspace) {
       setProjectName(workspace.name)
       setSupplierId(workspace.supplierId)
       setInputs((current) => ({ ...current, ...workspace.inputs }))
     }
-
-    const result = takeArResult()
-    if (result && COMPONENTS.some(({ name }) => name === result.component)) {
-      setInputs((current) => ({
-        ...current,
-        [result.component]: {
-          length: result.length.toFixed(2),
-          width: result.width.toFixed(2),
-          height: result.height.toFixed(2),
-        },
-      }))
+    if (applied) {
+      setArNote(
+        applied.fields.length === 0
+          ? `AR did not capture any dimension for ${applied.component}.`
+          : `AR filled in ${listFields(applied.fields)} for ${applied.component}.`,
+      )
     }
-
     setRestored(true)
   }, [])
 
@@ -126,6 +121,21 @@ export default function MeasurementsPage() {
           the dimensions of each structural component.
         </p>
       </header>
+
+      {arNote ? (
+        <div className="notice" role="status">
+          <Icon name="check" size={16} />
+          <p>{arNote}</p>
+          <button
+            type="button"
+            className="icon-btn notice-close"
+            onClick={() => setArNote(null)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
 
       <div className="card">
         <label className="field">

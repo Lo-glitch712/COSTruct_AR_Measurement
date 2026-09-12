@@ -66,26 +66,73 @@ export function readWorkspace(): Workspace | null {
   }
 }
 
-/** One dimension set written by `public/ar/index.html`, read exactly once. */
+/**
+ * One dimension set written by `public/ar/index.html`. Anything the camera did
+ * not capture is absent rather than zero, so it never clears a typed value.
+ */
 export type ArResult = {
   component: string
-  length: number
-  width: number
-  height: number
+  length?: number
+  width?: number
+  height?: number
 }
 
 const AR_RESULT_KEY = "costruct.ar-result"
 
-export function takeArResult(): ArResult | null {
-  if (typeof window === "undefined") return null
+export type ArMerge = {
+  workspace: Workspace | null
+  /** Which component was filled in and which of its fields AR supplied. */
+  applied: { component: string; fields: string[] } | null
+}
+
+function measured(value: number | undefined) {
+  return typeof value === "number" && value > 0 ? value.toFixed(2) : null
+}
+
+/**
+ * Folds an AR reading into the stored workspace and clears it. The merge runs
+ * entirely through localStorage so it is idempotent — a repeated effect cannot
+ * drop the reading the way a read-once-into-state handoff can.
+ */
+export function mergeArResult(): ArMerge {
+  if (typeof window === "undefined") return { workspace: null, applied: null }
+
+  let result: ArResult | null = null
   try {
     const raw = window.localStorage.getItem(AR_RESULT_KEY)
-    if (!raw) return null
-    window.localStorage.removeItem(AR_RESULT_KEY)
-    const parsed = JSON.parse(raw) as ArResult
-    if (!parsed?.component) return null
-    return parsed
+    if (raw) result = JSON.parse(raw) as ArResult
   } catch {
-    return null
+    result = null
   }
+
+  if (!result?.component) return { workspace: readWorkspace(), applied: null }
+
+  const workspace: Workspace = readWorkspace() ?? {
+    name: "",
+    supplierId: null,
+    inputs: {},
+  }
+  const existing = workspace.inputs[result.component] ?? {
+    length: "",
+    width: "",
+    height: "",
+  }
+  const incoming = {
+    length: measured(result.length),
+    width: measured(result.width),
+    height: measured(result.height),
+  }
+
+  workspace.inputs[result.component] = {
+    length: incoming.length ?? existing.length,
+    width: incoming.width ?? existing.width,
+    height: incoming.height ?? existing.height,
+  }
+  saveWorkspace(workspace)
+  window.localStorage.removeItem(AR_RESULT_KEY)
+
+  const fields = (["length", "width", "height"] as const).filter(
+    (field) => incoming[field] !== null,
+  )
+  return { workspace, applied: { component: result.component, fields } }
 }
