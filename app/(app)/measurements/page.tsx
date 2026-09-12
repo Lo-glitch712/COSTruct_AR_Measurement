@@ -170,7 +170,7 @@ export default function MeasurementsPage() {
                   ) : null}
                 </div>
                 <p>
-                  {supplier.location} · {supplier.items}
+                  {supplier.location} · {supplier.catalog.length} materials
                 </p>
                 <div className="supplier-meta">
                   <span className="badge badge-muted">

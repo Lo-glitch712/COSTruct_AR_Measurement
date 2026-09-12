@@ -1,6 +1,6 @@
 import Icon from "@/components/Icon"
 import { MATERIAL_PRICES, peso } from "@/lib/estimate"
-import { SUPPLIERS } from "@/lib/suppliers"
+import { dialable, referencePrice, SUPPLIERS } from "@/lib/suppliers"
 
 const CRITERIA = [
   {
@@ -24,9 +24,10 @@ export default function SupplierPage() {
         <span className="eyebrow">Procurement</span>
         <h1 className="page-title">Hardware suppliers</h1>
         <p className="page-subtitle">
-          Registered hardware stores and their reference pricing. Decision
-          support ranks them against your bill of materials by price,
-          availability, and lead time.
+          Registered hardware stores, what they carry, and how to reach them.
+          Decision support ranks them against your bill of materials by price,
+          availability, and lead time. Prices below the reference figure are
+          highlighted.
         </p>
       </header>
 
@@ -44,9 +45,40 @@ export default function SupplierPage() {
                 </span>
               ) : null}
             </div>
-            <p>
-              {supplier.location} · {supplier.items}
-            </p>
+            <p>{supplier.location}</p>
+
+            <div className="supplier-contact">
+              <a href={`mailto:${supplier.email}`}>
+                <Icon name="mail" size={15} />
+                {supplier.email}
+              </a>
+              <a href={`tel:${dialable(supplier.phone)}`}>
+                <Icon name="phone" size={15} />
+                {supplier.phone}
+              </a>
+            </div>
+
+            <div className="supplier-catalog">
+              <span className="field-label">Catalog</span>
+              {supplier.catalog.map((entry) => {
+                const reference = referencePrice(entry.material)
+                return (
+                  <div key={entry.material} className="catalog-row">
+                    <span>{entry.material}</span>
+                    <span
+                      className="catalog-price"
+                      data-cheaper={
+                        reference !== null && entry.price < reference
+                      }
+                    >
+                      {peso(entry.price)}
+                      <small> / {entry.unit}</small>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
             <div className="supplier-meta">
               <span className="badge badge-muted">
                 Lead time {supplier.lead}

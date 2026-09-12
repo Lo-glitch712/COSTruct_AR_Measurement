@@ -1251,6 +1251,64 @@ select.input {
   color: #ff8f86;
 }
 
+.supplier-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+}
+
+.supplier-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--label-secondary);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.supplier-contact a:hover {
+  color: var(--label);
+}
+
+.supplier-catalog {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--separator);
+}
+
+.catalog-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.catalog-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.catalog-price {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--label);
+}
+
+/* Cheaper than the reference price — the signal decision support ranks on. */
+.catalog-price[data-cheaper="true"] {
+  color: var(--accent-bright);
+}
+
+.catalog-price small {
+  font-size: 12px;
+  color: var(--label-tertiary);
+}
+
 .supplier-meta {
   display: flex;
   flex-wrap: wrap;
