@@ -11,8 +11,6 @@ const CAPABILITIES: { icon: IconName; label: string }[] = [
 export default function LandingPage() {
   return (
     <main className="landing">
-      <div className="landing-glow" aria-hidden />
-
       <section className="landing-content">
         <p className="landing-eyebrow">Construction estimating platform</p>
         <h1 className="landing-brand">COSTruct</h1>
