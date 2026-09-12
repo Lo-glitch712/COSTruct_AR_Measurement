@@ -450,6 +450,14 @@ textarea {
   border-radius: 16px;
 }
 
+.btn-sm {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  gap: 6px;
+  border-radius: 10px;
+}
+
 /* --------------------------------------------------------------------------
    Forms
    -------------------------------------------------------------------------- */
@@ -781,14 +789,9 @@ select.input option {
    Home / welcome hero
    -------------------------------------------------------------------------- */
 
+/* Sits directly on the page background — no card around the greeting. */
 .hero {
-  padding: 48px 36px;
-  border-radius: var(--radius-xl);
-  background: var(--bg-elevated);
-  border: 1px solid var(--separator);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 0 4px;
 }
 
 .hero-title {
@@ -815,10 +818,6 @@ select.input option {
 }
 
 @media (max-width: 600px) {
-  .hero {
-    padding: 30px 22px;
-  }
-
   .hero-title {
     font-size: 34px;
   }
@@ -901,6 +900,25 @@ select.input option {
 
 .component-heading {
   min-width: 0;
+}
+
+.component-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .component-head {
+    flex-wrap: wrap;
+  }
+
+  .component-actions {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 .component-heading h3 {
@@ -1006,24 +1024,22 @@ select.input option {
   gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 4px 4px 14px;
+  padding: 4px;
   margin: 0 -4px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+/* Slide it by dragging or swiping; the scrollbar itself stays hidden. */
 .carousel::-webkit-scrollbar {
-  height: 8px;
-}
-
-.carousel::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  display: none;
 }
 
 .carousel-item {
   scroll-snap-align: start;
   display: block;
+  user-select: none;
   padding: 20px;
   border-radius: var(--radius-lg);
   background: var(--bg-elevated);
@@ -1166,31 +1182,6 @@ select.input option {
 }
 
 /* Secondary, opt-in tooling (currently the AR capture experiment). */
-.optional-tool {
-  background: var(--bg-sunken);
-  box-shadow: none;
-}
-
-.optional-tool-head {
-  display: flex;
-  gap: 9px;
-}
-
-.optional-tool h3 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.optional-icon {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  padding-top: 2px;
-  color: #fff;
-}
-
 /* --------------------------------------------------------------------------
    Procurement
    -------------------------------------------------------------------------- */

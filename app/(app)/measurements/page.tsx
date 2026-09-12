@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import Carousel from "@/components/Carousel"
 import Icon from "@/components/Icon"
-import { AR_APP_URL } from "@/lib/ar"
+import { arUrlFor } from "@/lib/ar"
 import {
   COMPONENTS,
   concreteVolume,
@@ -109,11 +110,7 @@ export default function MeasurementsPage() {
           to source from.
         </p>
 
-        <div
-          className="carousel"
-          role="radiogroup"
-          aria-label="Hardware supplier"
-        >
+        <Carousel label="Hardware supplier">
           {SUPPLIERS.map((supplier) => {
             const selected = supplier.id === supplierId
             return (
@@ -150,7 +147,7 @@ export default function MeasurementsPage() {
               </button>
             )
           })}
-        </div>
+        </Carousel>
       </section>
 
       <section className="stack">
@@ -158,7 +155,8 @@ export default function MeasurementsPage() {
           <h2 className="section-title">Components</h2>
           <p className="muted" style={{ fontSize: 14 }}>
             Fill in only the components your project needs. Leave the rest
-            blank.
+            blank. Each one can optionally be captured with AR instead of a tape
+            measure.
           </p>
         </div>
 
@@ -176,11 +174,19 @@ export default function MeasurementsPage() {
                 <h3>{row.name}</h3>
                 <p className="tiny">{row.hint}</p>
               </div>
-              {row.measured ? (
-                <span className="badge" style={{ marginLeft: "auto" }}>
-                  Measured
-                </span>
-              ) : null}
+              <div className="component-actions">
+                {row.measured ? <span className="badge">Measured</span> : null}
+                <a
+                  className="btn btn-secondary btn-sm"
+                  href={arUrlFor(row.name)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Optional: capture this component with the camera instead of a tape measure, then type the reading below."
+                >
+                  <Icon name="camera" size={15} />
+                  Measure with AR
+                </a>
+              </div>
             </div>
 
             <div className="dims">
@@ -251,39 +257,6 @@ export default function MeasurementsPage() {
           <Icon name="arrowRight" size={18} />
         </button>
       </section>
-
-      <aside className="card optional-tool">
-        <div className="optional-tool-head">
-          <span className="optional-icon">
-            <Icon name="camera" size={20} />
-          </span>
-          <div>
-            <h3>
-              AR measurement <span className="badge badge-muted">Optional</span>
-            </h3>
-            <p>
-              An experimental camera-based way to capture the same dimensions
-              without a tape measure. It is an add-on for future development —
-              manual entry above stays the primary workflow, and both produce
-              identical estimates.
-            </p>
-          </div>
-        </div>
-        <div className="hero-actions">
-          <a
-            className="btn btn-secondary"
-            href={AR_APP_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Try AR measurement
-          </a>
-        </div>
-        <p className="tiny" style={{ marginTop: 12 }}>
-          Works best on a phone in a well-lit area, and needs HTTPS so the
-          browser can grant camera access.
-        </p>
-      </aside>
     </>
   )
 }

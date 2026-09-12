@@ -32,7 +32,7 @@ export default function BuyerHome({ session }: { session: Session }) {
 
   return (
     <>
-      <section className="hero">
+      <header className="hero">
         <span className="eyebrow">Buyer Home</span>
         <h1 className="hero-title">Welcome, {firstName}.</h1>
         <p className="hero-full-title">
@@ -47,7 +47,7 @@ export default function BuyerHome({ session }: { session: Session }) {
             <Icon name="arrowRight" size={18} />
           </Link>
         </div>
-      </section>
+      </header>
 
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
