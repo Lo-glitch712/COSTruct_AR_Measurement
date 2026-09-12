@@ -744,12 +744,37 @@ textarea {
    Home / welcome hero
    -------------------------------------------------------------------------- */
 
+/* Carries the landing screen's gradient and accent bloom into the app. */
 .hero {
-  padding: 44px 34px;
+  position: relative;
+  overflow: hidden;
+  padding: 48px 36px;
   border-radius: var(--radius-xl);
-  background: linear-gradient(165deg, #ffffff 0%, #f2f6f3 100%);
-  border: 1px solid var(--separator);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(170deg, #0b1220 0%, #131f36 48%, #1c2e46 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -70%;
+  left: 50%;
+  width: min(130%, 780px);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(52, 199, 89, 0.22) 0%,
+    rgba(52, 199, 89, 0.06) 42%,
+    transparent 68%
+  );
+}
+
+.hero > * {
+  position: relative;
 }
 
 .hero-title {
@@ -761,7 +786,11 @@ textarea {
   max-width: 46ch;
   font-size: 17px;
   line-height: 1.55;
-  color: var(--label-secondary);
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.hero-full-title strong {
+  color: #fff;
 }
 
 .hero-actions {

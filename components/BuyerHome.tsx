@@ -4,35 +4,26 @@ import Link from "next/link"
 import Icon, { type IconName } from "@/components/Icon"
 import type { Session } from "@/lib/session"
 
-const PILLARS: {
-  icon: IconName
-  title: string
-  body: string
-  href: string
-}[] = [
+const PILLARS: { icon: IconName; title: string; body: string }[] = [
   {
     icon: "ruler",
     title: "Measurement",
     body: "Enter length, width, and height for each structural component and COSTruct computes the areas and volumes for you.",
-    href: "/measurements",
   },
   {
     icon: "calculator",
     title: "Material Quantity & Cost Estimation",
     body: "Dimensions become material quantities and a priced bill of materials for every component, updated as you type.",
-    href: "/measurements",
   },
   {
     icon: "truck",
     title: "Procurement",
     body: "Match your bill of materials with registered hardware suppliers and send requests without leaving the platform.",
-    href: "/supplier",
   },
   {
     icon: "compass",
     title: "Decision Support",
     body: "Compare hardware suppliers on price, availability, and lead time so you can choose with confidence.",
-    href: "/supplier",
   },
 ]
 
@@ -55,21 +46,18 @@ export default function BuyerHome({ session }: { session: Session }) {
             Start a measurement
             <Icon name="arrowRight" size={18} />
           </Link>
-          <Link href="/projects" className="btn btn-secondary">
-            View projects
-          </Link>
         </div>
       </section>
 
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
-          <Link key={pillar.title} href={pillar.href} className="card card-link">
+          <article key={pillar.title} className="card">
             <span className="card-icon">
               <Icon name={pillar.icon} size={20} />
             </span>
             <h3>{pillar.title}</h3>
             <p>{pillar.body}</p>
-          </Link>
+          </article>
         ))}
       </section>
     </>
