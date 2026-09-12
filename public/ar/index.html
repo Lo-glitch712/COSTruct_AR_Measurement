@@ -57,6 +57,11 @@
   #hud.isHidden { display:none; }
   @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
 
+  /* Arriving from /measurements?component=... skips straight to the camera,
+     so the home screen must never paint. */
+  html.ar-direct #homeScreen { display:none !important; }
+
+
   /* Keep 8th Wall coaching instructions hidden on the home page.
      They are revealed only after Start Measuring is pressed. */
   body.home-active .coaching-overlay,
@@ -160,6 +165,12 @@
   .emptyReceipt{text-align:center;padding:35px 15px;color:#6b7280;font-size:13px}
   @media(max-width:560px){#materialsPricingScreen{padding:12px 9px 30px}.receiptPaper{padding:18px 12px 22px}.receiptTop h2{font-size:20px}.receiptTable{font-size:10px}.receiptTable th{font-size:8px}.receiptGrand strong{font-size:22px}}
 </style>
+<script>
+  /* Runs before first paint so the home screen never flashes on a deep link. */
+  if (new URLSearchParams(location.search).get('component')) {
+    document.documentElement.classList.add('ar-direct')
+  }
+</script>
 </head>
 
 <body class="home-active">
@@ -495,7 +506,17 @@
     function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none';
       const d=componentData(card); arEditLength.value=d.length.toFixed(2); arEditWidth.value=d.width.toFixed(2); arEditHeight.value=d.height.toFixed(2);
       document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.'; }
-    function leaveAR(){ hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+    function leaveAR(){ if(directComponent){ returnToApp(); return; } hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+
+    /* Deep link from the main app. `/ar/index.html?component=Column` opens the
+       camera for that component right away — no home screen, no second copy of
+       the estimation form — and hands the reading back through localStorage. */
+    const directComponent=new URLSearchParams(location.search).get('component');
+    function returnToApp(){ location.href='/measurements'; }
+    function handBackToApp(d){
+      try{ localStorage.setItem('costruct.ar-result',JSON.stringify({component:directComponent,length:d.length,width:d.width,height:d.height,savedAt:new Date().toISOString()})); }catch(err){}
+      returnToApp();
+    }
 
     document.querySelectorAll('.componentCard').forEach(card=>{
       const methods=card.querySelectorAll('.componentMethod');
@@ -575,6 +596,11 @@
 
     defaults.forEach(d=>addMaterial(d[0],d[1],d[2]));
 
+    if(directComponent){
+      const card=components.find(c=>c.dataset.component===directComponent);
+      if(card){ document.body.classList.remove('home-active'); homeScreen.style.display='none'; openAR(card); arBackBtn.textContent='← Back'; }
+    }
+
     window.COSTructEstimation={
       showEstimation,
       getLastARDimensions:()=>({length:+window.__COSTructLastLength||0,width:+window.__COSTructLastWidth||0,height:+window.__COSTructLastHeight||0,area:+window.__COSTructLastArea||0}),
@@ -583,7 +609,9 @@
         if(!activeComponent) return;
         dim=dim||{}; const l=+arEditLength.value||+dim.length||0,w=+arEditWidth.value||+dim.width||0,h=+arEditHeight.value||+dim.height||0,a=+dim.area||l*w;
         activeComponent.querySelector('.compLength').value=l.toFixed(2); activeComponent.querySelector('.compWidth').value=w.toFixed(2); activeComponent.querySelector('.compHeight').value=h.toFixed(2); activeComponent.querySelector('.componentARStatus').textContent=`Saved: ${l.toFixed(2)} × ${w.toFixed(2)} × ${h.toFixed(2)} m • Area ${a.toFixed(2)} m²`;
-        updateCard(activeComponent); leaveAR();
+        updateCard(activeComponent);
+        if(directComponent){ handBackToApp({length:l,width:w,height:h}); return; }
+        leaveAR();
       }
     };
   })();

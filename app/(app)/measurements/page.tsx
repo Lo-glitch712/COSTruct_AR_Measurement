@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Carousel from "@/components/Carousel"
 import Icon from "@/components/Icon"
@@ -14,7 +14,12 @@ import {
   type ComponentName,
   type Dimensions,
 } from "@/lib/estimate"
-import { saveDraft } from "@/lib/project"
+import {
+  readWorkspace,
+  saveDraft,
+  saveWorkspace,
+  takeArResult,
+} from "@/lib/project"
 import { SUPPLIERS } from "@/lib/suppliers"
 
 type DimensionInput = { length: string; width: string; height: string }
@@ -46,6 +51,37 @@ export default function MeasurementsPage() {
   const [inputs, setInputs] = useState<Record<string, DimensionInput>>(() =>
     Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])),
   )
+  const [restored, setRestored] = useState(false)
+
+  // Opening the AR tool unloads this page, so the form is parked in
+  // localStorage and picked back up here, along with anything AR measured.
+  useEffect(() => {
+    const workspace = readWorkspace()
+    if (workspace) {
+      setProjectName(workspace.name)
+      setSupplierId(workspace.supplierId)
+      setInputs((current) => ({ ...current, ...workspace.inputs }))
+    }
+
+    const result = takeArResult()
+    if (result && COMPONENTS.some(({ name }) => name === result.component)) {
+      setInputs((current) => ({
+        ...current,
+        [result.component]: {
+          length: result.length.toFixed(2),
+          width: result.width.toFixed(2),
+          height: result.height.toFixed(2),
+        },
+      }))
+    }
+
+    setRestored(true)
+  }, [])
+
+  useEffect(() => {
+    if (!restored) return
+    saveWorkspace({ name: projectName, supplierId, inputs })
+  }, [restored, projectName, supplierId, inputs])
 
   function update(name: ComponentName, field: keyof DimensionInput, value: string) {
     if (value !== "" && !/^\d*\.?\d*$/.test(value)) return
@@ -156,7 +192,7 @@ export default function MeasurementsPage() {
           <p className="muted" style={{ fontSize: 14 }}>
             Fill in only the components your project needs. Leave the rest
             blank. Each one can optionally be captured with AR instead of a tape
-            measure.
+            measure — your entries are kept while you are in the camera.
           </p>
         </div>
 
@@ -179,9 +215,7 @@ export default function MeasurementsPage() {
                 <a
                   className="btn btn-secondary btn-sm"
                   href={arUrlFor(row.name)}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Optional: capture this component with the camera instead of a tape measure, then type the reading below."
+                  title="Optional: capture this component with the camera. Saving in AR brings the dimensions back here."
                 >
                   <Icon name="camera" size={15} />
                   Measure with AR
