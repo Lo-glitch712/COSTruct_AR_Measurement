@@ -1,18 +1,19 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { AR_APP_URL } from "@/lib/ar"
 import {
   COMPONENTS,
-  componentEstimate,
+  concreteVolume,
   floorArea,
-  peso,
   quantity,
   wallArea,
   type ComponentName,
   type Dimensions,
 } from "@/lib/estimate"
+import { saveDraft } from "@/lib/project"
 
 type DimensionInput = { length: string; width: string; height: string }
 
@@ -32,7 +33,12 @@ function toDimensions(input: DimensionInput): Dimensions {
   }
 }
 
+function isComplete({ length, width, height }: Dimensions) {
+  return length > 0 && width > 0 && height > 0
+}
+
 export default function MeasurementsPage() {
+  const router = useRouter()
   const [projectName, setProjectName] = useState("")
   const [inputs, setInputs] = useState<Record<string, DimensionInput>>(() =>
     Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])),
@@ -55,44 +61,24 @@ export default function MeasurementsPage() {
     () =>
       COMPONENTS.map(({ name, hint }) => {
         const dimensions = toDimensions(inputs[name])
-        const lines = componentEstimate(name, dimensions)
-        return {
-          name,
-          hint,
-          dimensions,
-          lines,
-          cost: lines.reduce((total, line) => total + line.cost, 0),
-        }
+        return { name, hint, dimensions, measured: isComplete(dimensions) }
       }),
     [inputs],
   )
 
-  const measured = rows.filter((row) => row.lines.length > 0)
-  const total = measured.reduce((sum, row) => sum + row.cost, 0)
+  const measured = rows.filter((row) => row.measured)
 
-  const billOfMaterials = useMemo(() => {
-    const totals = new Map<
-      string,
-      { quantity: number; unit: string; unitPrice: number; cost: number }
-    >()
-
-    for (const row of measured) {
-      for (const line of row.lines) {
-        const existing = totals.get(line.material)
-        totals.set(line.material, {
-          unit: line.unit,
-          unitPrice: line.unitPrice,
-          quantity: (existing?.quantity ?? 0) + line.quantity,
-          cost: (existing?.cost ?? 0) + line.cost,
-        })
-      }
-    }
-
-    return [...totals.entries()].map(([material, value]) => ({
-      material,
-      ...value,
-    }))
-  }, [measured])
+  function calculate() {
+    saveDraft({
+      name: projectName.trim(),
+      savedAt: new Date().toISOString(),
+      components: measured.map((row) => ({
+        name: row.name,
+        dimensions: row.dimensions,
+      })),
+    })
+    router.push("/measurements/estimate")
+  }
 
   return (
     <>
@@ -100,9 +86,8 @@ export default function MeasurementsPage() {
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">Measure and estimate</h1>
         <p className="page-subtitle">
-          Enter the length, width, and height of each structural component.
-          COSTruct converts them into material quantities and a priced estimate
-          as you type.
+          Enter the length, width, and height of each structural component, then
+          calculate the project to see the material quantities and cost.
         </p>
       </header>
 
@@ -136,7 +121,7 @@ export default function MeasurementsPage() {
           <article
             key={row.name}
             className="card component"
-            data-measured={row.lines.length > 0}
+            data-measured={row.measured}
           >
             <div className="component-head">
               <span className="component-index">
@@ -146,10 +131,11 @@ export default function MeasurementsPage() {
                 <h3>{row.name}</h3>
                 <p className="tiny">{row.hint}</p>
               </div>
-              <div className="component-cost">
-                <div className="component-cost-value">{peso(row.cost)}</div>
-                <div className="tiny">estimated</div>
-              </div>
+              {row.measured ? (
+                <span className="badge" style={{ marginLeft: "auto" }}>
+                  Measured
+                </span>
+              ) : null}
             </div>
 
             <div className="dims">
@@ -169,7 +155,7 @@ export default function MeasurementsPage() {
               ))}
             </div>
 
-            {row.lines.length > 0 ? (
+            {row.measured ? (
               <div className="component-detail">
                 <div className="component-metrics">
                   <span>
@@ -180,69 +166,43 @@ export default function MeasurementsPage() {
                     Wall area{" "}
                     <strong>{quantity(wallArea(row.dimensions))} m²</strong>
                   </span>
+                  <span>
+                    Volume{" "}
+                    <strong>
+                      {quantity(concreteVolume(row.dimensions))} m³
+                    </strong>
+                  </span>
                 </div>
-                <ul className="material-lines">
-                  {row.lines.map((line) => (
-                    <li key={line.material}>
-                      <span className="material-name">{line.material}</span>
-                      <span className="material-qty">
-                        {quantity(line.quantity)} {line.unit}
-                      </span>
-                      <span className="material-cost">{peso(line.cost)}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             ) : null}
           </article>
         ))}
       </section>
 
-      <section className="card summary">
-        <div className="summary-head">
-          <div>
-            <span className="eyebrow">Estimate</span>
-            <h2 className="section-title" style={{ marginTop: 6 }}>
-              {projectName.trim() || "Untitled project"}
-            </h2>
-          </div>
-          <div className="summary-total">
-            <div className="tiny">Estimated total</div>
-            <div className="summary-total-value">{peso(total)}</div>
-          </div>
-        </div>
-
-        {billOfMaterials.length > 0 ? (
-          <>
-            <ul className="material-lines material-lines-lg">
-              {billOfMaterials.map((line) => (
-                <li key={line.material}>
-                  <span className="material-name">{line.material}</span>
-                  <span className="material-qty">
-                    {quantity(line.quantity)} {line.unit} × {peso(line.unitPrice)}
-                  </span>
-                  <span className="material-cost">{peso(line.cost)}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="tiny" style={{ marginTop: 16 }}>
-              Quantities use starter estimating factors and should be verified
-              against your project specifications. Prices are replaced by the
-              real figure once you attach a supplier quote in Procurement.
-            </p>
-            <div className="hero-actions">
-              <a href="/supplier" className="btn btn-primary">
-                Send to suppliers
-                <Icon name="arrowRight" />
-              </a>
-            </div>
-          </>
-        ) : (
-          <p className="muted" style={{ fontSize: 14 }}>
-            Enter dimensions above and the bill of materials will build itself
-            here.
+      <section className="card calculate">
+        <div>
+          <h3>
+            {measured.length === 0
+              ? "No components measured yet"
+              : `${measured.length} component${
+                  measured.length === 1 ? "" : "s"
+                } ready`}
+          </h3>
+          <p>
+            {measured.length === 0
+              ? "Enter length, width, and height for at least one component to continue."
+              : "Calculate the project to see the full bill of materials and the estimated cost."}
           </p>
-        )}
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary btn-lg"
+          onClick={calculate}
+          disabled={measured.length === 0}
+        >
+          Calculate project
+          <Icon name="arrowRight" size={18} />
+        </button>
       </section>
 
       <aside className="card optional-tool">

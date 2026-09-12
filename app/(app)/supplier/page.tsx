@@ -83,15 +83,17 @@ export default function SupplierPage() {
       <section className="grid grid-2">
         {SUPPLIERS.map((supplier) => (
           <div key={supplier.name} className="card">
-            <div className="supplier-head">
-              <span className="card-icon" style={{ marginBottom: 0 }}>
+            <div className="card-head">
+              <span className="card-icon">
                 <Icon name="store" size={20} />
               </span>
+              <h3>{supplier.name}</h3>
               {supplier.best ? (
-                <span className="badge">Best match</span>
+                <span className="badge" style={{ marginLeft: "auto" }}>
+                  Best match
+                </span>
               ) : null}
             </div>
-            <h3 style={{ marginTop: 14 }}>{supplier.name}</h3>
             <p>
               {supplier.location} · {supplier.items}
             </p>

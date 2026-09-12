@@ -17,10 +17,12 @@ export default function ProjectsPage() {
         className="card"
         style={{ textAlign: "center", padding: "52px 24px" }}
       >
-        <span className="card-icon" style={{ margin: "0 auto 16px" }}>
-          <Icon name="folder" size={20} />
-        </span>
-        <h3>No projects yet</h3>
+        <div className="card-head" style={{ justifyContent: "center" }}>
+          <span className="card-icon">
+            <Icon name="folder" size={20} />
+          </span>
+          <h3>No projects yet</h3>
+        </div>
         <p style={{ maxWidth: "42ch", margin: "0 auto" }}>
           Create your first project by entering the dimensions of a space.
           COSTruct will save the dimensions, quantities, and estimate together.

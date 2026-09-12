@@ -18,7 +18,10 @@ export default function AppLayout({
   const { session, loaded } = useSession()
 
   const blocked =
-    session?.role === "supplier" && BUYER_ONLY.includes(pathname)
+    session?.role === "supplier" &&
+    BUYER_ONLY.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`),
+    )
 
   useEffect(() => {
     if (!loaded) return

@@ -52,10 +52,12 @@ export default function BuyerHome({ session }: { session: Session }) {
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
           <article key={pillar.title} className="card">
-            <span className="card-icon">
-              <Icon name={pillar.icon} size={20} />
-            </span>
-            <h3>{pillar.title}</h3>
+            <div className="card-head">
+              <span className="card-icon">
+                <Icon name={pillar.icon} size={20} />
+              </span>
+              <h3>{pillar.title}</h3>
+            </div>
             <p>{pillar.body}</p>
           </article>
         ))}
