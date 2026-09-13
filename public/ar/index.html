@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <title>COSTruct AR Measurement</title>
 
   <script crossorigin="anonymous" src="./external/scripts/8frame-1.5.0.min.js"></script>
@@ -259,45 +259,81 @@
   #applyCalibration { background: var(--accent); color: #fff; width: 100%; margin-top: 10px; }
   #calibrationStatus { font-size: 12px; color: var(--label-secondary); line-height: 1.4; margin-top: 8px; }
 
+  /* Bottom sheet, no blur / no native keyboard — both freeze WebXR on iOS. */
   #arDimensionEditor {
     position: fixed;
     inset: 0;
     z-index: 200;
     display: none;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 20px;
-    background: rgba(15, 23, 42, 0.28);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(15, 23, 42, 0.16);
     pointer-events: auto;
     color: var(--label);
   }
   #arDimensionEditor .arEditCard {
-    width: min(92vw, 390px);
-    padding: 20px;
+    width: min(94vw, 390px);
+    padding: 16px 16px 14px;
     border-radius: 18px;
-    background: var(--glass-light);
-    backdrop-filter: blur(28px) saturate(170%);
-    -webkit-backdrop-filter: blur(28px) saturate(170%);
-    box-shadow: none;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
   }
-  #arDimensionEditor .arEditTitle { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
+  #arDimensionEditor .arEditTitle { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+  #arDimensionEditor .arEditHint {
+    margin: 4px 0 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--label-secondary);
+  }
   #arDimensionEditor .arEditGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  #arDimensionEditor label { font-size: 11px; font-weight: 600; color: var(--label-secondary); }
-  #arDimensionEditor input {
+  #arDimensionEditor .arEditField {
+    display: block;
     width: 100%;
-    margin-top: 4px;
-    padding: 10px;
+    padding: 8px 6px 10px;
     border: 1px solid rgba(15, 23, 42, 0.14);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.7);
-    color: var(--label);
-    font: inherit;
-    font-weight: 600;
+    border-radius: 12px;
+    background: #f4f6f8;
+    color: inherit;
+    text-align: left;
+    transform: none;
   }
-  #arDimensionEditor .arEditActions { display: flex; gap: 8px; margin-top: 14px; }
-  #arDimensionEditor .arEditActions button { flex: 1; height: 42px; border: 0; border-radius: 12px; font-weight: 600; }
+  #arDimensionEditor .arEditField.is-active {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(18, 38, 58, 0.12);
+  }
+  #arDimensionEditor .arEditField span {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--label-secondary);
+  }
+  #arDimensionEditor .arEditField strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  #arDimensionEditor .arEditPad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  #arDimensionEditor .arEditPad button {
+    height: 46px;
+    border: 0;
+    border-radius: 12px;
+    background: #eef1f4;
+    color: var(--label);
+    font-size: 20px;
+    font-weight: 700;
+    touch-action: manipulation;
+  }
+  #arDimensionEditor .arEditActions { display: flex; gap: 8px; margin-top: 12px; }
+  #arDimensionEditor .arEditActions button { flex: 1; height: 44px; border: 0; border-radius: 12px; font-weight: 600; }
   #applyAREdit { background: var(--accent); color: #fff; }
   #cancelAREdit { background: rgba(15, 23, 42, 0.08); color: var(--label); }
 
@@ -469,7 +505,7 @@
 
   @media (max-width: 560px) {
     .formGrid, .dimensionGrid, .componentInputs { grid-template-columns: 1fr; }
-    #arDimensionEditor .arEditGrid { grid-template-columns: 1fr; }
+    #arDimensionEditor .arEditField strong { font-size: 16px; }
     .estimationHeader h2, .receiptTop h2 { font-size: 20px; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -676,10 +712,37 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
+      <p class="arEditHint">Use the keypad so the camera does not freeze.</p>
       <div class="arEditGrid">
-        <label>Length (m)<input id="arEditLength" type="number" min="0" step="0.01" value="0.00"></label>
-        <label>Width (m)<input id="arEditWidth" type="number" min="0" step="0.01" value="0.00"></label>
-        <label>Height (m)<input id="arEditHeight" type="number" min="0" step="0.01" value="0.00"></label>
+        <button type="button" class="arEditField is-active" data-field="length">
+          <span>Length (m)</span>
+          <strong id="arEditLengthDisplay">0.00</strong>
+        </button>
+        <button type="button" class="arEditField" data-field="width">
+          <span>Width (m)</span>
+          <strong id="arEditWidthDisplay">0.00</strong>
+        </button>
+        <button type="button" class="arEditField" data-field="height">
+          <span>Height (m)</span>
+          <strong id="arEditHeightDisplay">0.00</strong>
+        </button>
+      </div>
+      <input id="arEditLength" type="hidden" value="0.00">
+      <input id="arEditWidth" type="hidden" value="0.00">
+      <input id="arEditHeight" type="hidden" value="0.00">
+      <div class="arEditPad" id="arEditPad">
+        <button type="button" data-key="1">1</button>
+        <button type="button" data-key="2">2</button>
+        <button type="button" data-key="3">3</button>
+        <button type="button" data-key="4">4</button>
+        <button type="button" data-key="5">5</button>
+        <button type="button" data-key="6">6</button>
+        <button type="button" data-key="7">7</button>
+        <button type="button" data-key="8">8</button>
+        <button type="button" data-key="9">9</button>
+        <button type="button" data-key=".">.</button>
+        <button type="button" data-key="0">0</button>
+        <button type="button" data-key="back">⌫</button>
       </div>
       <div class="arEditActions">
         <button id="cancelAREdit" type="button">Cancel</button>
@@ -800,6 +863,42 @@
     const arEditLength=document.getElementById('arEditLength');
     const arEditWidth=document.getElementById('arEditWidth');
     const arEditHeight=document.getElementById('arEditHeight');
+    const arEditInputs={length:arEditLength,width:arEditWidth,height:arEditHeight};
+    const arEditDisplays={
+      length:document.getElementById('arEditLengthDisplay'),
+      width:document.getElementById('arEditWidthDisplay'),
+      height:document.getElementById('arEditHeightDisplay'),
+    };
+    let arEditField='length';
+    let arEditReplace=true;
+    let arEditDraft={length:'0.00',width:'0.00',height:'0.00'};
+    function measureInst(){ return document.querySelector('a-scene')?.components['distance-measure']; }
+    function setAREditorOpen(open){
+      arDimensionEditor.style.display=open?'flex':'none';
+      const inst=measureInst();
+      if(inst) inst.editorOpen=open;
+      if(open) document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    }
+    function syncAREditDisplays(){
+      Object.keys(arEditDisplays).forEach(key=>{
+        const raw=arEditDraft[key];
+        arEditInputs[key].value=raw;
+        arEditDisplays[key].textContent=raw || '0';
+      });
+      document.querySelectorAll('#arDimensionEditor .arEditField').forEach(btn=>{
+        btn.classList.toggle('is-active', btn.dataset.field===arEditField);
+      });
+    }
+    function fillAREdit(l,w,h){
+      arEditDraft={
+        length:(+l||0).toFixed(2),
+        width:(+w||0).toFixed(2),
+        height:(+h||0).toFixed(2),
+      };
+      arEditField='length';
+      arEditReplace=true;
+      syncAREditDisplays();
+    }
     const materialsList=document.getElementById('materialsList');
     const summaryCost=document.getElementById('summaryCost');
     const summaryComponents=document.getElementById('summaryComponents');
@@ -808,17 +907,17 @@
     let materials=[];
     const defaults=[['Sand',1350,'m³'],['Portland Cement',245,'bag'],['Gravel',1700,'m³'],['CHB - 4"',17,'pc'],['CHB - 5"',20,'pc']];
 
-    function showEstimation(){ homeScreen.style.display='none'; hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.remove('home-active'); document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+    function showEstimation(){ homeScreen.style.display='none'; hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.remove('home-active'); document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; setAREditorOpen(false); updateAll(); }
     function showHome(){ estimationScreen.style.display='none'; document.getElementById('materialsPricingScreen').style.display='none'; hud.classList.add('isHidden'); homeScreen.style.display='flex'; document.body.classList.add('home-active'); document.body.classList.remove('estimation-active'); }
     function componentData(card){ return {length:+card.querySelector('.compLength').value||0,width:+card.querySelector('.compWidth').value||0,height:+card.querySelector('.compHeight').value||0}; }
     function updateCard(card){ const d=componentData(card); const area=d.length*d.width; card.querySelector('.compResult').textContent=area.toFixed(2); return d; }
     function updateAll(){ let count=0; components.forEach(c=>{ const d=updateCard(c); if(d.length>0&&d.width>0&&d.height>0) count++; }); summaryComponents.textContent=count+' / 7'; calculateCost(); }
     function addMaterial(name='',price=0,unit=''){ const row=document.createElement('div'); row.className='materialRow'; row.innerHTML=`<label>Material<input class="matName" value="${name}"></label><label>Qty<input class="matQty" type="number" min="0" step="0.01" value="0"></label><label>Price<input class="matPrice" type="number" min="0" step="0.01" value="${price}"></label><button class="removeMaterial" type="button">×</button>`; row.dataset.unit=unit; row.querySelector('.removeMaterial').onclick=()=>{row.remove();calculateCost()}; row.querySelectorAll('input').forEach(i=>i.addEventListener('input',calculateCost)); materialsList.appendChild(row); return row; }
     function calculateCost(){ let total=0; materialsList.querySelectorAll('.materialRow').forEach(r=>total+=(+r.querySelector('.matQty').value||0)*(+r.querySelector('.matPrice').value||0)); summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-    function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none';
-      const d=componentData(card); arEditLength.value=d.length.toFixed(2); arEditWidth.value=d.width.toFixed(2); arEditHeight.value=d.height.toFixed(2);
+    function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; setAREditorOpen(false);
+      const d=componentData(card); fillAREdit(d.length,d.width,d.height);
       document.getElementById('promptText').textContent='Aim at the first point, then tap Place.'; }
-    function leaveAR(){ if(directComponent){ returnToApp(); return; } hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
+    function leaveAR(){ if(directComponent){ returnToApp(); return; } hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; setAREditorOpen(false); updateAll(); }
 
     /* Deep link from the main app. `/ar/index.html?component=Column` opens the
        camera for that component right away — no home screen, no second copy of
@@ -848,21 +947,55 @@
     });
     document.getElementById('backToHomeBtn').addEventListener('click',showHome);
     arBackBtn.addEventListener('click',leaveAR);
-    editBtn.addEventListener('click',()=>{
-      const inst=document.querySelector('a-scene').components['distance-measure'];
-      if(!inst || !inst.closed) { alert('Finish the floor measurement first before editing.'); return; }
-      const l=+window.__COSTructLastLength||0,w=+window.__COSTructLastWidth||0,h=+window.__COSTructLastHeight||0;
-      arEditLength.value=l.toFixed(2); arEditWidth.value=w.toFixed(2); arEditHeight.value=h.toFixed(2);
-      arDimensionEditor.style.display='flex';
+    document.getElementById('editBtn').addEventListener('click',()=>{
+      const inst=measureInst();
+      if(!inst || !inst.closed) {
+        document.getElementById('promptText').textContent='Finish the floor measurement first before editing.';
+        return;
+      }
+      fillAREdit(window.__COSTructLastLength||0,window.__COSTructLastWidth||0,window.__COSTructLastHeight||0);
+      setAREditorOpen(true);
     });
-    cancelAREdit.addEventListener('click',()=>arDimensionEditor.style.display='none');
+    arDimensionEditor.addEventListener('click',event=>{
+      if(event.target===arDimensionEditor) setAREditorOpen(false);
+    });
+    document.querySelectorAll('#arDimensionEditor .arEditField').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        arEditField=btn.dataset.field;
+        arEditReplace=true;
+        syncAREditDisplays();
+      });
+    });
+    document.getElementById('arEditPad').addEventListener('click',event=>{
+      const key=event.target.closest('[data-key]')?.dataset.key;
+      if(!key) return;
+      let value=arEditDraft[arEditField] || '';
+      if(key==='back'){
+        value=arEditReplace ? '' : value.slice(0,-1);
+        arEditReplace=false;
+      } else if(key==='.'){
+        value=arEditReplace ? '0.' : (value.includes('.') ? value : (value || '0')+'.');
+        arEditReplace=false;
+      } else {
+        if(arEditReplace || value==='0' || value==='0.00') value=key;
+        else if(value.includes('.') && value.split('.')[1].length>=2) return;
+        else value+=key;
+        arEditReplace=false;
+      }
+      arEditDraft[arEditField]=value;
+      syncAREditDisplays();
+    });
+    cancelAREdit.addEventListener('click',()=>setAREditorOpen(false));
     applyAREdit.addEventListener('click',()=>{
-      const inst=document.querySelector('a-scene').components['distance-measure'];
+      const inst=measureInst();
       if(!inst) return;
-      const l=+arEditLength.value||0,w=+arEditWidth.value||0,h=+arEditHeight.value||0;
-      if(!(l>0&&w>0)) { alert('Length and Width must be greater than 0.'); return; }
+      const l=+arEditDraft.length||0,w=+arEditDraft.width||0,h=+arEditDraft.height||0;
+      if(!(l>0&&w>0)) {
+        document.querySelector('#arDimensionEditor .arEditHint').textContent='Length and width must be greater than 0.';
+        return;
+      }
       inst.applyEditedDimensions(l,w,h);
-      arDimensionEditor.style.display='none';
+      setAREditorOpen(false);
     });
     function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function qty(v, decimals=2){ return v.toLocaleString('en-PH',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
@@ -970,6 +1103,7 @@
     this.rawAimPoint = null;
     this.aimHistory = [];
     this.historyMax = 8;
+    this.editorOpen = false;
 
     this.calibrationActive = false;
     this.calibrationPoints = [];
@@ -1056,6 +1190,7 @@
   },
 
   tick: function () {
+    if (this.editorOpen) return;
     this.refreshLabels();
     if (this.calibrationActive && this.step === 'DONE') return;
     if (!this.calibrationActive) {
@@ -1884,6 +2019,7 @@
     this.areaResult.style.display = 'none';
     this.useAreaBtn.style.display = 'none';
     document.getElementById('arSaveBar').style.display = 'none';
+    this.editorOpen = false;
     const arEditor = document.getElementById('arDimensionEditor'); if (arEditor) arEditor.style.display='none';
     this.promptText.textContent = `Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
   }
