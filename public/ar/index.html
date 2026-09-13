@@ -716,7 +716,7 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
-      <p class="arEditHint">Change one side. The existing corner moves — no new point is added.</p>
+      <p class="arEditHint">Edit Length 1–4 or Height, then tap Apply.</p>
       <div class="arEditGrid">
         <button type="button" class="arEditField is-active" data-field="l1">
           <span>Length 1 (m)</span>
@@ -726,13 +726,13 @@
           <span>Length 2 (m)</span>
           <strong id="arEditL2Display">0.00</strong>
         </button>
-        <button type="button" class="arEditField" data-field="w1">
-          <span>Width 1 (m)</span>
-          <strong id="arEditW1Display">0.00</strong>
+        <button type="button" class="arEditField" data-field="l3">
+          <span>Length 3 (m)</span>
+          <strong id="arEditL3Display">0.00</strong>
         </button>
-        <button type="button" class="arEditField" data-field="w2">
-          <span>Width 2 (m)</span>
-          <strong id="arEditW2Display">0.00</strong>
+        <button type="button" class="arEditField" data-field="l4">
+          <span>Length 4 (m)</span>
+          <strong id="arEditL4Display">0.00</strong>
         </button>
         <button type="button" class="arEditField" data-field="height">
           <span>Height (m)</span>
@@ -878,13 +878,13 @@
     const arEditDisplays={
       l1:document.getElementById('arEditL1Display'),
       l2:document.getElementById('arEditL2Display'),
-      w1:document.getElementById('arEditW1Display'),
-      w2:document.getElementById('arEditW2Display'),
+      l3:document.getElementById('arEditL3Display'),
+      l4:document.getElementById('arEditL4Display'),
       height:document.getElementById('arEditHeightDisplay'),
     };
     let arEditField='l1';
     let arEditReplace=true;
-    let arEditDraft={l1:'0.00',l2:'0.00',w1:'0.00',w2:'0.00',height:'0.00'};
+    let arEditDraft={l1:'0.00',l2:'0.00',l3:'0.00',l4:'0.00',height:'0.00'};
     function measureInst(){ return document.querySelector('a-scene')?.components['distance-measure']; }
     function setAREditorOpen(open){
       arDimensionEditor.style.display=open?'flex':'none';
@@ -898,7 +898,7 @@
         arEditDisplays[key].textContent=raw || '0';
       });
       arEditLength.value=(+arEditDraft.l1||0).toFixed(2);
-      arEditWidth.value=(+arEditDraft.w1||0).toFixed(2);
+      arEditWidth.value=(+arEditDraft.l2||0).toFixed(2);
       arEditHeight.value=arEditDraft.height;
       document.querySelectorAll('#arDimensionEditor .arEditField').forEach(btn=>{
         btn.classList.toggle('is-active', btn.dataset.field===arEditField);
@@ -906,7 +906,7 @@
     }
     function fillAREdit(l,w,h){
       const length=(+l||0).toFixed(2), width=(+w||0).toFixed(2);
-      arEditDraft={l1:length,l2:length,w1:width,w2:width,height:(+h||0).toFixed(2)};
+      arEditDraft={l1:length,l2:width,l3:length,l4:width,height:(+h||0).toFixed(2)};
       arEditField='l1';
       arEditReplace=true;
       syncAREditDisplays();
@@ -920,8 +920,8 @@
       arEditDraft={
         l1:(+sides.l1||0).toFixed(2),
         l2:(+sides.l2||0).toFixed(2),
-        w1:(+sides.w1||0).toFixed(2),
-        w2:(+sides.w2||0).toFixed(2),
+        l3:(+sides.l3||0).toFixed(2),
+        l4:(+sides.l4||0).toFixed(2),
         height:(+sides.height||0).toFixed(2),
       };
       arEditField='l1';
@@ -1022,18 +1022,20 @@
         if(hint) hint.textContent='AR measurement is not ready. Close the floor first.';
         return;
       }
-      const l1=+arEditDraft.l1||0,l2=+arEditDraft.l2||0,w1=+arEditDraft.w1||0,w2=+arEditDraft.w2||0,h=+arEditDraft.height||0;
+      const l1=+arEditDraft.l1||0,l2=+arEditDraft.l2||0,l3=+arEditDraft.l3||0,l4=+arEditDraft.l4||0,h=+arEditDraft.height||0;
       const focus=arEditField;
-      const focusVal={l1,l2,w1,w2}[focus]||0;
+      const focusVal=focus==='height' ? h : ({l1,l2,l3,l4}[focus]||0);
       if(!(focusVal>0)){
-        if(hint) hint.textContent='Enter a length greater than 0, then tap Apply.';
+        if(hint) hint.textContent=focus==='height'
+          ? 'Enter a height greater than 0, then tap Apply.'
+          : 'Enter a length greater than 0, then tap Apply.';
         return;
       }
       try{
-        inst.applyEditedSides(l1,l2,w1,w2,h,focus);
+        inst.applyEditedSides(l1,l2,l3,l4,h,focus);
         setAREditorOpen(false);
       }catch(err){
-        if(hint) hint.textContent=err instanceof Error ? err.message : 'Could not apply the new length.';
+        if(hint) hint.textContent=err instanceof Error ? err.message : 'Could not apply the new measurement.';
       }
     });
     function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -1880,7 +1882,7 @@
     window.__COSTructLastArea = areaM2;
     const sides = this.pinFloorSides();
     window.__COSTructLastLength = sides.l1;
-    window.__COSTructLastWidth = sides.w1;
+    window.__COSTructLastWidth = sides.l2;
     this.labelFloorSides();
   },
 
@@ -1977,31 +1979,22 @@
     const f = this.calibrationFactor || 1;
     const pts = this.corners || [];
     const n = pts.length;
-    const edgeLen = (i) => pts[i].distanceTo(pts[(i + 1) % n]) * f;
-    if (n < 3) {
-      return {
-        l1: 0,
-        l2: 0,
-        w1: 0,
-        w2: 0,
-        lengthIsEven: true,
-      };
-    }
-    if (n === 3) {
-      return { l1: edgeLen(0), l2: edgeLen(1), w1: edgeLen(2), w2: edgeLen(2), lengthIsEven: true };
-    }
+    const edgeLen = (i) =>
+      i >= 0 && i < n ? pts[i].distanceTo(pts[(i + 1) % n]) * f : 0;
     return {
-      l1: edgeLen(0),
-      w1: edgeLen(1),
-      l2: edgeLen(2),
-      w2: edgeLen(3),
+      l1: n >= 2 ? edgeLen(0) : 0,
+      l2: n >= 3 ? edgeLen(1) : 0,
+      l3: n >= 3 ? edgeLen(2) : 0,
+      l4: n >= 4 ? edgeLen(3) : 0,
+      w1: n >= 3 ? edgeLen(1) : 0,
+      w2: n >= 4 ? edgeLen(3) : 0,
       lengthIsEven: true,
     };
   },
 
   pinFloorSides: function () {
-    if (!this.sideMap && this.corners.length >= 4) {
-      this.sideMap = { l1: 0, w1: 1, l2: 2, w2: 3 };
+    if (!this.sideMap || this.sideMap.w1 != null || this.sideMap.l3 == null) {
+      this.sideMap = { l1: 0, l2: 1, l3: 2, l4: 3 };
     }
     return this.classifyFloorSides();
   },
@@ -2014,14 +2007,14 @@
   },
 
   labelFloorSides: function () {
-    if (this.corners.length !== 4 || this.labels.length < 4) return;
+    if (this.corners.length < 3 || this.labels.length < this.corners.length) return;
     const map = this.pinFloorSides() && this.sideMap;
-    const names = ['', '', '', ''];
+    const names = this.corners.map(() => '');
     if (map) {
       names[map.l1] = 'L1';
       names[map.l2] = 'L2';
-      names[map.w1] = 'W1';
-      names[map.w2] = 'W2';
+      names[map.l3] = 'L3';
+      names[map.l4] = 'L4';
     }
     this.labels.forEach((wrapper, i) => {
       if (!wrapper || !wrapper._lineStart || !wrapper.textEl) return;
@@ -2151,27 +2144,29 @@
     return true;
   },
 
-  applyEditedSides: function (l1, l2, w1, w2, newHeight, focus) {
+  applyEditedSides: function (l1, l2, l3, l4, newHeight, focus) {
     if (!this.corners || this.corners.length < 3) {
       throw new Error('Finish the floor shape first, then edit.');
     }
     this.pinFloorSides();
-    const map = this.sideMap || { l1: 0, w1: 1, l2: 2, w2: 3 };
-    const values = { l1, l2, w1, w2 };
-    const keys = ['l1', 'l2', 'w1', 'w2'];
-    const key =
-      focus && values[focus] > 0
-        ? focus
-        : keys.find((item) => {
-            const edge = map[item];
-            if (!(edge >= 0) || edge >= this.corners.length) return false;
-            return Math.abs(values[item] - this.edgeLengthMeters(edge)) > 0.005;
-          });
+    const map = this.sideMap || { l1: 0, l2: 1, l3: 2, l4: 3 };
+    const values = { l1, l2, l3, l4 };
+    const keys = ['l1', 'l2', 'l3', 'l4'];
     let applied = 0;
-    if (key && values[key] > 0) {
-      const edge = map[key];
-      if (edge >= 0 && edge < this.corners.length && this.setEdgeLengthAlongWall(edge, values[key])) {
-        applied = 1;
+    if (focus !== 'height') {
+      const key =
+        focus && values[focus] > 0
+          ? focus
+          : keys.find((item) => {
+              const edge = map[item];
+              if (!(edge >= 0) || edge >= this.corners.length) return false;
+              return Math.abs(values[item] - this.edgeLengthMeters(edge)) > 0.005;
+            });
+      if (key && values[key] > 0) {
+        const edge = map[key];
+        if (edge >= 0 && edge < this.corners.length && this.setEdgeLengthAlongWall(edge, values[key])) {
+          applied = 1;
+        }
       }
     }
     this.rebuildFloorGraphics();
@@ -2181,9 +2176,10 @@
       window.__COSTructLastHeight = newHeight;
       this.clearExtrusionObjects();
       this.extrudeFloorToHeight(newHeight);
+      applied = 1;
     }
     const length = l1;
-    const width = w1;
+    const width = l2;
     const area = this.polygonArea();
     this._lastFloorArea = area;
     window.__COSTructLastLength = length;
