@@ -2096,9 +2096,36 @@
     return Math.sign(sum) || 1;
   },
 
+  scaleEdgeFromMid: function (edgeIndex, newMeters) {
+    const n = this.corners.length;
+    const a = this.corners[edgeIndex];
+    const b = this.corners[(edgeIndex + 1) % n];
+    const raw = newMeters / (this.calibrationFactor || 1);
+    if (!(raw > 0.02)) return false;
+    const midX = (a.x + b.x) * 0.5;
+    const midZ = (a.z + b.z) * 0.5;
+    let dx = b.x - a.x;
+    let dz = b.z - a.z;
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-8) {
+      dx = 1;
+      dz = 0;
+    } else {
+      dx /= len;
+      dz /= len;
+    }
+    const half = raw * 0.5;
+    a.x = midX - dx * half;
+    a.z = midZ - dz * half;
+    b.x = midX + dx * half;
+    b.z = midZ + dz * half;
+    return true;
+  },
+
   setOneEdgeLength: function (edgeIndex, newMeters) {
     const n = this.corners.length;
-    if (n < 4) return false;
+    if (n < 3) return false;
+    if (n < 4) return this.scaleEdgeFromMid(edgeIndex, newMeters);
     const L = newMeters / (this.calibrationFactor || 1);
     if (!(L > 0.02)) return false;
     const iA = edgeIndex;
@@ -2111,7 +2138,6 @@
     const D = this.corners[iD];
     const rBC = Math.hypot(B.x - C.x, B.z - C.z);
     const rDA = Math.hypot(D.x - A.x, D.z - A.z);
-    if (rBC < 1e-4 || rDA < 1e-4) return false;
     const oldWind = this.windingXZ(this.corners);
     const oldA = { x: A.x, z: A.z };
     const oldB = { x: B.x, z: B.z };
@@ -2119,35 +2145,43 @@
     const d = { x: D.x, z: D.z };
     let best = null;
     let bestScore = Infinity;
-    const steps = 180;
-    for (let i = 0; i < steps; i++) {
-      const theta = (i * 2 * Math.PI) / steps;
-      const bx = c.x + rBC * Math.cos(theta);
-      const bz = c.z + rBC * Math.sin(theta);
-      const hits = this.circleCircleXZ(d, rDA, { x: bx, z: bz }, L);
-      hits.forEach((hit) => {
-        const pts = [
-          { x: hit.x, z: hit.z },
-          { x: bx, z: bz },
-          { x: C.x, z: C.z },
-          { x: D.x, z: D.z },
-        ];
-        if (this.windingXZ(pts) !== oldWind) return;
-        const score =
-          (hit.x - oldA.x) ** 2 +
-          (hit.z - oldA.z) ** 2 +
-          (bx - oldB.x) ** 2 +
-          (bz - oldB.z) ** 2;
-        if (score < bestScore) {
-          bestScore = score;
-          best = { ax: hit.x, az: hit.z, bx, bz };
+    if (rBC > 1e-4 && rDA > 1e-4) {
+      const steps = 360;
+      for (let pass = 0; pass < 2 && !best; pass++) {
+        for (let i = 0; i < steps; i++) {
+          const theta = (i * 2 * Math.PI) / steps;
+          const bx = c.x + rBC * Math.cos(theta);
+          const bz = c.z + rBC * Math.sin(theta);
+          const hits = this.circleCircleXZ(d, rDA, { x: bx, z: bz }, L);
+          hits.forEach((hit) => {
+            const pts = [
+              { x: hit.x, z: hit.z },
+              { x: bx, z: bz },
+              { x: C.x, z: C.z },
+              { x: D.x, z: D.z },
+            ];
+            if (pass === 0 && this.windingXZ(pts) !== oldWind) return;
+            const score =
+              (hit.x - oldA.x) ** 2 +
+              (hit.z - oldA.z) ** 2 +
+              (bx - oldB.x) ** 2 +
+              (bz - oldB.z) ** 2;
+            if (score < bestScore) {
+              bestScore = score;
+              best = { ax: hit.x, az: hit.z, bx, bz };
+            }
+          });
         }
-      });
+      }
     }
-    if (!best) return false;
-    A.set(best.ax, A.y, best.az);
-    B.set(best.bx, B.y, best.bz);
-    return true;
+    if (best) {
+      A.x = best.ax;
+      A.z = best.az;
+      B.x = best.bx;
+      B.z = best.bz;
+      return true;
+    }
+    return this.scaleEdgeFromMid(edgeIndex, newMeters);
   },
 
   applyEditedSides: function (l1, l2, w1, w2, newHeight) {
@@ -2165,8 +2199,9 @@
       [changed(w1, before.w1), this.sideMap.w1, w1],
       [changed(w2, before.w2), this.sideMap.w2, w2],
     ];
+    let applied = 0;
     edits.forEach(([did, edge, meters]) => {
-      if (did) this.setOneEdgeLength(edge, meters);
+      if (did && this.setOneEdgeLength(edge, meters)) applied += 1;
     });
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
@@ -2187,7 +2222,9 @@
     this.areaResult.style.display = 'block';
     this.useAreaBtn.style.display = 'inline-block';
     document.getElementById('arSaveBar').style.display = 'block';
-    this.promptText.textContent = `Dimensions updated — Area: ${area.toFixed(2)} m². Tap Save Dimensions.`;
+    this.promptText.textContent = applied
+      ? `Dimensions updated — Area: ${area.toFixed(2)} m². Tap Save Dimensions.`
+      : 'Change a side value, then tap Apply.';
   },
 
   applyEditedDimensions: function (newLength, newWidth, newHeight) {
