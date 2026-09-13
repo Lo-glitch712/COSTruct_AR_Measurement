@@ -1,20 +1,25 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
+import Link from "next/link"
 import Icon from "@/components/Icon"
 import { UNITS, useCatalog } from "@/lib/catalog"
 import { peso } from "@/lib/estimate"
 import type { Session } from "@/lib/session"
 
 export default function SupplierDashboard({ session }: { session: Session }) {
-  const { items, loaded, add, remove, toggleStock } = useCatalog()
+  const { items, loaded, add, remove, toggleStock, update } = useCatalog()
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [unit, setUnit] = useState(UNITS[0])
   const [error, setError] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [armed, setArmed] = useState<string | null>(null)
+  const [pressed, setPressed] = useState<string | null>(null)
+  const pressTimer = useRef<number | null>(null)
+  const holdFired = useRef(false)
 
   const firstName = session.name.split(" ")[0]
-  const inStock = items.filter((item) => item.stock).length
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -32,18 +37,78 @@ export default function SupplierDashboard({ session }: { session: Session }) {
     }
     if (
       items.some(
-        (item) => item.name.toLowerCase() === trimmed.toLowerCase(),
+        (item) =>
+          item.id !== editingId &&
+          item.name.toLowerCase() === trimmed.toLowerCase(),
       )
     ) {
       setError(`${trimmed} is already in your catalog.`)
       return
     }
 
-    add({ name: trimmed, price: value, unit, stock: true })
+    if (editingId) {
+      update(editingId, { name: trimmed, price: value, unit })
+    } else {
+      add({ name: trimmed, price: value, unit, stock: true })
+    }
     setName("")
     setPrice("")
+    setUnit(UNITS[0])
+    setEditingId(null)
     setError("")
   }
+
+  function startEdit(id: string) {
+    const item = items.find((entry) => entry.id === id)
+    if (!item) return
+    setEditingId(item.id)
+    setName(item.name)
+    setPrice(String(item.price))
+    setUnit(item.unit)
+    setError("")
+    setArmed(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setName("")
+    setPrice("")
+    setUnit(UNITS[0])
+    setError("")
+  }
+
+  function clearPress() {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+
+  function startPress(id: string) {
+    clearPress()
+    holdFired.current = false
+    setPressed(id)
+    pressTimer.current = window.setTimeout(() => {
+      holdFired.current = true
+      setArmed(id)
+    }, 450)
+  }
+
+  function endPress() {
+    clearPress()
+    setPressed(null)
+  }
+
+  useEffect(() => {
+    if (!armed) return
+    function onPointerDown(event: Event) {
+      const target = event.target as HTMLElement | null
+      if (target?.closest("[data-armed='true']")) return
+      setArmed(null)
+    }
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [armed])
 
   return (
     <>
@@ -57,23 +122,35 @@ export default function SupplierDashboard({ session }: { session: Session }) {
         </p>
       </section>
 
-      <section className="grid grid-3">
+      <section className="card">
+        <div className="card-head">
+          <span className="card-icon">
+            <Icon name="calculator" size={20} />
+          </span>
+          <h3>Measurement calculator</h3>
+        </div>
+        <p>
+          Measure length, width, and height for a buyer. No component list —
+          just the dimensions, on site or typed in.
+        </p>
+        <div className="hero-actions" style={{ marginTop: 16 }}>
+          <Link href="/calculator" className="btn btn-primary">
+            Open calculator
+          </Link>
+        </div>
+      </section>
+
+      <section>
         <div className="stat">
           <div className="stat-value">{loaded ? items.length : "—"}</div>
           <div className="stat-label">Materials listed</div>
         </div>
-        <div className="stat">
-          <div className="stat-value">{loaded ? inStock : "—"}</div>
-          <div className="stat-label">In stock</div>
-        </div>
-        <div className="stat">
-          <div className="stat-value">0</div>
-          <div className="stat-label">Open requests</div>
-        </div>
       </section>
 
       <section className="card">
-        <h2 className="section-title">Add a material</h2>
+        <h2 className="section-title">
+          {editingId ? "Edit material" : "Add a material"}
+        </h2>
         <p className="muted" style={{ fontSize: 14, marginBottom: 16 }}>
           Set your own unit price. It replaces the reference price once a buyer
           attaches your quote.
@@ -124,9 +201,20 @@ export default function SupplierDashboard({ session }: { session: Session }) {
             </select>
           </label>
 
-          <button type="submit" className="btn btn-primary">
-            Add material
-          </button>
+          <div className="catalog-form-actions">
+            {editingId ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={cancelEdit}
+              >
+                Cancel
+              </button>
+            ) : null}
+            <button type="submit" className="btn btn-primary">
+              {editingId ? "Save" : "Add material"}
+            </button>
+          </div>
         </form>
 
         {error ? (
@@ -139,8 +227,7 @@ export default function SupplierDashboard({ session }: { session: Session }) {
       <section>
         <h2 className="section-title">Your catalog</h2>
         <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Toggle a material off when you run out — it stays listed but is
-          skipped when buyers are matched.
+          Hold a material to edit it, change stock, or remove it.
         </p>
 
         {loaded && items.length === 0 ? (
@@ -153,7 +240,17 @@ export default function SupplierDashboard({ session }: { session: Session }) {
         ) : (
           <div className="list">
             {items.map((item) => (
-              <div key={item.id} className="list-row">
+              <div
+                key={item.id}
+                className="list-row catalog-hold-row"
+                data-armed={armed === item.id}
+                data-pressed={pressed === item.id}
+                onPointerDown={() => startPress(item.id)}
+                onPointerUp={endPress}
+                onPointerCancel={endPress}
+                onPointerLeave={endPress}
+                onContextMenu={(event) => event.preventDefault()}
+              >
                 <div className="catalog-item">
                   <span className="list-row-title">{item.name}</span>
                   <span className="tiny">
@@ -161,36 +258,42 @@ export default function SupplierDashboard({ session }: { session: Session }) {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  className={`badge ${item.stock ? "" : "badge-muted"}`}
-                  onClick={() => toggleStock(item.id)}
-                  style={{ border: 0, cursor: "pointer" }}
-                >
-                  {item.stock ? "In stock" : "Out of stock"}
-                </button>
-
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Remove ${item.name}`}
-                  title={`Remove ${item.name}`}
-                  onClick={() => remove(item.id)}
-                >
-                  <Icon name="trash" size={17} />
-                </button>
+                {armed === item.id ? (
+                  <div className="catalog-row-actions">
+                    <button
+                      type="button"
+                      className={`badge ${item.stock ? "" : "badge-muted"}`}
+                      onClick={() => toggleStock(item.id)}
+                      style={{ border: 0, cursor: "pointer" }}
+                    >
+                      {item.stock ? "In stock" : "Out of stock"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => startEdit(item.id)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn catalog-remove"
+                      aria-label={`Remove ${item.name}`}
+                      title={`Remove ${item.name}`}
+                      onClick={() => {
+                        if (editingId === item.id) cancelEdit()
+                        remove(item.id)
+                        setArmed(null)
+                      }}
+                    >
+                      <Icon name="trash" size={17} />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
         )}
-      </section>
-
-      <section className="card">
-        <h3>Procurement requests</h3>
-        <p>
-          When a buyer sends you a bill of materials, it will show up here with
-          the quantities they need and a deadline to respond.
-        </p>
       </section>
     </>
   )

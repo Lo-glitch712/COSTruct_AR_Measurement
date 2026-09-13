@@ -2,17 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
-import {
-  componentEstimate,
-  peso,
-  quantity,
-  type MaterialLine,
-} from "@/lib/estimate"
-import { readDraft, type ProjectDraft } from "@/lib/project"
+import { componentEstimate, peso, quantity } from "@/lib/estimate"
+import { readDraft, saveProject, type ProjectDraft } from "@/lib/project"
 import { supplierById } from "@/lib/suppliers"
 
 export default function EstimatePage() {
+  const router = useRouter()
   const [draft, setDraft] = useState<ProjectDraft | null>(null)
   const [loaded, setLoaded] = useState(false)
 
@@ -36,22 +33,11 @@ export default function EstimatePage() {
 
   const total = components.reduce((sum, component) => sum + component.cost, 0)
 
-  const billOfMaterials = useMemo(() => {
-    const totals = new Map<string, MaterialLine>()
-
-    for (const component of components) {
-      for (const line of component.lines) {
-        const existing = totals.get(line.material)
-        totals.set(line.material, {
-          ...line,
-          quantity: (existing?.quantity ?? 0) + line.quantity,
-          cost: (existing?.cost ?? 0) + line.cost,
-        })
-      }
-    }
-
-    return [...totals.values()]
-  }, [components])
+  function save() {
+    if (!draft) return
+    saveProject(draft, total)
+    router.push("/projects")
+  }
 
   if (!loaded) return null
 
@@ -146,38 +132,13 @@ export default function EstimatePage() {
         </div>
       </article>
 
-      <section className="card">
-        <h2 className="section-title">Bill of materials</h2>
-        <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Every component combined, ready to send to a supplier.
-        </p>
-        <ul className="material-lines material-lines-lg">
-          {billOfMaterials.map((line) => (
-            <li key={line.material}>
-              <span className="material-name">{line.material}</span>
-              <span className="material-qty">
-                {quantity(line.quantity)} {line.unit} × {peso(line.unitPrice)}
-              </span>
-              <span className="material-cost">{peso(line.cost)}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="tiny" style={{ marginTop: 16 }}>
-          Quantities use starter estimating factors and should be verified
-          against your project specifications. Prices are replaced by the real
-          figure once you attach a supplier quote in Procurement.
-        </p>
-      </section>
-
-      <div className="hero-actions">
-        <Link href="/supplier" className="btn btn-primary">
-          Send to suppliers
-          <Icon name="arrowRight" size={18} />
-        </Link>
+      <div className="estimate-actions">
         <Link href="/measurements" className="btn btn-secondary">
-          <Icon name="arrowLeft" size={18} />
           Edit measurements
         </Link>
+        <button type="button" className="btn btn-primary" onClick={save}>
+          Save to projects
+        </button>
       </div>
     </>
   )

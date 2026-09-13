@@ -92,7 +92,7 @@ export default function LoginPage() {
             />
           </label>
 
-          {error ? <p className="notice">{error}</p> : null}
+          {error ? <p className="notice-error">{error}</p> : null}
 
           <button type="submit" className="btn btn-primary btn-lg btn-block">
             Sign in as {role === "buyer" ? "Buyer" : "Supplier"}

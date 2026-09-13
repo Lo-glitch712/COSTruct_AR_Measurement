@@ -27,6 +27,11 @@ export default function Carousel({
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType === "touch" || !track.current) return
+    if (
+      (event.target as HTMLElement).closest("button, a, input, textarea, select")
+    ) {
+      return
+    }
     start.current = { x: event.clientX, scroll: track.current.scrollLeft }
     dragged.current = false
     track.current.setPointerCapture(event.pointerId)

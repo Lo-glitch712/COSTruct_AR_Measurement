@@ -6,14 +6,7 @@
  * component measured with AR always produce an identical estimate.
  */
 
-export type ComponentName =
-  | "Column"
-  | "Beam"
-  | "Ground Floor Slab"
-  | "Slab"
-  | "Mortar"
-  | "Plastering"
-  | "Walls"
+export type ComponentName = string
 
 export type Dimensions = {
   length: number
@@ -102,7 +95,11 @@ export function componentEstimate(
               ["Sand (Mortar)", walls * 0.015, 1350, "m³"],
               ["Portland Cement", walls * 0.14, 245, "bag"],
             ]
-          : []
+          : [
+              ["Sand", volume * 0.5, 1350, "m³"],
+              ["Portland Cement", volume * 9, 245, "bag"],
+              ["Gravel", volume * 0.8, 1700, "m³"],
+            ]
 
   return raw.map(([material, quantity, unitPrice, unit]) => ({
     material,

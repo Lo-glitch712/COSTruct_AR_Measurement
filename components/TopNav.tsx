@@ -17,6 +17,7 @@ const BUYER_LINKS = [
 /** A supplier manages their catalog on the dashboard, so /home is enough. */
 const SUPPLIER_LINKS = [
   { href: "/home", label: "Dashboard" },
+  { href: "/calculator", label: "Calculator" },
   { href: "/about", label: "About" },
   { href: "/settings", label: "Settings" },
 ]
@@ -32,46 +33,54 @@ export default function TopNav({ session }: { session: Session }) {
     router.push("/")
   }
 
+  function renderLinks() {
+    return links.map((link) => (
+      <Link
+        key={link.href}
+        href={link.href}
+        className="nav-link"
+        aria-current={pathname === link.href ? "page" : undefined}
+        onClick={() => setOpen(false)}
+      >
+        {link.label}
+      </Link>
+    ))
+  }
+
   return (
     <header className="nav">
-      <div className="container nav-inner">
-        <Link href="/home" className="nav-brand" onClick={() => setOpen(false)}>
-          COSTruct
-        </Link>
+      <div className="nav-glass">
+        <div className="container nav-inner">
+          <Link href="/home" className="nav-brand" onClick={() => setOpen(false)}>
+            COSTruct
+          </Link>
 
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-expanded={open}
-          aria-label="Toggle navigation"
-          onClick={() => setOpen((value) => !value)}
-        >
-          <Icon name="menu" size={20} />
-        </button>
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-expanded={open}
+            aria-label="Toggle navigation"
+            onClick={() => setOpen((value) => !value)}
+          >
+            <Icon name="menu" size={20} />
+          </button>
 
-        <nav className="nav-links" data-open={open}>
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="nav-link"
-              aria-current={pathname === link.href ? "page" : undefined}
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+          <nav className="nav-links">{renderLinks()}</nav>
 
-        <button
-          type="button"
-          className="nav-avatar"
-          title={`${session.name} — sign out`}
-          onClick={signOut}
-        >
-          {initials(session.name)}
-        </button>
+          <button
+            type="button"
+            className="nav-avatar"
+            title={`${session.name} — sign out`}
+            onClick={signOut}
+          >
+            {initials(session.name)}
+          </button>
+        </div>
       </div>
+
+      <nav className="nav-drawer" data-open={open} aria-label="Menu">
+        {renderLinks()}
+      </nav>
     </header>
   )
 }

@@ -92,5 +92,13 @@ export function useCatalog() {
     [commit],
   )
 
-  return { items, loaded, add, remove, toggleStock }
+  const update = useCallback(
+    (id: string, patch: Partial<Omit<CatalogItem, "id">>) =>
+      commit(
+        read().map((item) => (item.id === id ? { ...item, ...patch } : item)),
+      ),
+    [commit],
+  )
+
+  return { items, loaded, add, remove, toggleStock, update }
 }

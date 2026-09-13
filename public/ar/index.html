@@ -13,157 +13,469 @@
   <script src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" crossorigin="anonymous" async="true" data-preload-chunks="slam"></script>
 
   <style>
-  :root { --panel: rgba(17, 24, 39, .78); --glass: rgba(255,255,255,.92); --muted: rgba(255,255,255,.72); --accent:#22c55e; }
+  :root {
+    --accent: #12263a;
+    --accent-pressed: #0b1826;
+    --label: #0f172a;
+    --label-secondary: rgba(15, 23, 42, 0.62);
+    --hairline: rgba(255, 255, 255, 0.18);
+    --glass-dark: rgba(15, 23, 42, 0.48);
+    --glass-light: rgba(255, 255, 255, 0.58);
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin:0; width:100%; height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
-  body { background:#111827; }
-  #hud { position:fixed; inset:0; z-index:20; pointer-events:none; }
-  #topBar { position:absolute; top:14px; left:12px; right:12px; display:flex; justify-content:center; pointer-events:none; }
-  #promptText { max-width:92vw; padding:10px 15px; border-radius:18px; background:rgba(17,24,39,.72); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:#fff; font-size:14px; line-height:1.25; text-align:center; text-shadow:none; box-shadow:0 6px 22px rgba(0,0,0,.18); }
-  #modeBar { position:absolute; top:62px; left:50%; transform:translateX(-50%); display:flex; gap:2px; padding:4px; border-radius:18px; background:rgba(255,255,255,.9); box-shadow:0 6px 18px rgba(0,0,0,.18); pointer-events:auto; }
-  .modeBtn { border:0; background:transparent; color:#374151; border-radius:14px; padding:7px 12px; font-size:12px; font-weight:700; }
-  .modeBtn.active { background:#111827; color:#fff; }
-  #areaResult { position:absolute; top:108px; left:50%; transform:translateX(-50%); padding:7px 13px; border-radius:10px; background:rgba(255,255,255,.94); color:#111827; font-size:13px; font-weight:700; box-shadow:0 5px 16px rgba(0,0,0,.14); }
-  #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:34px; font-weight:300; line-height:1; text-shadow:0 1px 5px rgba(0,0,0,.75); }
-  #snapHint, #heightHint { position:absolute; top:calc(50% + 22px); left:50%; transform:translateX(-50%); padding:6px 10px; border-radius:10px; background:rgba(17,24,39,.78); color:#fff; font-size:11px; font-weight:600; white-space:nowrap; }
-  #bottomControls { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(94vw,380px); display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:auto; }
-  .controlBtn { border:0; font-weight:700; box-shadow:0 8px 22px rgba(0,0,0,.20); }
-  #placeBtn { width:74px; height:74px; padding:0; border-radius:50%; background:#22c55e; color:#fff; font-size:13px; line-height:1.1; border:4px solid rgba(255,255,255,.92); box-shadow:0 7px 24px rgba(0,0,0,.28), inset 0 0 0 2px rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; text-align:center; }
-  #placeBtn:active { transform:scale(.95); }
-  #bottomSecondary { display:flex; align-items:center; justify-content:center; gap:10px; }
-  #resetBtn, #calibrateBtn, #editBtn { width:auto; min-width:96px; height:42px; border-radius:14px; font-size:14px; padding:0 16px; }
-  #resetBtn { background:rgba(17,24,39,.88); color:#fff; }
-  #calibrateBtn { background:rgba(255,255,255,.94); color:#111827; }
-  #editBtn { background:rgba(255,255,255,.94); color:#111827; }
-  #undoBtn { width:48px; height:48px; border:0; border-radius:50%; background:rgba(255,255,255,.94); color:#111827; font-size:28px; font-weight:800; line-height:1; box-shadow:0 8px 22px rgba(0,0,0,.20); }
-  #undoBtn:active { transform:scale(.95); }
-  #calibrationPanel { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); z-index:21; display:none; width:min(88vw,360px); padding:16px; border-radius:18px; background:rgba(255,255,255,.96); color:#111827; box-shadow:0 12px 34px rgba(0,0,0,.22); pointer-events:auto; }
-  #calibrationPanel input { width:100px; padding:9px 10px; font-size:17px; border:1px solid #d1d5db; border-radius:10px; }
-  #calibrationPanel button { border:0; border-radius:10px; padding:10px 14px; font-weight:700; }
-  #applyCalibration { background:#111827; color:#fff; }
-  #calibrationStatus { font-size:12px; color:#4b5563; line-height:1.4; margin-top:8px; }
-  @media (min-width: 600px) { #bottomControls { width:360px; } }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 0;
+  }
+  body { background: #e8eef4; color: var(--label); }
 
-  /* Home screen */
-  #homeScreen { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,#0f172a 0%,#1e293b 55%,#334155 100%); color:#fff; }
-  #homeCard { width:min(92vw,420px); padding:32px 24px 26px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
-  #homeCard { width:min(92vw,420px); padding:40px 26px 28px; border-radius:28px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); box-shadow:0 20px 60px rgba(0,0,0,.28); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); text-align:center; }
-  #homeBrand { margin:0 auto 12px; color:#fff; font-size:48px; line-height:1; font-weight:900; letter-spacing:-2px; }
-  #homeTitle { margin:0; font-size:15px; line-height:1.3; font-weight:600; color:rgba(255,255,255,.68); letter-spacing:.2px; }
-  #homeSubtitle { margin:16px auto 28px; max-width:300px; color:rgba(255,255,255,.78); font-size:14px; line-height:1.55; }
-  #startMeasureBtn { width:100%; height:56px; border:0; border-radius:18px; background:#22c55e; color:#fff; font-size:17px; font-weight:800; box-shadow:0 10px 26px rgba(0,0,0,.24); }
-  #startMeasureBtn:active { transform:scale(.985); }
-  #homeNote { margin-top:12px; color:rgba(255,255,255,.50); font-size:10px; }
-  #hud.isHidden { display:none; }
-  @media (max-height: 620px) { #homeCard { padding:28px 20px 20px; } #homeBrand{font-size:40px;} #startMeasureBtn{height:48px;} }
+  button {
+    font: inherit;
+    cursor: pointer;
+    transition: transform 140ms var(--ease-out), background 200ms var(--ease-out);
+  }
+  button:active { transform: scale(0.97); }
 
-  /* Arriving from /measurements?component=... skips straight to the camera,
-     so the home screen must never paint. */
-  html.ar-direct #homeScreen { display:none !important; }
+  /* Camera HUD — one column of chrome, nothing stacked on top of itself. */
+  #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+  #hud.isHidden { display: none; }
 
+  .hud-top {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    left: 12px;
+    right: 12px;
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 72px;
+    align-items: start;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .hud-top > * { pointer-events: auto; }
+  #arBackBtn[style*="display: none"],
+  #arSaveBar[style*="display: none"] {
+    display: block !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
 
-  /* Keep 8th Wall coaching instructions hidden on the home page.
-     They are revealed only after Start Measuring is pressed. */
+  #arBackBtn,
+  .arBackTop {
+    position: static;
+    z-index: auto;
+    width: 72px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    background: var(--glass-dark);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  #promptText {
+    min-height: 40px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    background: var(--glass-dark);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  #arSaveBar {
+    position: static;
+    z-index: auto;
+    display: block;
+    justify-self: end;
+  }
+  .saveMeasurementBtn,
+  #useAreaBtn {
+    width: 72px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  #modeBar {
+    position: absolute;
+    top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 12px;
+    background: var(--glass-light);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: none;
+    pointer-events: auto;
+  }
+  .modeBtn {
+    border: 0;
+    background: transparent;
+    color: var(--label-secondary);
+    border-radius: 10px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .modeBtn.active { background: var(--accent); color: #fff; }
+
+  #areaResult {
+    position: absolute;
+    top: calc(max(12px, env(safe-area-inset-top)) + 98px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--glass-light);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--label);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+
+  #crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  }
+  #snapHint, #heightHint {
+    position: absolute;
+    top: calc(50% + 22px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--glass-dark);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  #bottomControls {
+    position: absolute;
+    left: 50%;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(92vw, 360px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+  }
+  .controlBtn { border: 0; font-weight: 600; box-shadow: none; }
+  #placeBtn {
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.15;
+    border: 3px solid rgba(255, 255, 255, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: none;
+  }
+  #bottomSecondary { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  #undoBtn, #resetBtn, #calibrateBtn, #editBtn, #arCloseBtn {
+    width: auto;
+    min-width: 88px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 13px;
+    padding: 0 14px;
+    background: var(--glass-light);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--label);
+  }
+  #undoBtn { min-width: 0; padding: 0 12px; }
+  #resetBtn { background: var(--glass-dark); color: #fff; }
+  #heightHint { display: none !important; }
+
+  #calibrationPanel {
+    position: absolute;
+    left: 50%;
+    bottom: 168px;
+    transform: translateX(-50%);
+    z-index: 21;
+    display: none;
+    width: min(88vw, 340px);
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--glass-light);
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    color: var(--label);
+    box-shadow: none;
+    pointer-events: auto;
+  }
+  #calibrationPanel input {
+    width: 100px;
+    padding: 9px 10px;
+    font-size: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+  }
+  #calibrationPanel button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
+  #applyCalibration { background: var(--accent); color: #fff; width: 100%; margin-top: 10px; }
+  #calibrationStatus { font-size: 12px; color: var(--label-secondary); line-height: 1.4; margin-top: 8px; }
+
+  #arDimensionEditor {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: auto;
+    color: var(--label);
+  }
+  #arDimensionEditor .arEditCard {
+    width: min(92vw, 390px);
+    padding: 20px;
+    border-radius: 18px;
+    background: var(--glass-light);
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    box-shadow: none;
+  }
+  #arDimensionEditor .arEditTitle { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
+  #arDimensionEditor .arEditGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  #arDimensionEditor label { font-size: 11px; font-weight: 600; color: var(--label-secondary); }
+  #arDimensionEditor input {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--label);
+    font: inherit;
+    font-weight: 600;
+  }
+  #arDimensionEditor .arEditActions { display: flex; gap: 8px; margin-top: 14px; }
+  #arDimensionEditor .arEditActions button { flex: 1; height: 42px; border: 0; border-radius: 12px; font-weight: 600; }
+  #applyAREdit { background: var(--accent); color: #fff; }
+  #cancelAREdit { background: rgba(15, 23, 42, 0.08); color: var(--label); }
+
+  /* Home */
+  #homeScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: linear-gradient(168deg, #e8eef4 0%, #f4f6f8 46%, #dce6ef 100%);
+  }
+  #homeCard {
+    width: min(92vw, 420px);
+    padding: 36px 26px 28px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    text-align: center;
+    box-shadow: none;
+  }
+  #homeBrand {
+    margin: 0 auto 10px;
+    font-size: clamp(40px, 11vw, 56px);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--label);
+  }
+  #homeTitle { margin: 0; font-size: 15px; font-weight: 600; color: var(--label-secondary); }
+  #homeSubtitle { margin: 14px auto 26px; max-width: 32ch; color: var(--label-secondary); font-size: 15px; line-height: 1.5; }
+  #startMeasureBtn {
+    width: 100%;
+    height: 52px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: none;
+  }
+  #homeNote { margin-top: 14px; color: rgba(15, 23, 42, 0.4); font-size: 12px; }
+  html.ar-direct #homeScreen { display: none !important; }
   body.home-active .coaching-overlay,
-  body.home-active [class*='coaching-overlay'] {
-    display: none !important;
+  body.home-active [class*='coaching-overlay'],
+  body.estimation-active .coaching-overlay,
+  body.estimation-active [class*="coaching-overlay"] { display: none !important; }
+
+  /* Standalone estimate / receipt — same light glass as the main app. */
+  .appScreen, #materialsPricingScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    overflow: auto;
+    background: linear-gradient(168deg, #e8eef4 0%, #f4f6f8 46%, #dce6ef 100%);
+    color: var(--label);
+    padding: 20px 14px 36px;
   }
-
-
-  /* Material & Cost Estimation */
-  .appScreen{position:fixed;inset:0;z-index:110;overflow:auto;background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:#111827;padding:20px 14px 36px}
-  .estimationCard{width:min(94vw,760px);margin:0 auto;padding:22px 0}
-  .estimationHeader{display:flex;align-items:center;gap:14px;margin-bottom:12px}
-  .backBtn{width:42px;height:42px;border:0;border-radius:14px;background:#111827;color:#fff;font-size:30px;line-height:1}
-  .estimateEyebrow{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#22c55e}
-  .estimationHeader h2{margin:2px 0 0;font-size:25px;letter-spacing:-.6px}
-  .progressDots{display:flex;gap:7px;margin:10px 0 18px}
-  .dot{height:5px;width:34px;border-radius:99px;background:#d1d5db}.dot.active{background:#22c55e}
-  .estimateSection{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 8px 25px rgba(15,23,42,.06)}
-  .sectionTitle{font-size:16px;font-weight:850;margin-bottom:13px;display:flex;gap:9px;align-items:center}.sectionTitle span{font-size:11px;color:#22c55e;font-weight:900}
-  .sectionHint{font-size:12px;color:#6b7280;margin:-5px 0 13px}
-  .formGrid,.dimensionGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .formGrid label,.dimensionGrid label{font-size:11px;font-weight:750;color:#4b5563}
-  .formGrid input,.formGrid select,.formGrid textarea,.dimensionGrid input{display:block;width:100%;margin-top:6px;padding:11px 12px;border:1px solid #dbe1e8;border-radius:11px;background:#f9fafb;font:inherit;color:#111827;outline:none}
-  .formGrid textarea{resize:vertical}
-  .measurementChoice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-  .measureChoice{border:1px solid #dbe1e8;background:#f8fafc;border-radius:15px;padding:13px;text-align:left;cursor:pointer}
-  .measureChoice.active{border:2px solid #22c55e;background:#f0fdf4}
-  .measureChoice b,.measureChoice small{display:block}.measureChoice b{font-size:13px}.measureChoice small{font-size:10px;color:#6b7280;margin-top:4px;line-height:1.35}
-  .dimensionPanel{background:#f8fafc;border-radius:15px;padding:13px}.areaPreview{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280}.areaPreview strong{color:#111827}
-  .arInfo{display:flex;gap:12px;align-items:flex-start}.arIcon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:#111827;color:#fff;font-size:24px}.arInfo b{font-size:13px}.arInfo p{margin:4px 0 0;font-size:11px;line-height:1.45;color:#6b7280}
-  .primaryEstimateBtn{width:100%;height:46px;border:0;border-radius:13px;background:#22c55e;color:#fff;font-weight:850;font-size:14px;margin-top:12px;cursor:pointer}
-  .arResult{margin-top:10px;padding:10px 12px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:11px;font-size:12px;font-weight:750}
-  .materialRow{display:grid;grid-template-columns:1.3fr .65fr .65fr 38px;gap:8px;align-items:end;margin-bottom:9px}.materialRow label{font-size:10px;font-weight:750;color:#6b7280}.materialRow input{width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px}.removeMaterial{height:38px;border:0;border-radius:10px;background:#fee2e2;color:#b91c1c;font-weight:900}
-  .addMaterialBtn{width:100%;height:42px;border:1px dashed #9ca3af;border-radius:12px;background:#fff;color:#374151;font-weight:750}
-  .estimateSummary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.estimateSummary div{background:#111827;color:#fff;border-radius:16px;padding:15px}.estimateSummary span{display:block;font-size:10px;color:#cbd5e1}.estimateSummary strong{display:block;margin-top:4px;font-size:19px}
-  @media(max-width:560px){.formGrid,.dimensionGrid,.measurementChoice{grid-template-columns:1fr}.materialRow{grid-template-columns:1.1fr .65fr .65fr 38px}.estimationHeader h2{font-size:21px}}
-
-
-  #bottomSecondary{flex-wrap:wrap}
-  #arCloseBtn{background:rgba(255,255,255,.94);color:#111827}
-  #arBackBtn{background:rgba(255,255,255,.94);color:#111827}
-  #useAreaBtn{background:#22c55e;color:#fff}
-  .savedMeasurement{margin-top:10px;padding:11px 12px;border-radius:12px;background:#ecfdf5;border:1px solid #bbf7d0;font-size:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .savedMeasurement b{color:#166534}
-  .savedMeasurement button{border:0;background:#fff;border-radius:8px;padding:6px 9px;font-weight:700;color:#374151}
-
-
-  .arBackTop{position:fixed;top:16px;left:14px;z-index:30;border:0;border-radius:13px;background:rgba(17,24,39,.88);color:#fff;padding:10px 15px;font-size:14px;font-weight:800;box-shadow:0 7px 20px rgba(0,0,0,.22);pointer-events:auto}
-  #arSaveBar{position:absolute;top:16px;right:14px;z-index:100;pointer-events:auto;display:block}
-  #arDimensionEditor{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.38);pointer-events:auto;color:#111827}
-  #arDimensionEditor .arEditCard{width:min(92vw,390px);padding:18px;border-radius:18px;background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(0,0,0,.30)}
-  #arDimensionEditor .arEditTitle{font-size:14px;font-weight:850;margin-bottom:12px}
-  #arDimensionEditor .arEditGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  #arDimensionEditor label{font-size:9px;font-weight:750;color:#6b7280}
-  #arDimensionEditor input{width:100%;margin-top:4px;padding:10px;border:1px solid #d1d5db;border-radius:9px;background:#fff;color:#111827;font:inherit;font-weight:700}
-  #arDimensionEditor .arEditActions{display:flex;gap:8px;margin-top:12px}
-  #arDimensionEditor .arEditActions button{flex:1;height:42px;border:0;border-radius:11px;font-weight:800}
-  #applyAREdit{background:#22c55e;color:#fff}
-  #cancelAREdit{background:#e5e7eb;color:#111827}
-  .componentMethod.active{border-color:#22c55e;background:#f0fdf4}
-  .componentMeasurements.ar-readonly input{background:#eef2f7;color:#4b5563;cursor:not-allowed}
-  .saveMeasurementBtn{border:0;border-radius:13px;background:#22c55e;color:#fff;padding:11px 15px;font-size:13px;font-weight:850;box-shadow:0 8px 22px rgba(0,0,0,.24);cursor:pointer;display:block}
-  .arInputGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:14px}
-  .arInputGrid label{font-size:10px;font-weight:750;color:#6b7280}
-  .arInputGrid input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f3f4f6;color:#111827;font:inherit;font-weight:700}
-  @media(max-width:560px){
-    .arInputGrid{grid-template-columns:1fr}
-    #arSaveBar{top:16px;right:12px}
-    .saveMeasurementBtn{padding:10px 12px;font-size:12px}
+  #materialsPricingScreen { z-index: 115; display: none; }
+  .estimationCard, .receiptWrap { width: min(94vw, 760px); margin: 0 auto; padding: 8px 0 22px; }
+  .estimationHeader, .receiptTop { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .backBtn {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
   }
+  .estimateEyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+  .estimationHeader h2, .receiptTop h2 { margin: 2px 0 0; font-size: 24px; letter-spacing: -0.03em; }
+  .progressDots { display: flex; gap: 6px; margin: 0 0 16px; }
+  .dot { height: 4px; width: 28px; border-radius: 99px; background: rgba(15, 23, 42, 0.12); }
+  .dot.active { background: var(--accent); }
+  .estimateSection, .componentCard, .receiptPaper {
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: none;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+  .sectionTitle { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; gap: 8px; align-items: center; }
+  .sectionTitle span { font-size: 11px; color: var(--accent); font-weight: 700; }
+  .sectionHint { font-size: 13px; color: var(--label-secondary); margin: -4px 0 12px; }
+  .formGrid, .dimensionGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .formGrid label, .dimensionGrid label, .componentInputs label { font-size: 12px; font-weight: 600; color: var(--label-secondary); }
+  .formGrid input, .formGrid select, .formGrid textarea, .dimensionGrid input, .componentInputs input {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 11px 12px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.5);
+    font: inherit;
+    color: var(--label);
+    outline: none;
+  }
+  .primaryEstimateBtn, .openComponentAR {
+    width: 100%;
+    height: 46px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .componentTitle { display: flex; gap: 10px; align-items: center; }
+  .componentNum {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .componentTitle b { display: block; font-size: 15px; }
+  .componentTitle small { display: block; color: var(--label-secondary); font-size: 12px; margin-top: 2px; }
+  .methodToggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .componentMethod {
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 11px;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--label-secondary);
+  }
+  .componentMethod.active { background: var(--accent); color: #fff; border-color: transparent; }
+  .componentInputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .componentArea { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(15, 23, 42, 0.08); font-size: 12px; color: var(--label-secondary); }
+  .componentArea strong { color: var(--label); }
+  .componentARStatus { margin-top: 8px; font-size: 12px; color: var(--label-secondary); }
+  .componentMeasurements.ar-readonly input { background: rgba(15, 23, 42, 0.06); color: var(--label-secondary); cursor: not-allowed; }
+  .estimateSummary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+  .estimateSummary div { background: var(--accent); color: #fff; border-radius: 14px; padding: 14px; }
+  .estimateSummary span { display: block; font-size: 11px; opacity: 0.7; }
+  .estimateSummary strong { display: block; margin-top: 4px; font-size: 18px; }
+  .materialRow { display: grid; grid-template-columns: 1.3fr .65fr .65fr 38px; gap: 8px; align-items: end; margin-bottom: 9px; }
+  .addMaterialBtn { width: 100%; height: 42px; border: 1px dashed rgba(15, 23, 42, 0.2); border-radius: 12px; background: transparent; color: var(--label-secondary); font-weight: 600; }
+  .receiptHead { text-align: center; border-bottom: 1px solid rgba(15, 23, 42, 0.08); padding-bottom: 14px; margin-bottom: 16px; }
+  .receiptBrand { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+  .receiptSubtitle { font-size: 11px; color: var(--label-secondary); margin-top: 4px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .receiptMeta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--label-secondary); margin: 8px 0 16px; }
+  .receiptComponent { border-top: 1px solid rgba(15, 23, 42, 0.08); padding: 14px 0; }
+  .receiptGrand { border-top: 1px solid var(--accent); margin-top: 12px; padding-top: 14px; display: flex; justify-content: space-between; align-items: end; }
+  .receiptGrand span { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--label-secondary); }
+  .receiptGrand strong { font-size: 24px; letter-spacing: -0.03em; }
+  .receiptNote { margin-top: 14px; font-size: 11px; line-height: 1.5; color: var(--label-secondary); text-align: center; }
+  .receiptTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .receiptTable th { font-size: 10px; color: var(--label-secondary); text-transform: uppercase; text-align: left; padding: 6px 3px; }
+  .receiptTable th:not(:first-child), .receiptTable td:not(:first-child) { text-align: right; }
+  .receiptTable td { padding: 7px 3px; border-bottom: 1px solid rgba(15, 23, 42, 0.06); }
 
-
-  body.estimation-active .coaching-overlay, body.estimation-active [class*="coaching-overlay"] { display:none !important; }
-  .componentCard{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
-  .componentTitle{display:flex;gap:10px;align-items:center}.componentNum{width:30px;height:30px;border-radius:10px;background:#111827;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:900}.componentTitle b{display:block;font-size:15px}.componentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:2px}
-  .methodToggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.componentMethod{border:1px solid #dbe1e8;background:#f8fafc;border-radius:11px;padding:10px;font-size:11px;font-weight:800;color:#374151}.componentMethod.active{border:2px solid #22c55e;background:#f0fdf4;color:#166534}
-  .componentInputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.componentInputs label{font-size:10px;font-weight:750;color:#6b7280}.componentInputs input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #dbe1e8;border-radius:10px;background:#f9fafb;font:inherit}.componentArea{margin-top:9px;padding-top:9px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280}.componentArea strong{color:#111827}.componentAR{margin-top:10px}.openComponentAR{width:100%;height:42px;border:0;border-radius:12px;background:#22c55e;color:#fff;font-weight:850}.componentARStatus{margin-top:7px;font-size:10px;color:#6b7280}.componentCard.ar-selected{border-color:#86efac;box-shadow:0 0 0 2px rgba(34,197,94,.12)}
-  @media(max-width:560px){.componentInputs{grid-template-columns:1fr 1fr}.componentInputs label:last-child{grid-column:1/-1}}
-
-  /* Materials & Pricing receipt page */
-  #materialsPricingScreen{position:fixed;inset:0;z-index:115;display:none;overflow:auto;background:#eef2f7;color:#111827;padding:18px 12px 42px}
-  .receiptWrap{width:min(94vw,760px);margin:0 auto}
-  .receiptTop{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-  .receiptTop h2{margin:0;font-size:24px;letter-spacing:-.5px}
-  .receiptPaper{background:#fff;width:100%;border-radius:8px;padding:22px 18px 26px;box-shadow:0 12px 35px rgba(15,23,42,.12);border:1px solid #e5e7eb}
-  .receiptHead{text-align:center;border-bottom:1px dashed #9ca3af;padding-bottom:15px;margin-bottom:16px}
-  .receiptBrand{font-size:24px;font-weight:950;letter-spacing:-1px}.receiptSubtitle{font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1.2px;text-transform:uppercase}
-  .receiptMeta{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:#4b5563;margin:8px 0 16px}
-  .receiptComponent{border-top:1px dashed #cbd5e1;padding:15px 0 13px}
-  .receiptComponent:first-of-type{border-top:0}
-  .receiptComponentTitle{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
-  .receiptComponentTitle b{font-size:14px}.receiptComponentTitle small{display:block;color:#6b7280;font-size:10px;margin-top:3px}
-  .receiptTable{width:100%;border-collapse:collapse;font-size:11px}
-  .receiptTable th{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;text-align:left;border-bottom:1px solid #e5e7eb;padding:6px 3px}
-  .receiptTable th:not(:first-child),.receiptTable td:not(:first-child){text-align:right}
-  .receiptTable td{padding:7px 3px;border-bottom:1px dotted #e5e7eb}.receiptTable td:first-child{font-weight:700}
-  .receiptDim{font-size:10px;color:#6b7280;margin-bottom:7px}.receiptDim strong{color:#374151}
-  .componentSubtotal{display:flex;justify-content:flex-end;gap:10px;font-size:11px;font-weight:850;padding-top:8px}
-  .receiptGrand{border-top:2px dashed #111827;margin-top:12px;padding-top:15px;display:flex;justify-content:space-between;align-items:end}.receiptGrand span{font-size:11px;font-weight:800}.receiptGrand strong{font-size:25px;letter-spacing:-.5px}
-  .receiptNote{margin-top:14px;padding-top:12px;border-top:1px dashed #9ca3af;font-size:9px;line-height:1.5;color:#6b7280;text-align:center}
-  .emptyReceipt{text-align:center;padding:35px 15px;color:#6b7280;font-size:13px}
-  @media(max-width:560px){#materialsPricingScreen{padding:12px 9px 30px}.receiptPaper{padding:18px 12px 22px}.receiptTop h2{font-size:20px}.receiptTable{font-size:10px}.receiptTable th{font-size:8px}.receiptGrand strong{font-size:22px}}
+  @media (max-width: 560px) {
+    .formGrid, .dimensionGrid, .componentInputs { grid-template-columns: 1fr; }
+    #arDimensionEditor .arEditGrid { grid-template-columns: 1fr; }
+    .estimationHeader h2, .receiptTop h2 { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button { transition: background 160ms ease; }
+    button:active { transform: none; }
+  }
 </style>
 <script>
   /* Runs before first paint so the home screen never flashes on a deep link. */
@@ -361,10 +673,9 @@
 </div>
 
 <div id="hud" class="isHidden">
-  <button id="arBackBtn" class="arBackTop" style="display:none">← Back</button>
   <div id="arDimensionEditor">
     <div class="arEditCard">
-      <div class="arEditTitle">Edit AR Measurement</div>
+      <div class="arEditTitle">Edit measurement</div>
       <div class="arEditGrid">
         <label>Length (m)<input id="arEditLength" type="number" min="0" step="0.01" value="0.00"></label>
         <label>Width (m)<input id="arEditWidth" type="number" min="0" step="0.01" value="0.00"></label>
@@ -372,35 +683,36 @@
       </div>
       <div class="arEditActions">
         <button id="cancelAREdit" type="button">Cancel</button>
-        <button id="applyAREdit" type="button">Apply Changes</button>
+        <button id="applyAREdit" type="button">Apply</button>
       </div>
     </div>
   </div>
-  <div id="topBar"><div id="promptText">FLOOR: Aim at the first point, then tap Place.</div></div>
+  <div class="hud-top">
+    <button id="arBackBtn" class="arBackTop" style="display:none">Back</button>
+    <div id="topBar"><div id="promptText">Aim at the first point, then tap Place.</div></div>
+    <div id="arSaveBar" style="display:none"><button id="useAreaBtn" class="saveMeasurementBtn">Save</button></div>
+  </div>
   <div id="modeBar">
     <button id="floorModeBtn" class="modeBtn active">Floor</button>
     <button id="heightModeBtn" class="modeBtn">Height</button>
   </div>
   <div id="areaResult"></div>
   <div id="crosshair">+</div>
-  <div id="snapHint" style="display:none">SNAP • Tap Place</div>
-  <div id="heightHint" style="display:none">Vertical height • Aim at top</div>
+  <div id="snapHint" style="display:none">Snap · tap Place</div>
+  <div id="heightHint" style="display:none">Aim at the top</div>
   <div id="calibrationPanel">
-    <div style="font-weight:800;font-size:15px;margin-bottom:8px">Calibrate measurement</div>
-    <div style="font-size:12px;color:#4b5563;margin-bottom:10px">Place two points on a known distance.</div>
+    <div style="font-weight:700;font-size:15px;margin-bottom:8px;letter-spacing:-0.02em">Calibrate</div>
+    <div style="font-size:13px;color:rgba(15,23,42,.62);margin-bottom:10px">Place two points on a known distance.</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:6px">
       <input id="knownDistance" type="number" min="0.01" step="0.01" value="1.00"> <span>m</span>
     </div>
-    <button id="applyCalibration">Apply Calibration</button>
+    <button id="applyCalibration">Apply</button>
     <div id="calibrationStatus"></div>
   </div>
-  <div id="arSaveBar" style="display:none"><button id="useAreaBtn" class="saveMeasurementBtn">Save Dimensions</button></div>
   <div id="bottomControls">
-    <div style="display:flex;align-items:center;gap:12px">
-      <button id="undoBtn" class="controlBtn" type="button" aria-label="Undo last point" title="Undo">←</button>
-      <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
-    </div>
+    <button id="placeBtn" class="controlBtn primary" aria-label="Place point">Place<br>Point</button>
     <div id="bottomSecondary">
+      <button id="undoBtn" class="controlBtn" type="button" aria-label="Undo last point" title="Undo">Undo</button>
       <button id="calibrateBtn" class="controlBtn secondary">Calibrate</button>
       <button id="resetBtn" class="controlBtn reset">Reset</button>
       <button id="editBtn" class="controlBtn" type="button">Edit</button>
@@ -505,7 +817,7 @@
     function calculateCost(){ let total=0; materialsList.querySelectorAll('.materialRow').forEach(r=>total+=(+r.querySelector('.matQty').value||0)*(+r.querySelector('.matPrice').value||0)); summaryCost.textContent='₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function openAR(card){ activeComponent=card; components.forEach(c=>c.classList.remove('ar-selected')); card.classList.add('ar-selected'); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); hud.classList.remove('isHidden'); arBackBtn.style.display='inline-block'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none';
       const d=componentData(card); arEditLength.value=d.length.toFixed(2); arEditWidth.value=d.width.toFixed(2); arEditHeight.value=d.height.toFixed(2);
-      document.getElementById('promptText').textContent='FLOOR: Aim at the first point, then tap Place.'; }
+      document.getElementById('promptText').textContent='Aim at the first point, then tap Place.'; }
     function leaveAR(){ if(directComponent){ returnToApp(); return; } hud.classList.add('isHidden'); estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); arBackBtn.style.display='none'; arSaveBar.style.display='none'; arDimensionEditor.style.display='none'; updateAll(); }
 
     /* Deep link from the main app. `/ar/index.html?component=Column` opens the
@@ -607,7 +919,7 @@
 
     if(directComponent){
       const card=components.find(c=>c.dataset.component===directComponent);
-      if(card){ document.body.classList.remove('home-active'); homeScreen.style.display='none'; openAR(card); arBackBtn.textContent='← Back'; }
+      if(card){ document.body.classList.remove('home-active'); homeScreen.style.display='none'; openAR(card); arBackBtn.textContent='Back'; }
     }
 
     window.COSTructEstimation={
@@ -723,11 +1035,11 @@
       if (this.closed) {
         this.promptText.textContent = 'Floor area complete. You can switch to Height.';
       } else if (this.waitingForContinue) {
-        this.promptText.textContent = 'FLOOR: Aim at an existing point to continue';
+        this.promptText.textContent = 'Aim at an existing point to continue';
       } else if (this.corners.length === 0) {
-        this.promptText.textContent = 'FLOOR: Aim at the first point, then tap Place';
+        this.promptText.textContent = 'Aim at the first point, then tap Place';
       } else {
-        this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+        this.promptText.textContent = 'Aim at the next point, then tap Place';
       }
       return;
     }
@@ -744,6 +1056,7 @@
   },
 
   tick: function () {
+    this.refreshLabels();
     if (this.calibrationActive && this.step === 'DONE') return;
     if (!this.calibrationActive) {
       if (this.measureMode === 'floor' && (this.step === 'DONE' || this.closed)) return;
@@ -835,12 +1148,7 @@
       const key = 'height';
       this.updatePreviewLine(key, base, liveEnd);
 
-      const rawVertical = Math.abs(liveEnd.y - base.y);
-      const value = rawVertical * this.calibrationFactor;
-      if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
-      const mid = new THREE.Vector3().addVectors(base, liveEnd).multiplyScalar(0.5);
-      this.setLabel(this.previewLabel, mid, `${value.toFixed(2)} m`);
-      this.faceCamera(this.previewLabel);
+      this.updateLiveLabel(base, liveEnd);
       return;
     }
 
@@ -980,9 +1288,7 @@
   updateLiveLabel: function (start, end) {
     if (!this.previewLabel) this.previewLabel = this.createLabelEntity();
     const dist = start.distanceTo(end) * this.calibrationFactor;
-    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-    this.setLabel(this.previewLabel, mid, `${dist.toFixed(2)} m`);
-    this.faceCamera(this.previewLabel);
+    this.placeLabelOnLine(this.previewLabel, start, end, `${dist.toFixed(2)} m`);
   },
 
   createLabelEntity: function () {
@@ -1007,11 +1313,70 @@
   },
 
   setLabel: function (wrapper, midpoint, text) {
-    wrapper.setAttribute('position', `${midpoint.x} ${midpoint.y + 0.08} ${midpoint.z}`);
+    wrapper.object3D.position.copy(midpoint);
     wrapper.textEl.setAttribute('value', text);
   },
 
+  /**
+   * Park the reading on the segment itself. Offset is perpendicular to the
+   * line — not world-up — so a vertical or diagonal tape still carries its tag.
+   * X follows the line; Z faces the camera so the digits stay readable.
+   */
+  placeLabelOnLine: function (wrapper, start, end, text) {
+    if (text != null) wrapper.textEl.setAttribute('value', text);
+    wrapper._lineStart = start.clone();
+    wrapper._lineEnd = end.clone();
+    this.orientLabel(wrapper, start, end);
+  },
+
+  orientLabel: function (wrapper, start, end) {
+    const dir = new THREE.Vector3().subVectors(end, start);
+    if (dir.lengthSq() < 1e-10) return;
+    dir.normalize();
+
+    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+    const camPos = new THREE.Vector3();
+    this.el.camera.getWorldPosition(camPos);
+    const toCam = new THREE.Vector3().subVectors(camPos, mid);
+
+    let side = new THREE.Vector3().crossVectors(dir, toCam);
+    if (side.lengthSq() < 1e-8) side.crossVectors(dir, new THREE.Vector3(0, 1, 0));
+    if (side.lengthSq() < 1e-8) side.crossVectors(dir, new THREE.Vector3(1, 0, 0));
+    side.normalize();
+    const towardCam = toCam.clone();
+    towardCam.addScaledVector(dir, -towardCam.dot(dir));
+    if (towardCam.lengthSq() > 1e-8) towardCam.normalize();
+    else towardCam.set(0, 1, 0);
+    wrapper.object3D.position.copy(mid)
+      .addScaledVector(side, 0.05)
+      .addScaledVector(towardCam, 0.03);
+
+    const camQuat = new THREE.Quaternion();
+    this.el.camera.getWorldQuaternion(camQuat);
+    const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camQuat);
+    const xAxis = camRight.dot(dir) < 0 ? dir.clone().negate() : dir.clone();
+
+    const zAxis = toCam.clone();
+    zAxis.addScaledVector(xAxis, -zAxis.dot(xAxis));
+    if (zAxis.lengthSq() < 1e-8) {
+      this.el.camera.getWorldDirection(zAxis);
+      zAxis.negate();
+      zAxis.addScaledVector(xAxis, -zAxis.dot(xAxis));
+    }
+    zAxis.normalize();
+    const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+    zAxis.crossVectors(xAxis, yAxis).normalize();
+
+    wrapper.object3D.quaternion.setFromRotationMatrix(
+      new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis),
+    );
+  },
+
   faceCamera: function (wrapper) {
+    if (wrapper._lineStart && wrapper._lineEnd) {
+      this.orientLabel(wrapper, wrapper._lineStart, wrapper._lineEnd);
+      return;
+    }
     const camPos = new THREE.Vector3();
     this.el.camera.getWorldPosition(camPos);
     wrapper.object3D.lookAt(camPos);
@@ -1019,10 +1384,19 @@
 
   finalizeLabel: function (start, end, text) {
     const wrapper = this.createLabelEntity();
-    const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-    this.setLabel(wrapper, mid, text);
-    this.faceCamera(wrapper);
+    this.placeLabelOnLine(wrapper, start, end, text);
     this.labels.push(wrapper);
+  },
+
+  refreshLabels: function () {
+    if (!this.el.camera) return;
+    const keepOnLine = (wrapper) => {
+      if (wrapper && wrapper._lineStart && wrapper._lineEnd) {
+        this.orientLabel(wrapper, wrapper._lineStart, wrapper._lineEnd);
+      }
+    };
+    this.labels.forEach(keepOnLine);
+    keepOnLine(this.previewLabel);
   },
 
   removePreviewLabel: function () {
@@ -1114,7 +1488,7 @@
       this.floorStep = 'B';
       this.step = 'B';
       this.waitingForContinue = false;
-      this.promptText.textContent = 'FLOOR: Aim at the second point, then tap Place';
+      this.promptText.textContent = 'Aim at the second point, then tap Place';
       return;
     }
 
@@ -1157,7 +1531,7 @@
           this.step = 'B';
           this.clearPreview();
           this.removePreviewLabel();
-          this.promptText.textContent = 'FLOOR: Aim at the next point, then tap Place';
+          this.promptText.textContent = 'Aim at the next point, then tap Place';
           return;
         }
 
@@ -1397,7 +1771,7 @@
       this.areaResult.style.display='none';
       this.useAreaBtn.style.display='none';
       document.getElementById('arSaveBar').style.display='none';
-      this.promptText.textContent='FLOOR: Snap an existing point, then tap Place to close or continue.';
+      this.promptText.textContent='Snap an existing point, then tap Place to close or continue.';
       return;
     }
 
@@ -1415,9 +1789,9 @@
     this.floorStep=this.step;
     if (!this.corners.length) {
       this.floorMeasurementY=null; this.measurementY=null;
-      this.promptText.textContent='FLOOR: Aim at the first point, then tap Place.';
+      this.promptText.textContent='Aim at the first point, then tap Place.';
     } else {
-      this.promptText.textContent='FLOOR: Aim at the next point, then tap Place.';
+      this.promptText.textContent='Aim at the next point, then tap Place.';
     }
   },
 
@@ -1511,7 +1885,7 @@
     this.useAreaBtn.style.display = 'none';
     document.getElementById('arSaveBar').style.display = 'none';
     const arEditor = document.getElementById('arDimensionEditor'); if (arEditor) arEditor.style.display='none';
-    this.promptText.textContent = `FLOOR: Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
+    this.promptText.textContent = `Aim at the first point, then tap Place. Scale: ${this.calibrationFactor.toFixed(3)}×`;
   }
 });
 </script>
