@@ -18,7 +18,8 @@ export default function AppLayout({
   const { session, loaded } = useSession()
 
   const blocked =
-    session?.role === "supplier" &&
+    session != null &&
+    session.role !== "buyer" &&
     BUYER_ONLY.some(
       (route) => pathname === route || pathname.startsWith(`${route}/`),
     )

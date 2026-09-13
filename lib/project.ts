@@ -1,6 +1,7 @@
 "use client"
 
 import { COMPONENTS, type ComponentName, type Dimensions } from "@/lib/estimate"
+import { supabase, supabaseEnabled } from "@/lib/supabase"
 
 /**
  * The measurement form hands its dimensions to the estimate page through
@@ -40,7 +41,11 @@ export function clearDraft() {
  * Projects the buyer chose to keep. The draft above is scratch space for one
  * calculation; these survive until they are deleted.
  */
-export type SavedProject = ProjectDraft & { id: string; total: number }
+export type SavedProject = ProjectDraft & {
+  id: string
+  total: number
+  ownerEmail?: string
+}
 
 const PROJECTS_KEY = "costruct.projects"
 
@@ -84,7 +89,11 @@ function writeProjects(projects: SavedProject[]) {
  * Saves a calculation, replacing the previous save of the same one. `savedAt`
  * is stamped when Calculate runs, so re-saving updates instead of duplicating.
  */
-export function saveProject(draft: ProjectDraft, total: number) {
+export function saveProject(
+  draft: ProjectDraft,
+  total: number,
+  ownerEmail?: string,
+) {
   const projects = readProjects()
   const existing = projects.findIndex(
     (project) => project.savedAt === draft.savedAt,
@@ -92,6 +101,7 @@ export function saveProject(draft: ProjectDraft, total: number) {
   const entry: SavedProject = {
     ...draft,
     total,
+    ownerEmail: ownerEmail ?? projects[existing]?.ownerEmail,
     id: existing >= 0 ? projects[existing].id : newId(),
   }
 
@@ -99,11 +109,84 @@ export function saveProject(draft: ProjectDraft, total: number) {
   else projects.unshift(entry)
 
   writeProjects(projects)
+  void pushProject(entry)
   return entry
+}
+
+async function pushProject(entry: SavedProject) {
+  if (!supabaseEnabled) return
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) return
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      buyer_id: auth.user.id,
+      name: entry.name,
+      supplier_id: entry.supplierId,
+      total: entry.total,
+      saved_at: entry.savedAt,
+    })
+    .select("id")
+    .single()
+  if (error || !project) {
+    console.warn("project sync failed", error?.message)
+    return
+  }
+  if (entry.components.length === 0) return
+  await supabase.from("project_components").insert(
+    entry.components.map((component) => ({
+      project_id: project.id,
+      name: component.name,
+      length: component.dimensions.length,
+      width: component.dimensions.width,
+      height: component.dimensions.height,
+    })),
+  )
+}
+
+export async function fetchRemoteProjects(): Promise<SavedProject[]> {
+  if (!supabaseEnabled) return readProjects()
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, name, supplier_id, total, saved_at, buyer_id, profiles(email), project_components(name, length, width, height)")
+    .order("saved_at", { ascending: false })
+  if (error || !data) return readProjects()
+  return data.map((row) => {
+    const profile = row.profiles as { email?: string } | { email?: string }[] | null
+    const email = Array.isArray(profile) ? profile[0]?.email : profile?.email
+    const parts = (row.project_components ?? []) as {
+      name: string
+      length: number
+      width: number
+      height: number
+    }[]
+    return {
+      id: String(row.id),
+      name: String(row.name ?? ""),
+      savedAt: String(row.saved_at),
+      supplierId: row.supplier_id ? String(row.supplier_id) : null,
+      total: Number(row.total ?? 0),
+      ownerEmail: email,
+      components: parts.map((part) => ({
+        name: part.name,
+        dimensions: {
+          length: Number(part.length),
+          width: Number(part.width),
+          height: Number(part.height),
+        },
+      })),
+    }
+  })
 }
 
 export function removeProject(id: string) {
   writeProjects(readProjects().filter((project) => project.id !== id))
+}
+
+export function readProjectsFor(email: string) {
+  return readProjects().filter(
+    (project) => project.ownerEmail?.toLowerCase() === email.toLowerCase(),
+  )
 }
 
 function newId() {
@@ -199,37 +282,6 @@ export function consumeArResult() {
   } catch {
     return null
   }
-}
-
-const SUPPLIER_CALC_KEY = "costruct.supplier-calc"
-
-export type SupplierCalc = {
-  length: string
-  width: string
-  height: string
-  arLocked: ArLockedFields
-}
-
-export function readSupplierCalc(): SupplierCalc | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = window.localStorage.getItem(SUPPLIER_CALC_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as SupplierCalc
-    if (!parsed || typeof parsed !== "object") return null
-    return {
-      length: String(parsed.length ?? ""),
-      width: String(parsed.width ?? ""),
-      height: String(parsed.height ?? ""),
-      arLocked: parsed.arLocked ?? {},
-    }
-  } catch {
-    return null
-  }
-}
-
-export function saveSupplierCalc(calc: SupplierCalc) {
-  window.localStorage.setItem(SUPPLIER_CALC_KEY, JSON.stringify(calc))
 }
 
 /**

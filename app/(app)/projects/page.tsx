@@ -6,22 +6,25 @@ import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { peso } from "@/lib/estimate"
 import {
-  readProjects,
+  readProjectsFor,
   removeProject,
   saveDraft,
   type SavedProject,
 } from "@/lib/project"
+import { useSession } from "@/lib/session"
 import { supplierById } from "@/lib/suppliers"
 
 export default function ProjectsPage() {
   const router = useRouter()
+  const { session } = useSession()
   const [projects, setProjects] = useState<SavedProject[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    setProjects(readProjects())
+    if (!session) return
+    setProjects(readProjectsFor(session.email))
     setLoaded(true)
-  }, [])
+  }, [session])
 
   function open(project: SavedProject) {
     saveDraft({
@@ -35,7 +38,7 @@ export default function ProjectsPage() {
 
   function remove(id: string) {
     removeProject(id)
-    setProjects(readProjects())
+    setProjects(session ? readProjectsFor(session.email) : [])
   }
 
   if (!loaded) return null

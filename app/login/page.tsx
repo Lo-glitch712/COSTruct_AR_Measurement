@@ -1,26 +1,44 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Icon from "@/components/Icon"
-import { nameFromEmail, writeSession, type Role } from "@/lib/session"
+import {
+  ADMIN_EMAIL,
+  ADMIN_PASSWORD,
+  SUPPLIER_PASSWORD,
+  authenticate,
+} from "@/lib/accounts"
+import { signInRemote } from "@/lib/auth"
+import { supabaseEnabled } from "@/lib/supabase"
+import { writeSession, type Role } from "@/lib/session"
 
 const ROLE_HINT: Record<Role, string> = {
   buyer:
-    "Record your site dimensions, generate material quantities and cost estimates, then send requests to hardware suppliers.",
-  supplier:
-    "Publish your material catalog and pricing, and respond to buyer procurement requests.",
+    "Sign in with the email and password you created. New here? Create a buyer account first.",
+  supplier: `Use your store Gmail and the shared password ${SUPPLIER_PASSWORD}. Example: johan.hardware@gmail.com`,
+  admin: `Monitor buyers, suppliers, projects, and catalogs. ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`,
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const router = useRouter()
+  const created = useSearchParams().get("created") === "1"
   const [role, setRole] = useState<Role>("buyer")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [pending, setPending] = useState(false)
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     if (!email.trim() || !password) {
@@ -28,8 +46,34 @@ export default function LoginPage() {
       return
     }
 
-    writeSession({ name: nameFromEmail(email), email: email.trim(), role })
-    router.push("/home")
+    setPending(true)
+    setError("")
+
+    try {
+      if (supabaseEnabled) {
+        await signInRemote(email, password, role)
+      } else {
+        const account = authenticate(email, password)
+        if (!account) throw new Error("Email or password is incorrect.")
+        if (account.role !== role) {
+          throw new Error(
+            `That account is a ${account.role}. Switch the tab and try again.`,
+          )
+        }
+        writeSession({
+          name: account.name,
+          email: account.email,
+          phone: account.phone,
+          role: account.role,
+          supplierId: account.supplierId,
+        })
+      }
+      router.push("/home")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not sign in.")
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -39,27 +83,30 @@ export default function LoginPage() {
         <p className="auth-tagline">Sign in to continue to your workspace</p>
 
         <div className="segmented" role="tablist" aria-label="Account type">
-          <button
-            type="button"
-            role="tab"
-            className="segment"
-            aria-selected={role === "buyer"}
-            onClick={() => setRole("buyer")}
-          >
-            BUYER
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className="segment"
-            aria-selected={role === "supplier"}
-            onClick={() => setRole("supplier")}
-          >
-            SUPPLIER
-          </button>
+          {(["buyer", "supplier", "admin"] as Role[]).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              className="segment"
+              aria-selected={role === value}
+              onClick={() => {
+                setRole(value)
+                setError("")
+              }}
+            >
+              {value.toUpperCase()}
+            </button>
+          ))}
         </div>
 
-        <p className="auth-role-hint">{ROLE_HINT[role]}</p>
+        {created ? (
+          <p className="auth-role-hint">
+            Account created. Sign in with your email and password.
+          </p>
+        ) : (
+          <p className="auth-role-hint">{ROLE_HINT[role]}</p>
+        )}
 
         <form className="stack" onSubmit={handleSubmit} noValidate>
           <label className="field">
@@ -68,7 +115,13 @@ export default function LoginPage() {
               className="input"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={
+                role === "admin"
+                  ? ADMIN_EMAIL
+                  : role === "supplier"
+                    ? "johan.hardware@gmail.com"
+                    : "you@example.com"
+              }
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value)
@@ -83,7 +136,13 @@ export default function LoginPage() {
               className="input"
               type="password"
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder={
+                role === "supplier"
+                  ? SUPPLIER_PASSWORD
+                  : role === "admin"
+                    ? ADMIN_PASSWORD
+                    : "••••••••"
+              }
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value)
@@ -94,13 +153,23 @@ export default function LoginPage() {
 
           {error ? <p className="notice-error">{error}</p> : null}
 
-          <button type="submit" className="btn btn-primary btn-lg btn-block">
-            Sign in as {role === "buyer" ? "Buyer" : "Supplier"}
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg btn-block"
+            disabled={pending}
+          >
+            {pending ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
         <div className="auth-footer">
-          New to COSTruct? <Link href="/login">Create an account</Link>
+          {role === "buyer" ? (
+            <>
+              New buyer? <Link href="/signup">Create an account</Link>
+            </>
+          ) : (
+            <>Supplier and admin accounts are already issued.</>
+          )}
           <div className="tiny back-link" style={{ marginTop: 10 }}>
             <Link href="/">
               <Icon name="arrowLeft" size={14} />

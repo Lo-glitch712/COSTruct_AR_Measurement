@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { componentEstimate, peso, quantity } from "@/lib/estimate"
 import { readDraft, saveProject, type ProjectDraft } from "@/lib/project"
+import { readSession } from "@/lib/session"
 import { supplierById } from "@/lib/suppliers"
 
 export default function EstimatePage() {
@@ -35,7 +36,7 @@ export default function EstimatePage() {
 
   function save() {
     if (!draft) return
-    saveProject(draft, total)
+    saveProject(draft, total, readSession()?.email)
     router.push("/projects")
   }
 

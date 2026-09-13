@@ -1,20 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ROLE_LABEL, clearSession, useSession } from "@/lib/session"
+import { signOutRemote } from "@/lib/auth"
+import { ROLE_LABEL, useSession } from "@/lib/session"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { session } = useSession()
+  const { session, update } = useSession()
+  const [phone, setPhone] = useState("")
   const [metric, setMetric] = useState(true)
   const [arEnabled, setArEnabled] = useState(false)
   const [alerts, setAlerts] = useState(false)
   const isSupplier = session?.role === "supplier"
+  const isAdmin = session?.role === "admin"
+
+  useEffect(() => {
+    if (session) setPhone(session.phone)
+  }, [session])
+
+  function savePhone() {
+    update({ phone: phone.trim() })
+  }
 
   function signOut() {
-    clearSession()
-    router.push("/")
+    void signOutRemote().then(() => router.push("/"))
   }
 
   return (
@@ -35,9 +45,64 @@ export default function SettingsPage() {
             <span className="list-row-title">Name</span>
             <span className="list-row-value">{session?.name ?? "—"}</span>
           </div>
+          {session?.firstName || session?.lastName ? (
+            <>
+              <div className="list-row">
+                <span className="list-row-title">First name</span>
+                <span className="list-row-value">{session.firstName || "—"}</span>
+              </div>
+              <div className="list-row">
+                <span className="list-row-title">Middle name</span>
+                <span className="list-row-value">
+                  {session.middleName || "—"}
+                </span>
+              </div>
+              <div className="list-row">
+                <span className="list-row-title">Last name</span>
+                <span className="list-row-value">{session.lastName || "—"}</span>
+              </div>
+            </>
+          ) : null}
+          {session?.birthday ? (
+            <div className="list-row">
+              <span className="list-row-title">Birthday</span>
+              <span className="list-row-value">{session.birthday}</span>
+            </div>
+          ) : null}
+          {session?.street || session?.city ? (
+            <div className="list-row">
+              <span className="list-row-title">Address</span>
+              <span className="list-row-value">
+                {[
+                  session.street,
+                  session.city,
+                  session.province,
+                  session.zipCode,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            </div>
+          ) : null}
           <div className="list-row">
             <span className="list-row-title">Email</span>
             <span className="list-row-value">{session?.email ?? "—"}</span>
+          </div>
+          <div className="list-row">
+            <label className="list-row-title" htmlFor="account-phone">
+              Contact number
+            </label>
+            <input
+              id="account-phone"
+              className="list-row-input"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="09XX XXX XXXX"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              onBlur={savePhone}
+            />
           </div>
           <div className="list-row">
             <span className="list-row-title">Account type</span>
@@ -45,9 +110,16 @@ export default function SettingsPage() {
               {session ? ROLE_LABEL[session.role] : "—"}
             </span>
           </div>
+          {session?.supplierId ? (
+            <div className="list-row">
+              <span className="list-row-title">Hardware store</span>
+              <span className="list-row-value">{session.name}</span>
+            </div>
+          ) : null}
         </div>
       </section>
 
+      {isAdmin ? null : (
       <section>
         <h2 className="section-title">
           {isSupplier ? "Catalog" : "Measurement"}
@@ -105,6 +177,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+      )}
 
       <div>
         <button type="button" className="btn btn-secondary" onClick={signOut}>

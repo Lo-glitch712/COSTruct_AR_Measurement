@@ -1,14 +1,15 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import Link from "next/link"
 import Icon from "@/components/Icon"
 import { UNITS, useCatalog } from "@/lib/catalog"
 import { peso } from "@/lib/estimate"
 import type { Session } from "@/lib/session"
 
 export default function SupplierDashboard({ session }: { session: Session }) {
-  const { items, loaded, add, remove, toggleStock, update } = useCatalog()
+  const { items, loaded, add, remove, toggleStock, update } = useCatalog(
+    session.supplierId,
+  )
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [unit, setUnit] = useState(UNITS[0])
@@ -116,28 +117,10 @@ export default function SupplierDashboard({ session }: { session: Session }) {
         <span className="eyebrow">Supplier Dashboard</span>
         <h1 className="hero-title">Welcome, {firstName}.</h1>
         <p className="hero-full-title">
-          Publish the materials you carry and keep their prices current. Buyers
-          see your catalog when COSTruct ranks suppliers against their bill of
-          materials.
+          Signed in as {session.email}. Publish the materials you carry and keep
+          their prices current. Buyers see your catalog when COSTruct ranks
+          suppliers against their bill of materials.
         </p>
-      </section>
-
-      <section className="card">
-        <div className="card-head">
-          <span className="card-icon">
-            <Icon name="calculator" size={20} />
-          </span>
-          <h3>Measurement calculator</h3>
-        </div>
-        <p>
-          Measure length, width, and height for a buyer. No component list —
-          just the dimensions, on site or typed in.
-        </p>
-        <div className="hero-actions" style={{ marginTop: 16 }}>
-          <Link href="/calculator" className="btn btn-primary">
-            Open calculator
-          </Link>
-        </div>
       </section>
 
       <section>

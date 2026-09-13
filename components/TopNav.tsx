@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
-import { clearSession, initials, type Session } from "@/lib/session"
+import { initials, type Session } from "@/lib/session"
+import { signOutRemote } from "@/lib/auth"
 
 const BUYER_LINKS = [
   { href: "/measurements", label: "Measurements" },
@@ -17,7 +18,12 @@ const BUYER_LINKS = [
 /** A supplier manages their catalog on the dashboard, so /home is enough. */
 const SUPPLIER_LINKS = [
   { href: "/home", label: "Dashboard" },
-  { href: "/calculator", label: "Calculator" },
+  { href: "/about", label: "About" },
+  { href: "/settings", label: "Settings" },
+]
+
+const ADMIN_LINKS = [
+  { href: "/home", label: "Monitor" },
   { href: "/about", label: "About" },
   { href: "/settings", label: "Settings" },
 ]
@@ -26,11 +32,15 @@ export default function TopNav({ session }: { session: Session }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const links = session.role === "supplier" ? SUPPLIER_LINKS : BUYER_LINKS
+  const links =
+    session.role === "admin"
+      ? ADMIN_LINKS
+      : session.role === "supplier"
+        ? SUPPLIER_LINKS
+        : BUYER_LINKS
 
   function signOut() {
-    clearSession()
-    router.push("/")
+    void signOutRemote().then(() => router.push("/"))
   }
 
   function renderLinks() {

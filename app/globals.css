@@ -646,6 +646,27 @@ select.input option {
   font-size: 14px;
 }
 
+.list-row-input {
+  margin-left: auto;
+  width: min(220px, 58%);
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: right;
+  color: var(--label);
+  font-size: 14px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.list-row-input::placeholder {
+  color: var(--label-tertiary);
+}
+
+.list-row-input:focus {
+  outline: none;
+}
+
 /* iOS switch */
 .switch {
   margin-left: auto;
@@ -823,11 +844,20 @@ select.input option {
    -------------------------------------------------------------------------- */
 
 .auth {
+  height: 100dvh;
   min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 28px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.auth::-webkit-scrollbar {
+  display: none;
 }
 
 .auth-card {
@@ -839,6 +869,150 @@ select.input option {
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+.auth-card-wide {
+  width: min(94vw, 560px);
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.date-picker {
+  position: relative;
+}
+
+.date-picker-trigger {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+}
+
+.date-picker-trigger span[data-empty="true"] {
+  color: var(--label-tertiary);
+}
+
+.date-picker-pop {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  padding: 14px 14px 16px;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  border: 1px solid var(--separator-strong);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.date-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.date-picker-title {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--label);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.date-picker-nav {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  color: var(--label);
+  cursor: pointer;
+}
+
+.date-picker-week,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.date-picker-week {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--label-tertiary);
+}
+
+.date-picker-day,
+.date-picker-year {
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.date-picker-day:hover,
+.date-picker-year:hover,
+.date-picker-nav:hover {
+  background: var(--accent-tint);
+}
+
+.date-picker-day[data-selected="true"],
+.date-picker-year[data-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.date-picker-years {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.date-picker-years::-webkit-scrollbar {
+  display: none;
+}
+
+.form-section-title {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .field-row,
+  .field-row-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .auth-brand {
@@ -1563,6 +1737,37 @@ select.input {
   gap: 2px;
   min-width: 0;
   margin-right: auto;
+}
+
+.admin-account {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 140ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+
+.admin-account[data-pressed="true"] {
+  transform: scale(0.985);
+  background: rgba(18, 38, 58, 0.06);
+}
+
+.admin-account[data-armed="true"] {
+  transform: none;
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.admin-account-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.admin-account-body {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--separator);
+  cursor: default;
 }
 
 .icon-btn {

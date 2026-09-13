@@ -37,9 +37,11 @@ export const MATERIAL_PRICES: { name: string; price: number; unit: string }[] =
   [
     { name: "Sand", price: 1350, unit: "m³" },
     { name: "Portland Cement", price: 245, unit: "bag" },
+    { name: "Pozzolan Cement", price: 250, unit: "bag" },
     { name: "Gravel", price: 1700, unit: "m³" },
     { name: 'CHB — 4"', price: 17, unit: "pc" },
     { name: 'CHB — 5"', price: 20, unit: "pc" },
+    { name: 'CHB — 6"', price: 20, unit: "pc" },
   ]
 
 const CONCRETE_COMPONENTS: ComponentName[] = [

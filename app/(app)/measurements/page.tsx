@@ -603,16 +603,22 @@ export default function MeasurementsPage() {
                   </button>
                 </div>
 
-                <div className="supplier-contact">
-                  <a href={`mailto:${catalog.email}`}>
-                    <Icon name="mail" size={15} />
-                    {catalog.email}
-                  </a>
-                  <a href={`tel:${dialable(catalog.phone)}`}>
-                    <Icon name="phone" size={15} />
-                    {catalog.phone}
-                  </a>
-                </div>
+                {catalog.email || catalog.phone ? (
+                  <div className="supplier-contact">
+                    {catalog.email ? (
+                      <a href={`mailto:${catalog.email}`}>
+                        <Icon name="mail" size={15} />
+                        {catalog.email}
+                      </a>
+                    ) : null}
+                    {catalog.phone ? (
+                      <a href={`tel:${dialable(catalog.phone)}`}>
+                        <Icon name="phone" size={15} />
+                        {catalog.phone}
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className="supplier-catalog">
                   <span className="field-label">Catalog</span>
