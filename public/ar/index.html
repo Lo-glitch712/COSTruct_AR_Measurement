@@ -1429,18 +1429,21 @@
   createLabelEntity: function () {
     const wrapper = document.createElement('a-entity');
     const bg = document.createElement('a-plane');
-    bg.setAttribute('width', 0.28);
-    bg.setAttribute('height', 0.085);
-    bg.setAttribute('color', '#ffffff');
-    bg.setAttribute('opacity', 0.92);
-    bg.setAttribute('position', '0 0 -0.002');
+    bg.setAttribute('width', 0.34);
+    bg.setAttribute('height', 0.10);
+    bg.setAttribute('position', '0 0 0.001');
+    bg.setAttribute(
+      'material',
+      'shader: flat; color: #ffffff; opacity: 0.96; side: double; depthTest: true; transparent: true',
+    );
     wrapper.appendChild(bg);
 
     const txt = document.createElement('a-text');
     txt.setAttribute('align', 'center');
     txt.setAttribute('baseline', 'center');
     txt.setAttribute('color', '#111111');
-    txt.setAttribute('width', 1.05);
+    txt.setAttribute('width', 1.25);
+    txt.setAttribute('position', '0 0 0.004');
     wrapper.appendChild(txt);
     wrapper.textEl = txt;
     this.el.appendChild(wrapper);
@@ -1453,9 +1456,8 @@
   },
 
   /**
-   * Park the reading on the segment itself. Offset is perpendicular to the
-   * line — not world-up — so a vertical or diagonal tape still carries its tag.
-   * X follows the line; Z faces the camera so the digits stay readable.
+   * Sit the reading beside the tape, lifted off the floor, and billboard it
+   * upright toward the camera so it never sinks or flips face-down.
    */
   placeLabelOnLine: function (wrapper, start, end, text) {
     if (text != null) wrapper.textEl.setAttribute('value', text);
@@ -1472,35 +1474,37 @@
     const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
     const camPos = new THREE.Vector3();
     this.el.camera.getWorldPosition(camPos);
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const vertical = Math.abs(dir.y) > 0.65;
     const toCam = new THREE.Vector3().subVectors(camPos, mid);
 
-    let side = new THREE.Vector3().crossVectors(dir, toCam);
-    if (side.lengthSq() < 1e-8) side.crossVectors(dir, new THREE.Vector3(0, 1, 0));
-    if (side.lengthSq() < 1e-8) side.crossVectors(dir, new THREE.Vector3(1, 0, 0));
+    let side = new THREE.Vector3().crossVectors(worldUp, dir);
+    if (side.lengthSq() < 1e-8) {
+      side.crossVectors(worldUp, new THREE.Vector3(toCam.x, 0, toCam.z));
+    }
+    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
     side.normalize();
-    const towardCam = toCam.clone();
-    towardCam.addScaledVector(dir, -towardCam.dot(dir));
-    if (towardCam.lengthSq() > 1e-8) towardCam.normalize();
-    else towardCam.set(0, 1, 0);
+    if (side.dot(toCam) < 0) side.negate();
+
     wrapper.object3D.position.copy(mid)
-      .addScaledVector(side, 0.05)
-      .addScaledVector(towardCam, 0.03);
+      .addScaledVector(side, vertical ? 0.08 : 0.07)
+      .addScaledVector(worldUp, vertical ? 0.03 : 0.14);
 
-    const camQuat = new THREE.Quaternion();
-    this.el.camera.getWorldQuaternion(camQuat);
-    const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camQuat);
-    const xAxis = camRight.dot(dir) < 0 ? dir.clone().negate() : dir.clone();
-
-    const zAxis = toCam.clone();
-    zAxis.addScaledVector(xAxis, -zAxis.dot(xAxis));
+    let zAxis = toCam.clone();
     if (zAxis.lengthSq() < 1e-8) {
       this.el.camera.getWorldDirection(zAxis);
       zAxis.negate();
-      zAxis.addScaledVector(xAxis, -zAxis.dot(xAxis));
     }
     zAxis.normalize();
+    let xAxis = new THREE.Vector3().crossVectors(worldUp, zAxis);
+    if (xAxis.lengthSq() < 1e-8) xAxis.set(1, 0, 0);
+    xAxis.normalize();
     const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
     zAxis.crossVectors(xAxis, yAxis).normalize();
+    if (yAxis.y < 0) {
+      yAxis.negate();
+      xAxis.negate();
+    }
 
     wrapper.object3D.quaternion.setFromRotationMatrix(
       new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis),
