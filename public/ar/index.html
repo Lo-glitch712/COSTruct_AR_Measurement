@@ -1115,6 +1115,7 @@
     this.heightStep = 'A';
     this.waitingForContinue = false;
     this.closed = false;
+    this.sideMap = null;
 
     this.floorMeasurementY = null;
     this.heightBaseY = null;
@@ -1868,7 +1869,7 @@
     // Send the completed AR floor area back to Material & Cost Estimation.
     this._lastFloorArea = areaM2;
     window.__COSTructLastArea = areaM2;
-    const sides = this.classifyFloorSides();
+    const sides = this.pinFloorSides();
     window.__COSTructLastLength = (sides.l1 + sides.l2) * 0.5;
     window.__COSTructLastWidth = (sides.w1 + sides.w2) * 0.5;
     this.labelFloorSides();
@@ -1915,6 +1916,7 @@
     this.markers = [];
     this.lines = [];
     this.corners = [];
+    this.sideMap = null;
   },
 
   undoLast: function () {
@@ -1932,6 +1934,7 @@
       if (this.lines.length) { const el=this.lines.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
       if (this.labels.length) { const el=this.labels.pop(); if(el.parentNode) el.parentNode.removeChild(el); }
       this.closed=false;
+      this.sideMap=null;
       this.step='B'; this.floorStep='B'; this.waitingForContinue=true;
       this.areaResult.style.display='none';
       this.useAreaBtn.style.display='none';
@@ -1988,24 +1991,51 @@
     return { l1: e[1], l2: e[3], w1: e[0], w2: e[2], lengthIsEven: false };
   },
 
+  pinFloorSides: function () {
+    const classified = this.classifyFloorSides();
+    if (!this.sideMap && this.corners.length === 4) {
+      this.sideMap = classified.lengthIsEven
+        ? { l1: 0, w1: 1, l2: 2, w2: 3 }
+        : { l1: 1, w1: 0, l2: 3, w2: 2 };
+    }
+    if (this.sideMap && this.corners.length === 4) {
+      const f = this.calibrationFactor || 1;
+      const len = (i) =>
+        this.corners[i].distanceTo(this.corners[(i + 1) % 4]) * f;
+      return {
+        l1: len(this.sideMap.l1),
+        l2: len(this.sideMap.l2),
+        w1: len(this.sideMap.w1),
+        w2: len(this.sideMap.w2),
+        lengthIsEven: this.sideMap.l1 % 2 === 0,
+      };
+    }
+    return classified;
+  },
+
   getFloorSideLengths: function () {
     return {
-      ...this.classifyFloorSides(),
+      ...this.pinFloorSides(),
       height: this._lastMeasuredHeight || window.__COSTructLastHeight || 0,
     };
   },
 
   labelFloorSides: function () {
     if (this.corners.length !== 4 || this.labels.length < 4) return;
-    const sides = this.classifyFloorSides();
-    const names = sides.lengthIsEven
-      ? ['L1', 'W1', 'L2', 'W2']
-      : ['W1', 'L1', 'W2', 'L2'];
+    const map = this.pinFloorSides() && this.sideMap;
+    const names = ['', '', '', ''];
+    if (map) {
+      names[map.l1] = 'L1';
+      names[map.l2] = 'L2';
+      names[map.w1] = 'W1';
+      names[map.w2] = 'W2';
+    }
     this.labels.forEach((wrapper, i) => {
       if (!wrapper || !wrapper._lineStart || !wrapper.textEl) return;
       const meters =
         wrapper._lineStart.distanceTo(wrapper._lineEnd) * this.calibrationFactor;
-      wrapper.textEl.setAttribute('value', `${names[i]} ${meters.toFixed(2)} m`);
+      const tag = names[i] ? `${names[i]} ` : '';
+      wrapper.textEl.setAttribute('value', `${tag}${meters.toFixed(2)} m`);
     });
   },
 
@@ -2044,66 +2074,68 @@
     return raw * this.calibrationFactor * this.calibrationFactor;
   },
 
-  rebuildQuadFromSides: function (l1, l2, w1, w2) {
-    if (this.corners.length !== 4) return false;
-    const sides = this.classifyFloorSides();
-    if (!sides.lengthIsEven) {
-      this.corners = [
-        this.corners[1],
-        this.corners[2],
-        this.corners[3],
-        this.corners[0],
-      ];
-    }
-    const raw = (meters) => meters / (this.calibrationFactor || 1);
-    const L1 = raw(l1), L2 = raw(l2), W1 = raw(w1), W2 = raw(w2);
-    const A = this.corners[0].clone();
-    const B = this.corners[1];
-    const D = this.corners[3];
-    let u = new THREE.Vector3(B.x - A.x, 0, B.z - A.z);
-    if (u.lengthSq() < 1e-10) u.set(1, 0, 0);
-    else u.normalize();
-    let v = new THREE.Vector3(-u.z, 0, u.x);
-    const toD = new THREE.Vector3(D.x - A.x, 0, D.z - A.z);
-    if (v.dot(toD) < 0) v.negate();
-
-    const delta = L2 - L1;
-    let s = 0;
-    let h = (W1 + W2) * 0.5;
-    if (Math.abs(delta) > 1e-4) {
-      s = (W1 * W1 - W2 * W2 - delta * delta) / (2 * delta);
-      const h2 = W2 * W2 - s * s;
-      if (h2 > 1e-6) h = Math.sqrt(h2);
-      else {
-        s = 0;
-        h = (W1 + W2) * 0.5;
-      }
-    } else {
-      s = 0;
-      const h2 = W2 * W2;
-      h = h2 > 1e-6 ? Math.sqrt(h2) : (W1 + W2) * 0.5;
-    }
-
-    const y = A.y;
-    this.corners[0].set(A.x, y, A.z);
-    this.corners[1].set(A.x + L1 * u.x, y, A.z + L1 * u.z);
-    this.corners[3].set(A.x + s * u.x + h * v.x, y, A.z + s * u.z + h * v.z);
-    this.corners[2].set(
-      A.x + (s + L2) * u.x + h * v.x,
-      y,
-      A.z + (s + L2) * u.z + h * v.z,
+  edgeLengthMeters: function (edgeIndex) {
+    const n = this.corners.length;
+    return (
+      this.corners[edgeIndex].distanceTo(this.corners[(edgeIndex + 1) % n]) *
+      (this.calibrationFactor || 1)
     );
-    return true;
+  },
+
+  scaleEdgeFromMid: function (edgeIndex, newMeters) {
+    const n = this.corners.length;
+    const a = this.corners[edgeIndex];
+    const b = this.corners[(edgeIndex + 1) % n];
+    const raw = newMeters / (this.calibrationFactor || 1);
+    const mid = new THREE.Vector3((a.x + b.x) * 0.5, a.y, (a.z + b.z) * 0.5);
+    const dir = new THREE.Vector3(b.x - a.x, 0, b.z - a.z);
+    if (dir.lengthSq() < 1e-12) dir.set(1, 0, 0);
+    else dir.normalize();
+    const half = raw * 0.5;
+    a.set(mid.x - dir.x * half, a.y, mid.z - dir.z * half);
+    b.set(mid.x + dir.x * half, b.y, mid.z + dir.z * half);
+  },
+
+  setWidthKeepLength2: function (widthEdgeIndex, newMeters) {
+    const n = this.corners.length;
+    const i0 = widthEdgeIndex;
+    const i1 = (widthEdgeIndex + 1) % n;
+    const l2 = this.sideMap.l2;
+    const l2a = l2;
+    const l2b = (l2 + 1) % n;
+    const onL2 = (i) => i === l2a || i === l2b;
+    if (onL2(i0) === onL2(i1)) {
+      this.scaleEdgeFromMid(widthEdgeIndex, newMeters);
+      return;
+    }
+    const keep = onL2(i0) ? i0 : i1;
+    const move = onL2(i0) ? i1 : i0;
+    const fixed = this.corners[keep];
+    const mobile = this.corners[move];
+    const raw = newMeters / (this.calibrationFactor || 1);
+    const dir = new THREE.Vector3(mobile.x - fixed.x, 0, mobile.z - fixed.z);
+    if (dir.lengthSq() < 1e-12) dir.set(0, 0, 1);
+    else dir.normalize();
+    mobile.set(
+      fixed.x + dir.x * raw,
+      mobile.y,
+      fixed.z + dir.z * raw,
+    );
   },
 
   applyEditedSides: function (l1, l2, w1, w2, newHeight) {
     if (!this.corners || this.corners.length < 3 || !this.closed) return;
-    if (this.corners.length === 4) {
-      this.rebuildQuadFromSides(l1, l2, w1, w2);
-    } else {
+    if (this.corners.length !== 4) {
       this.applyEditedDimensions((l1 + l2) * 0.5, (w1 + w2) * 0.5, newHeight);
       return;
     }
+    this.pinFloorSides();
+    const before = this.getFloorSideLengths();
+    const changed = (next, prev) => Math.abs((+next || 0) - (+prev || 0)) > 0.005;
+    if (changed(l1, before.l1)) this.scaleEdgeFromMid(this.sideMap.l1, l1);
+    if (changed(l2, before.l2)) this.scaleEdgeFromMid(this.sideMap.l2, l2);
+    if (changed(w1, before.w1)) this.setWidthKeepLength2(this.sideMap.w1, w1);
+    if (changed(w2, before.w2)) this.setWidthKeepLength2(this.sideMap.w2, w2);
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
       this.heightMeasurements = [];
@@ -2177,6 +2209,7 @@
     this.measurementY = null;
     this.waitingForContinue = false;
     this.closed = false;
+    this.sideMap = null;
     this.snapThreshold = 0.12;
     this.isSnapped = false;
     this.snapKind = '';
