@@ -892,14 +892,13 @@
       if(inst) inst.editorOpen=open;
       if(open) document.activeElement && document.activeElement.blur && document.activeElement.blur();
     }
-    function avgPair(a,b){ return ((+a||0)+(+b||0))/2; }
     function syncAREditDisplays(){
       Object.keys(arEditDisplays).forEach(key=>{
         const raw=arEditDraft[key];
         arEditDisplays[key].textContent=raw || '0';
       });
-      arEditLength.value=avgPair(arEditDraft.l1,arEditDraft.l2).toFixed(2);
-      arEditWidth.value=avgPair(arEditDraft.w1,arEditDraft.w2).toFixed(2);
+      arEditLength.value=(+arEditDraft.l1||0).toFixed(2);
+      arEditWidth.value=(+arEditDraft.w1||0).toFixed(2);
       arEditHeight.value=arEditDraft.height;
       document.querySelectorAll('#arDimensionEditor .arEditField').forEach(btn=>{
         btn.classList.toggle('is-active', btn.dataset.field===arEditField);
@@ -1870,8 +1869,8 @@
     this._lastFloorArea = areaM2;
     window.__COSTructLastArea = areaM2;
     const sides = this.pinFloorSides();
-    window.__COSTructLastLength = (sides.l1 + sides.l2) * 0.5;
-    window.__COSTructLastWidth = (sides.w1 + sides.w2) * 0.5;
+    window.__COSTructLastLength = sides.l1;
+    window.__COSTructLastWidth = sides.w1;
     this.labelFloorSides();
   },
 
@@ -2096,37 +2095,38 @@
     b.set(mid.x + dir.x * half, b.y, mid.z + dir.z * half);
   },
 
-  setWidthKeepLength2: function (widthEdgeIndex, newMeters) {
-    const n = this.corners.length;
+  setWidthBySlidingLength: function (widthEdgeIndex, newMeters) {
+    const n = 4;
+    const l1 = this.sideMap.l1;
+    const l2 = this.sideMap.l2;
+    const l1verts = [l1, (l1 + 1) % n];
+    const l2verts = [l2, (l2 + 1) % n];
     const i0 = widthEdgeIndex;
     const i1 = (widthEdgeIndex + 1) % n;
-    const l2 = this.sideMap.l2;
-    const l2a = l2;
-    const l2b = (l2 + 1) % n;
-    const onL2 = (i) => i === l2a || i === l2b;
-    if (onL2(i0) === onL2(i1)) {
+    const onL1 = l1verts.includes(i0) ? i0 : l1verts.includes(i1) ? i1 : -1;
+    const onL2 = l2verts.includes(i0) ? i0 : l2verts.includes(i1) ? i1 : -1;
+    if (onL1 < 0 || onL2 < 0) {
       this.scaleEdgeFromMid(widthEdgeIndex, newMeters);
       return;
     }
-    const keep = onL2(i0) ? i0 : i1;
-    const move = onL2(i0) ? i1 : i0;
-    const fixed = this.corners[keep];
-    const mobile = this.corners[move];
+    const moving = this.corners[onL1];
+    const fixed = this.corners[onL2];
     const raw = newMeters / (this.calibrationFactor || 1);
-    const dir = new THREE.Vector3(mobile.x - fixed.x, 0, mobile.z - fixed.z);
+    const dir = new THREE.Vector3(moving.x - fixed.x, 0, moving.z - fixed.z);
     if (dir.lengthSq() < 1e-12) dir.set(0, 0, 1);
     else dir.normalize();
-    mobile.set(
-      fixed.x + dir.x * raw,
-      mobile.y,
-      fixed.z + dir.z * raw,
-    );
+    const shiftX = fixed.x + dir.x * raw - moving.x;
+    const shiftZ = fixed.z + dir.z * raw - moving.z;
+    l1verts.forEach((i) => {
+      this.corners[i].x += shiftX;
+      this.corners[i].z += shiftZ;
+    });
   },
 
   applyEditedSides: function (l1, l2, w1, w2, newHeight) {
     if (!this.corners || this.corners.length < 3 || !this.closed) return;
     if (this.corners.length !== 4) {
-      this.applyEditedDimensions((l1 + l2) * 0.5, (w1 + w2) * 0.5, newHeight);
+      this.applyEditedDimensions(l1, w1, newHeight);
       return;
     }
     this.pinFloorSides();
@@ -2134,8 +2134,8 @@
     const changed = (next, prev) => Math.abs((+next || 0) - (+prev || 0)) > 0.005;
     if (changed(l1, before.l1)) this.scaleEdgeFromMid(this.sideMap.l1, l1);
     if (changed(l2, before.l2)) this.scaleEdgeFromMid(this.sideMap.l2, l2);
-    if (changed(w1, before.w1)) this.setWidthKeepLength2(this.sideMap.w1, w1);
-    if (changed(w2, before.w2)) this.setWidthKeepLength2(this.sideMap.w2, w2);
+    if (changed(w1, before.w1)) this.setWidthBySlidingLength(this.sideMap.w1, w1);
+    if (changed(w2, before.w2)) this.setWidthBySlidingLength(this.sideMap.w2, w2);
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
       this.heightMeasurements = [];
@@ -2144,8 +2144,8 @@
       this.clearExtrusionObjects();
       this.extrudeFloorToHeight(newHeight);
     }
-    const length = (l1 + l2) * 0.5;
-    const width = (w1 + w2) * 0.5;
+    const length = l1;
+    const width = w1;
     const area = this.polygonArea();
     this._lastFloorArea = area;
     window.__COSTructLastLength = length;
