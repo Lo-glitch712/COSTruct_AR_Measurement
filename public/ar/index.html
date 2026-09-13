@@ -716,7 +716,7 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
-      <p class="arEditHint">Change one side. That wall stretches point to point; the floor stays connected.</p>
+      <p class="arEditHint">Change one side. The existing corner moves — no new point is added.</p>
       <div class="arEditGrid">
         <button type="button" class="arEditField is-active" data-field="l1">
           <span>Length 1 (m)</span>
@@ -1891,6 +1891,7 @@
     marker.setAttribute('color', '#ffffff');
     marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
     this.el.appendChild(marker);
+    if (marker.object3D) marker.object3D.position.set(point.x, point.y, point.z);
     this.markers.push(marker);
   },
 
@@ -2032,10 +2033,17 @@
   },
 
   rebuildFloorGraphics: function () {
+    this.clearPreview();
+    this.removePreviewLabel();
     this.lines.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
     this.lines = [];
     this.labels.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
     this.labels = [];
+    // Drop leftover height/ghost markers so Apply never leaves a second point.
+    while (this.markers.length > this.corners.length) {
+      const extra = this.markers.pop();
+      if (extra && extra.parentNode) extra.parentNode.removeChild(extra);
+    }
     for (let i = 0; i < this.corners.length; i++) {
       const a = this.corners[i];
       const b = this.corners[(i + 1) % this.corners.length];
@@ -2045,14 +2053,19 @@
         b,
         `${(a.distanceTo(b) * this.calibrationFactor).toFixed(2)} m`,
       );
+      this.syncMarker(i, a);
     }
-    this.markers.slice(0, this.corners.length).forEach((m, i) => {
-      m.setAttribute(
-        'position',
-        `${this.corners[i].x} ${this.corners[i].y} ${this.corners[i].z}`,
-      );
-    });
     this.labelFloorSides();
+  },
+
+  syncMarker: function (index, point) {
+    const marker = this.markers[index];
+    if (!marker) {
+      this.placeMarker(point);
+      return;
+    }
+    if (marker.object3D) marker.object3D.position.set(point.x, point.y, point.z);
+    marker.setAttribute('position', `${point.x} ${point.y} ${point.z}`);
   },
 
   polygonArea: function () {
@@ -2122,8 +2135,19 @@
       dx /= len;
       dz /= len;
     }
-    b.x = a.x + dx * raw;
-    b.z = a.z + dz * raw;
+    // Slide the existing end corner only. Never insert a new point.
+    const nx = a.x + dx * raw;
+    const nz = a.z + dz * raw;
+    const shiftX = nx - b.x;
+    const shiftZ = nz - b.z;
+    b.x = nx;
+    b.z = nz;
+    // Keep the next existing corner attached so the old point moves with the wall.
+    const c = this.corners[(edgeIndex + 2) % n];
+    if (n >= 4 && c && c !== a) {
+      c.x += shiftX;
+      c.z += shiftZ;
+    }
     return true;
   },
 
@@ -2131,9 +2155,6 @@
     if (!this.corners || this.corners.length < 3) {
       throw new Error('Finish the floor shape first, then edit.');
     }
-    this.corners = this.corners.map(
-      (p) => new THREE.Vector3(Number(p.x), Number(p.y), Number(p.z)),
-    );
     this.pinFloorSides();
     const map = this.sideMap || { l1: 0, w1: 1, l2: 2, w2: 3 };
     const values = { l1, l2, w1, w2 };
