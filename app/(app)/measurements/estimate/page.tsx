@@ -92,6 +92,16 @@ export default function EstimatePage() {
               {components.length === 1 ? "" : "s"}
               {supplier ? ` · ${supplier.name}` : ""}
             </p>
+            {draft?.address?.trim() ? (
+              <p className="tiny" style={{ marginTop: 6 }}>
+                {draft.address.trim()}
+              </p>
+            ) : null}
+            {draft?.description?.trim() ? (
+              <p className="muted" style={{ marginTop: 8, fontSize: 14 }}>
+                {draft.description.trim()}
+              </p>
+            ) : null}
           </div>
           <div className="receipt-total">
             <div className="tiny">Estimated total</div>

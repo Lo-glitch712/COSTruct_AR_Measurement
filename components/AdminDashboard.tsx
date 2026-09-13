@@ -348,6 +348,9 @@ function BuyerProjects({ projects }: { projects: SavedProject[] }) {
                 {project.name.trim() || "Untitled project"}
               </div>
               <div className="tiny">
+                {project.address?.trim()
+                  ? `${project.address.trim()} · `
+                  : ""}
                 {store?.name ?? "No hardware selected"} ·{" "}
                 {project.components.length} components
               </div>

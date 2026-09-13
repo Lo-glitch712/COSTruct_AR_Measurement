@@ -58,6 +58,8 @@ create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   buyer_id uuid not null references public.profiles (id) on delete cascade,
   name text not null default '',
+  address text not null default '',
+  description text not null default '',
   supplier_id text references public.suppliers (id),
   total numeric(14, 2) not null default 0,
   saved_at timestamptz not null default now(),

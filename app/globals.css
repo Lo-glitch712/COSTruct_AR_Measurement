@@ -522,6 +522,14 @@ select.input option {
   color: var(--label-tertiary);
 }
 
+textarea.input-area {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
 .input:focus {
   outline: none;
   border-color: var(--accent);

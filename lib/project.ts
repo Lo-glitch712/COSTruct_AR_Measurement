@@ -9,6 +9,8 @@ import { supabase, supabaseEnabled } from "@/lib/supabase"
  */
 export type ProjectDraft = {
   name: string
+  address: string
+  description: string
   savedAt: string
   supplierId: string | null
   components: { name: ComponentName; dimensions: Dimensions }[]
@@ -27,7 +29,7 @@ export function readDraft(): ProjectDraft | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as ProjectDraft
     if (!Array.isArray(parsed?.components)) return null
-    return parsed
+    return { ...parsed, ...normalizeDraft(parsed) }
   } catch {
     return null
   }
@@ -55,9 +57,21 @@ export function readProjects(): SavedProject[] {
     const raw = window.localStorage.getItem(PROJECTS_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as SavedProject[]
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed)
+      ? parsed.map((project) => ({ ...project, ...normalizeDraft(project) }))
+      : []
   } catch {
     return []
+  }
+}
+
+function normalizeDraft(draft: Partial<ProjectDraft> & {
+  components?: ProjectDraft["components"]
+}): Pick<ProjectDraft, "name" | "address" | "description"> {
+  return {
+    name: draft.name ?? "",
+    address: draft.address ?? "",
+    description: draft.description ?? "",
   }
 }
 
@@ -122,6 +136,8 @@ async function pushProject(entry: SavedProject) {
     .insert({
       buyer_id: auth.user.id,
       name: entry.name,
+      address: entry.address,
+      description: entry.description,
       supplier_id: entry.supplierId,
       total: entry.total,
       saved_at: entry.savedAt,
@@ -148,7 +164,7 @@ export async function fetchRemoteProjects(): Promise<SavedProject[]> {
   if (!supabaseEnabled) return readProjects()
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, supplier_id, total, saved_at, buyer_id, profiles(email), project_components(name, length, width, height)")
+    .select("id, name, address, description, supplier_id, total, saved_at, buyer_id, profiles(email), project_components(name, length, width, height)")
     .order("saved_at", { ascending: false })
   if (error || !data) return readProjects()
   return data.map((row) => {
@@ -163,6 +179,8 @@ export async function fetchRemoteProjects(): Promise<SavedProject[]> {
     return {
       id: String(row.id),
       name: String(row.name ?? ""),
+      address: String(row.address ?? ""),
+      description: String(row.description ?? ""),
       savedAt: String(row.saved_at),
       supplierId: row.supplier_id ? String(row.supplier_id) : null,
       total: Number(row.total ?? 0),
@@ -208,6 +226,8 @@ export type ArLockedFields = {
 
 export type Workspace = {
   name: string
+  address: string
+  description: string
   supplierId: string | null
   selected: ComponentName[]
   inputs: Record<string, { length: string; width: string; height: string }>
@@ -232,6 +252,8 @@ export function readWorkspace(): Workspace | null {
     if (!parsed || typeof parsed.inputs !== "object") return null
     return {
       ...parsed,
+      address: parsed.address ?? "",
+      description: parsed.description ?? "",
       selected: normalizeSelected(parsed.selected, parsed.inputs),
     }
   } catch {
@@ -304,6 +326,8 @@ export function mergeArResult(): ArMerge {
 
   const workspace: Workspace = readWorkspace() ?? {
     name: "",
+    address: "",
+    description: "",
     supplierId: null,
     selected: [],
     inputs: {},

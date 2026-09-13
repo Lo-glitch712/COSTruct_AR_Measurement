@@ -62,6 +62,8 @@ const LONG_PRESS_MS = 450
 export default function MeasurementsPage() {
   const router = useRouter()
   const [projectName, setProjectName] = useState("")
+  const [projectAddress, setProjectAddress] = useState("")
+  const [projectDescription, setProjectDescription] = useState("")
   const [supplierId, setSupplierId] = useState<string | null>(null)
   const [inputs, setInputs] = useState<Record<string, DimensionInput>>(() =>
     Object.fromEntries(COMPONENTS.map(({ name }) => [name, EMPTY])),
@@ -87,6 +89,8 @@ export default function MeasurementsPage() {
     const { workspace, applied } = mergeArResult()
     if (workspace) {
       setProjectName(workspace.name)
+      setProjectAddress(workspace.address ?? "")
+      setProjectDescription(workspace.description ?? "")
       setSupplierId(workspace.supplierId)
       setSelected(workspace.selected)
       setInputs((current) => ({ ...current, ...workspace.inputs }))
@@ -117,6 +121,8 @@ export default function MeasurementsPage() {
     if (!restored) return
     saveWorkspace({
       name: projectName,
+      address: projectAddress,
+      description: projectDescription,
       supplierId,
       selected,
       inputs,
@@ -127,6 +133,8 @@ export default function MeasurementsPage() {
   }, [
     restored,
     projectName,
+    projectAddress,
+    projectDescription,
     supplierId,
     selected,
     inputs,
@@ -288,6 +296,8 @@ export default function MeasurementsPage() {
   function calculate() {
     saveDraft({
       name: projectName.trim(),
+      address: projectAddress.trim(),
+      description: projectDescription.trim(),
       savedAt: new Date().toISOString(),
       supplierId,
       components: measured.map((row) => ({
@@ -304,8 +314,9 @@ export default function MeasurementsPage() {
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">Measure and estimate</h1>
         <p className="page-subtitle">
-          Name the project, pick the hardware, then tap a component to measure
-          it. The form opens in place — no extra section below.
+          Name the project, add the site address, pick the hardware, then tap a
+          component to measure it. The form opens in place — no extra section
+          below.
         </p>
       </header>
 
@@ -324,14 +335,34 @@ export default function MeasurementsPage() {
         </div>
       ) : null}
 
-      <div className="card">
+      <div className="card stack">
         <label className="field">
           <span className="field-label">Project name</span>
           <input
             className="input"
-            placeholder="e.g. Two-storey residence, Naga City"
+            placeholder="e.g. Two-storey residence"
             value={projectName}
             onChange={(event) => setProjectName(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Project address</span>
+          <input
+            className="input"
+            autoComplete="street-address"
+            placeholder="e.g. Poblacion, Goa, Camarines Sur"
+            value={projectAddress}
+            onChange={(event) => setProjectAddress(event.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Description (optional)</span>
+          <textarea
+            className="input input-area"
+            rows={3}
+            placeholder="Notes about the job, site, or scope"
+            value={projectDescription}
+            onChange={(event) => setProjectDescription(event.target.value)}
           />
         </label>
       </div>

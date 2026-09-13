@@ -29,6 +29,8 @@ export default function ProjectsPage() {
   function open(project: SavedProject) {
     saveDraft({
       name: project.name,
+      address: project.address,
+      description: project.description,
       savedAt: project.savedAt,
       supplierId: project.supplierId,
       components: project.components,
@@ -98,6 +100,14 @@ export default function ProjectsPage() {
                     <Icon name="trash" size={16} />
                   </button>
                 </div>
+                {project.address?.trim() ? (
+                  <p className="tiny">{project.address.trim()}</p>
+                ) : null}
+                {project.description?.trim() ? (
+                  <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>
+                    {project.description.trim()}
+                  </p>
+                ) : null}
                 <p className="tiny">
                   {savedAt.toLocaleDateString("en-PH", {
                     year: "numeric",
