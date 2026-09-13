@@ -1729,7 +1729,7 @@
           const snapped = point.clone();
           const nearest = this.existingCornerIndex(snapped);
           if (nearest && nearest.index === 0 && this.corners.length >= 3) {
-            this.closePolygon();
+            this.closePolygon(true);
             return;
           }
           // Already on an existing corner — never add another point.
@@ -1750,7 +1750,7 @@
         if (rawDistance < 0.01) return;
         const first = this.corners[0];
         if (first && this.corners.length >= 3 && Math.hypot(end.x - first.x, end.z - first.z) <= this.snapThreshold) {
-          this.closePolygon();
+          this.closePolygon(true);
           return;
         }
         if (this.existingCornerIndex(end, this.corners.length - 1)?.distance <= this.snapThreshold) {
@@ -1879,19 +1879,20 @@
     this.extrusionWalls = [];
   },
 
-  closePolygon: function () {
+  closePolygon: function (force) {
     if (this.measureMode !== 'floor' || this.corners.length < 3 || this.closed) return;
 
     const first = this.corners[0];
     const last = this.corners[this.corners.length - 1];
     const rawClosing = last.distanceTo(first);
-    if (rawClosing > 0.15) return;
+    // Snap-to-first is an explicit close. Do not require the last corner to
+    // already sit on the first point (that blocked closing the shape).
+    if (!force && rawClosing > 0.15) return;
 
-    // Closing snaps back to the first point — do not keep a near-copy as a 5th corner.
+    // Drop only a leftover copy of the first point, never a real corner.
     if (this.corners.length > 3 && rawClosing <= (this.snapThreshold || 0.12)) {
       this.corners.pop();
     }
-    this.collapseDuplicateCorners();
     if (this.corners.length < 3) return;
 
     this.clearPreview();
