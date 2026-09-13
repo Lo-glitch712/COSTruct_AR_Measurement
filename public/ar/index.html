@@ -1017,14 +1017,24 @@
     cancelAREdit.addEventListener('click',()=>setAREditorOpen(false));
     applyAREdit.addEventListener('click',()=>{
       const inst=measureInst();
-      if(!inst) return;
-      const l1=+arEditDraft.l1||0,l2=+arEditDraft.l2||0,w1=+arEditDraft.w1||0,w2=+arEditDraft.w2||0,h=+arEditDraft.height||0;
-      if(!(l1>0&&l2>0&&w1>0&&w2>0)) {
-        document.querySelector('#arDimensionEditor .arEditHint').textContent='Length 1, length 2, width 1, and width 2 must be greater than 0.';
+      const hint=document.querySelector('#arDimensionEditor .arEditHint');
+      if(!inst || !inst.applyEditedSides){
+        if(hint) hint.textContent='AR measurement is not ready. Close the floor first.';
         return;
       }
-      inst.applyEditedSides(l1,l2,w1,w2,h);
-      setAREditorOpen(false);
+      const l1=+arEditDraft.l1||0,l2=+arEditDraft.l2||0,w1=+arEditDraft.w1||0,w2=+arEditDraft.w2||0,h=+arEditDraft.height||0;
+      const focus=arEditField;
+      const focusVal={l1,l2,w1,w2}[focus]||0;
+      if(!(focusVal>0)){
+        if(hint) hint.textContent='Enter a length greater than 0, then tap Apply.';
+        return;
+      }
+      try{
+        inst.applyEditedSides(l1,l2,w1,w2,h,focus);
+        setAREditorOpen(false);
+      }catch(err){
+        if(hint) hint.textContent=err instanceof Error ? err.message : 'Could not apply the new length.';
+      }
     });
     function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function qty(v, decimals=2){ return v.toLocaleString('en-PH',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
@@ -1651,7 +1661,7 @@
       }
 
       this.placeMarker(point);
-      this.corners[0] = point;
+      this.corners[0] = point.clone();
       this.floorMeasurementY = point.y;
       this.measurementY = point.y;
       this.floorStep = 'B';
@@ -2122,86 +2132,31 @@
     return true;
   },
 
-  setOneEdgeLength: function (edgeIndex, newMeters) {
-    const n = this.corners.length;
-    if (n < 3) return false;
-    if (n < 4) return this.scaleEdgeFromMid(edgeIndex, newMeters);
-    const L = newMeters / (this.calibrationFactor || 1);
-    if (!(L > 0.02)) return false;
-    const iA = edgeIndex;
-    const iB = (edgeIndex + 1) % n;
-    const iC = (edgeIndex + 2) % n;
-    const iD = (edgeIndex + 3) % n;
-    const A = this.corners[iA];
-    const B = this.corners[iB];
-    const C = this.corners[iC];
-    const D = this.corners[iD];
-    const rBC = Math.hypot(B.x - C.x, B.z - C.z);
-    const rDA = Math.hypot(D.x - A.x, D.z - A.z);
-    const oldWind = this.windingXZ(this.corners);
-    const oldA = { x: A.x, z: A.z };
-    const oldB = { x: B.x, z: B.z };
-    const c = { x: C.x, z: C.z };
-    const d = { x: D.x, z: D.z };
-    let best = null;
-    let bestScore = Infinity;
-    if (rBC > 1e-4 && rDA > 1e-4) {
-      const steps = 360;
-      for (let pass = 0; pass < 2 && !best; pass++) {
-        for (let i = 0; i < steps; i++) {
-          const theta = (i * 2 * Math.PI) / steps;
-          const bx = c.x + rBC * Math.cos(theta);
-          const bz = c.z + rBC * Math.sin(theta);
-          const hits = this.circleCircleXZ(d, rDA, { x: bx, z: bz }, L);
-          hits.forEach((hit) => {
-            const pts = [
-              { x: hit.x, z: hit.z },
-              { x: bx, z: bz },
-              { x: C.x, z: C.z },
-              { x: D.x, z: D.z },
-            ];
-            if (pass === 0 && this.windingXZ(pts) !== oldWind) return;
-            const score =
-              (hit.x - oldA.x) ** 2 +
-              (hit.z - oldA.z) ** 2 +
-              (bx - oldB.x) ** 2 +
-              (bz - oldB.z) ** 2;
-            if (score < bestScore) {
-              bestScore = score;
-              best = { ax: hit.x, az: hit.z, bx, bz };
-            }
-          });
-        }
-      }
+  applyEditedSides: function (l1, l2, w1, w2, newHeight, focus) {
+    if (!this.corners || this.corners.length < 3) {
+      throw new Error('Finish the floor shape first, then edit.');
     }
-    if (best) {
-      A.x = best.ax;
-      A.z = best.az;
-      B.x = best.bx;
-      B.z = best.bz;
-      return true;
-    }
-    return this.scaleEdgeFromMid(edgeIndex, newMeters);
-  },
-
-  applyEditedSides: function (l1, l2, w1, w2, newHeight) {
-    if (!this.corners || this.corners.length < 3 || !this.closed) return;
-    if (this.corners.length < 4) {
-      this.applyEditedDimensions(l1, w1, newHeight);
-      return;
-    }
+    this.corners = this.corners.map(
+      (p) => new THREE.Vector3(Number(p.x), Number(p.y), Number(p.z)),
+    );
     this.pinFloorSides();
-    const before = this.getFloorSideLengths();
-    const changed = (next, prev) => Math.abs((+next || 0) - (+prev || 0)) > 0.005;
-    const edits = [
-      [changed(l1, before.l1), this.sideMap.l1, l1],
-      [changed(l2, before.l2), this.sideMap.l2, l2],
-      [changed(w1, before.w1), this.sideMap.w1, w1],
-      [changed(w2, before.w2), this.sideMap.w2, w2],
-    ];
+    const map = this.sideMap || { l1: 0, w1: 1, l2: 2, w2: 3 };
+    const values = { l1, l2, w1, w2 };
+    const keys = ['l1', 'l2', 'w1', 'w2'];
     let applied = 0;
-    edits.forEach(([did, edge, meters]) => {
-      if (did && this.setOneEdgeLength(edge, meters)) applied += 1;
+    const resize = (key) => {
+      const edge = map[key];
+      const meters = values[key];
+      if (!(edge >= 0) || !(meters > 0) || edge >= this.corners.length) return;
+      if (this.scaleEdgeFromMid(edge, meters)) applied += 1;
+    };
+    if (focus && values[focus] > 0) resize(focus);
+    keys.forEach((key) => {
+      if (key === focus) return;
+      const edge = map[key];
+      if (!(edge >= 0) || edge >= this.corners.length) return;
+      const live = this.edgeLengthMeters(edge);
+      if (Math.abs(values[key] - live) > 0.005) resize(key);
     });
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
