@@ -259,7 +259,7 @@
   #applyCalibration { background: var(--accent); color: #fff; width: 100%; margin-top: 10px; }
   #calibrationStatus { font-size: 12px; color: var(--label-secondary); line-height: 1.4; margin-top: 8px; }
 
-  /* Bottom sheet, no blur / no native keyboard — both freeze WebXR on iOS. */
+  /* Glass sheet on the card only — full-screen blur freezes the phone camera. */
   #arDimensionEditor {
     position: fixed;
     inset: 0;
@@ -268,16 +268,19 @@
     align-items: flex-end;
     justify-content: center;
     padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-    background: rgba(15, 23, 42, 0.16);
+    background: rgba(15, 23, 42, 0.08);
     pointer-events: auto;
     color: var(--label);
   }
   #arDimensionEditor .arEditCard {
     width: min(94vw, 390px);
     padding: 16px 16px 14px;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
   }
   #arDimensionEditor .arEditTitle { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
   #arDimensionEditor .arEditHint {
@@ -286,21 +289,22 @@
     line-height: 1.4;
     color: var(--label-secondary);
   }
-  #arDimensionEditor .arEditGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  #arDimensionEditor .arEditGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #arDimensionEditor .arEditField[data-field="height"] { grid-column: 1 / -1; }
   #arDimensionEditor .arEditField {
     display: block;
     width: 100%;
     padding: 8px 6px 10px;
-    border: 1px solid rgba(15, 23, 42, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 12px;
-    background: #f4f6f8;
+    background: rgba(255, 255, 255, 0.28);
     color: inherit;
     text-align: left;
     transform: none;
   }
   #arDimensionEditor .arEditField.is-active {
-    border-color: var(--accent);
-    background: #fff;
+    border-color: rgba(18, 38, 58, 0.45);
+    background: rgba(255, 255, 255, 0.58);
     box-shadow: 0 0 0 3px rgba(18, 38, 58, 0.12);
   }
   #arDimensionEditor .arEditField span {
@@ -324,9 +328,9 @@
   }
   #arDimensionEditor .arEditPad button {
     height: 46px;
-    border: 0;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 12px;
-    background: #eef1f4;
+    background: rgba(255, 255, 255, 0.32);
     color: var(--label);
     font-size: 20px;
     font-weight: 700;
@@ -334,8 +338,8 @@
   }
   #arDimensionEditor .arEditActions { display: flex; gap: 8px; margin-top: 12px; }
   #arDimensionEditor .arEditActions button { flex: 1; height: 44px; border: 0; border-radius: 12px; font-weight: 600; }
-  #applyAREdit { background: var(--accent); color: #fff; }
-  #cancelAREdit { background: rgba(15, 23, 42, 0.08); color: var(--label); }
+  #applyAREdit { background: rgba(18, 38, 58, 0.88); color: #fff; }
+  #cancelAREdit { background: rgba(255, 255, 255, 0.34); color: var(--label); }
 
   /* Home */
   #homeScreen {
@@ -712,15 +716,23 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
-      <p class="arEditHint">Use the keypad so the camera does not freeze.</p>
+      <p class="arEditHint">Edit each floor side. Height stays one value.</p>
       <div class="arEditGrid">
-        <button type="button" class="arEditField is-active" data-field="length">
-          <span>Length (m)</span>
-          <strong id="arEditLengthDisplay">0.00</strong>
+        <button type="button" class="arEditField is-active" data-field="l1">
+          <span>Length 1 (m)</span>
+          <strong id="arEditL1Display">0.00</strong>
         </button>
-        <button type="button" class="arEditField" data-field="width">
-          <span>Width (m)</span>
-          <strong id="arEditWidthDisplay">0.00</strong>
+        <button type="button" class="arEditField" data-field="l2">
+          <span>Length 2 (m)</span>
+          <strong id="arEditL2Display">0.00</strong>
+        </button>
+        <button type="button" class="arEditField" data-field="w1">
+          <span>Width 1 (m)</span>
+          <strong id="arEditW1Display">0.00</strong>
+        </button>
+        <button type="button" class="arEditField" data-field="w2">
+          <span>Width 2 (m)</span>
+          <strong id="arEditW2Display">0.00</strong>
         </button>
         <button type="button" class="arEditField" data-field="height">
           <span>Height (m)</span>
@@ -863,15 +875,16 @@
     const arEditLength=document.getElementById('arEditLength');
     const arEditWidth=document.getElementById('arEditWidth');
     const arEditHeight=document.getElementById('arEditHeight');
-    const arEditInputs={length:arEditLength,width:arEditWidth,height:arEditHeight};
     const arEditDisplays={
-      length:document.getElementById('arEditLengthDisplay'),
-      width:document.getElementById('arEditWidthDisplay'),
+      l1:document.getElementById('arEditL1Display'),
+      l2:document.getElementById('arEditL2Display'),
+      w1:document.getElementById('arEditW1Display'),
+      w2:document.getElementById('arEditW2Display'),
       height:document.getElementById('arEditHeightDisplay'),
     };
-    let arEditField='length';
+    let arEditField='l1';
     let arEditReplace=true;
-    let arEditDraft={length:'0.00',width:'0.00',height:'0.00'};
+    let arEditDraft={l1:'0.00',l2:'0.00',w1:'0.00',w2:'0.00',height:'0.00'};
     function measureInst(){ return document.querySelector('a-scene')?.components['distance-measure']; }
     function setAREditorOpen(open){
       arDimensionEditor.style.display=open?'flex':'none';
@@ -879,23 +892,40 @@
       if(inst) inst.editorOpen=open;
       if(open) document.activeElement && document.activeElement.blur && document.activeElement.blur();
     }
+    function avgPair(a,b){ return ((+a||0)+(+b||0))/2; }
     function syncAREditDisplays(){
       Object.keys(arEditDisplays).forEach(key=>{
         const raw=arEditDraft[key];
-        arEditInputs[key].value=raw;
         arEditDisplays[key].textContent=raw || '0';
       });
+      arEditLength.value=avgPair(arEditDraft.l1,arEditDraft.l2).toFixed(2);
+      arEditWidth.value=avgPair(arEditDraft.w1,arEditDraft.w2).toFixed(2);
+      arEditHeight.value=arEditDraft.height;
       document.querySelectorAll('#arDimensionEditor .arEditField').forEach(btn=>{
         btn.classList.toggle('is-active', btn.dataset.field===arEditField);
       });
     }
     function fillAREdit(l,w,h){
+      const length=(+l||0).toFixed(2), width=(+w||0).toFixed(2);
+      arEditDraft={l1:length,l2:length,w1:width,w2:width,height:(+h||0).toFixed(2)};
+      arEditField='l1';
+      arEditReplace=true;
+      syncAREditDisplays();
+    }
+    function fillAREditFromInst(inst){
+      const sides=inst && inst.getFloorSideLengths ? inst.getFloorSideLengths() : null;
+      if(!sides){
+        fillAREdit(window.__COSTructLastLength||0,window.__COSTructLastWidth||0,window.__COSTructLastHeight||0);
+        return;
+      }
       arEditDraft={
-        length:(+l||0).toFixed(2),
-        width:(+w||0).toFixed(2),
-        height:(+h||0).toFixed(2),
+        l1:(+sides.l1||0).toFixed(2),
+        l2:(+sides.l2||0).toFixed(2),
+        w1:(+sides.w1||0).toFixed(2),
+        w2:(+sides.w2||0).toFixed(2),
+        height:(+sides.height||0).toFixed(2),
       };
-      arEditField='length';
+      arEditField='l1';
       arEditReplace=true;
       syncAREditDisplays();
     }
@@ -953,7 +983,7 @@
         document.getElementById('promptText').textContent='Finish the floor measurement first before editing.';
         return;
       }
-      fillAREdit(window.__COSTructLastLength||0,window.__COSTructLastWidth||0,window.__COSTructLastHeight||0);
+      fillAREditFromInst(inst);
       setAREditorOpen(true);
     });
     arDimensionEditor.addEventListener('click',event=>{
@@ -989,12 +1019,12 @@
     applyAREdit.addEventListener('click',()=>{
       const inst=measureInst();
       if(!inst) return;
-      const l=+arEditDraft.length||0,w=+arEditDraft.width||0,h=+arEditDraft.height||0;
-      if(!(l>0&&w>0)) {
-        document.querySelector('#arDimensionEditor .arEditHint').textContent='Length and width must be greater than 0.';
+      const l1=+arEditDraft.l1||0,l2=+arEditDraft.l2||0,w1=+arEditDraft.w1||0,w2=+arEditDraft.w2||0,h=+arEditDraft.height||0;
+      if(!(l1>0&&l2>0&&w1>0&&w2>0)) {
+        document.querySelector('#arDimensionEditor .arEditHint').textContent='Length 1, length 2, width 1, and width 2 must be greater than 0.';
         return;
       }
-      inst.applyEditedDimensions(l,w,h);
+      inst.applyEditedSides(l1,l2,w1,w2,h);
       setAREditorOpen(false);
     });
     function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -1838,14 +1868,10 @@
     // Send the completed AR floor area back to Material & Cost Estimation.
     this._lastFloorArea = areaM2;
     window.__COSTructLastArea = areaM2;
-    // For the estimation form, derive length and width from the measured floor polygon.
-    if (window.COSTructEstimation && this.corners.length >= 3) {
-      const xs = this.corners.map(p => p.x), zs = this.corners.map(p => p.z);
-      const measuredLength = (Math.max(...xs)-Math.min(...xs)) * this.calibrationFactor;
-      const measuredWidth = (Math.max(...zs)-Math.min(...zs)) * this.calibrationFactor;
-      window.__COSTructLastLength = measuredLength;
-      window.__COSTructLastWidth = measuredWidth;
-    }
+    const sides = this.classifyFloorSides();
+    window.__COSTructLastLength = (sides.l1 + sides.l2) * 0.5;
+    window.__COSTructLastWidth = (sides.w1 + sides.w2) * 0.5;
+    this.labelFloorSides();
   },
 
   placeMarker: function (point) {
@@ -1934,6 +1960,172 @@
     }
   },
 
+  classifyFloorSides: function () {
+    const f = this.calibrationFactor || 1;
+    const pts = this.corners || [];
+    const n = pts.length;
+    const fallback = {
+      l1: window.__COSTructLastLength || 0,
+      l2: window.__COSTructLastLength || 0,
+      w1: window.__COSTructLastWidth || 0,
+      w2: window.__COSTructLastWidth || 0,
+      lengthIsEven: true,
+    };
+    if (n < 3) return fallback;
+    const edgeLen = (i) => pts[i].distanceTo(pts[(i + 1) % n]) * f;
+    if (n !== 4) {
+      const xs = pts.map((p) => p.x), zs = pts.map((p) => p.z);
+      const L = (Math.max(...xs) - Math.min(...xs)) * f;
+      const W = (Math.max(...zs) - Math.min(...zs)) * f;
+      return { l1: L, l2: L, w1: W, w2: W, lengthIsEven: true };
+    }
+    const e = [0, 1, 2, 3].map(edgeLen);
+    const avgA = (e[0] + e[2]) * 0.5;
+    const avgB = (e[1] + e[3]) * 0.5;
+    if (avgA >= avgB) {
+      return { l1: e[0], l2: e[2], w1: e[1], w2: e[3], lengthIsEven: true };
+    }
+    return { l1: e[1], l2: e[3], w1: e[0], w2: e[2], lengthIsEven: false };
+  },
+
+  getFloorSideLengths: function () {
+    return {
+      ...this.classifyFloorSides(),
+      height: this._lastMeasuredHeight || window.__COSTructLastHeight || 0,
+    };
+  },
+
+  labelFloorSides: function () {
+    if (this.corners.length !== 4 || this.labels.length < 4) return;
+    const sides = this.classifyFloorSides();
+    const names = sides.lengthIsEven
+      ? ['L1', 'W1', 'L2', 'W2']
+      : ['W1', 'L1', 'W2', 'L2'];
+    this.labels.forEach((wrapper, i) => {
+      if (!wrapper || !wrapper._lineStart || !wrapper.textEl) return;
+      const meters =
+        wrapper._lineStart.distanceTo(wrapper._lineEnd) * this.calibrationFactor;
+      wrapper.textEl.setAttribute('value', `${names[i]} ${meters.toFixed(2)} m`);
+    });
+  },
+
+  rebuildFloorGraphics: function () {
+    this.lines.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
+    this.lines = [];
+    this.labels.forEach((l) => l.parentNode && l.parentNode.removeChild(l));
+    this.labels = [];
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      this.drawLine(a, b);
+      this.finalizeLabel(
+        a,
+        b,
+        `${(a.distanceTo(b) * this.calibrationFactor).toFixed(2)} m`,
+      );
+    }
+    this.markers.slice(0, this.corners.length).forEach((m, i) => {
+      m.setAttribute(
+        'position',
+        `${this.corners[i].x} ${this.corners[i].y} ${this.corners[i].z}`,
+      );
+    });
+    this.labelFloorSides();
+  },
+
+  polygonArea: function () {
+    let sum = 0;
+    for (let i = 0; i < this.corners.length; i++) {
+      const a = this.corners[i];
+      const b = this.corners[(i + 1) % this.corners.length];
+      sum += a.x * b.z - b.x * a.z;
+    }
+    const raw = Math.abs(sum) * 0.5;
+    return raw * this.calibrationFactor * this.calibrationFactor;
+  },
+
+  rebuildQuadFromSides: function (l1, l2, w1, w2) {
+    if (this.corners.length !== 4) return false;
+    const sides = this.classifyFloorSides();
+    if (!sides.lengthIsEven) {
+      this.corners = [
+        this.corners[1],
+        this.corners[2],
+        this.corners[3],
+        this.corners[0],
+      ];
+    }
+    const raw = (meters) => meters / (this.calibrationFactor || 1);
+    const L1 = raw(l1), L2 = raw(l2), W1 = raw(w1), W2 = raw(w2);
+    const A = this.corners[0].clone();
+    const B = this.corners[1];
+    const D = this.corners[3];
+    let u = new THREE.Vector3(B.x - A.x, 0, B.z - A.z);
+    if (u.lengthSq() < 1e-10) u.set(1, 0, 0);
+    else u.normalize();
+    let v = new THREE.Vector3(-u.z, 0, u.x);
+    const toD = new THREE.Vector3(D.x - A.x, 0, D.z - A.z);
+    if (v.dot(toD) < 0) v.negate();
+
+    const delta = L2 - L1;
+    let s = 0;
+    let h = (W1 + W2) * 0.5;
+    if (Math.abs(delta) > 1e-4) {
+      s = (W1 * W1 - W2 * W2 - delta * delta) / (2 * delta);
+      const h2 = W2 * W2 - s * s;
+      if (h2 > 1e-6) h = Math.sqrt(h2);
+      else {
+        s = 0;
+        h = (W1 + W2) * 0.5;
+      }
+    } else {
+      s = 0;
+      const h2 = W2 * W2;
+      h = h2 > 1e-6 ? Math.sqrt(h2) : (W1 + W2) * 0.5;
+    }
+
+    const y = A.y;
+    this.corners[0].set(A.x, y, A.z);
+    this.corners[1].set(A.x + L1 * u.x, y, A.z + L1 * u.z);
+    this.corners[3].set(A.x + s * u.x + h * v.x, y, A.z + s * u.z + h * v.z);
+    this.corners[2].set(
+      A.x + (s + L2) * u.x + h * v.x,
+      y,
+      A.z + (s + L2) * u.z + h * v.z,
+    );
+    return true;
+  },
+
+  applyEditedSides: function (l1, l2, w1, w2, newHeight) {
+    if (!this.corners || this.corners.length < 3 || !this.closed) return;
+    if (this.corners.length === 4) {
+      this.rebuildQuadFromSides(l1, l2, w1, w2);
+    } else {
+      this.applyEditedDimensions((l1 + l2) * 0.5, (w1 + w2) * 0.5, newHeight);
+      return;
+    }
+    this.rebuildFloorGraphics();
+    if (newHeight > 0) {
+      this.heightMeasurements = [];
+      this._lastMeasuredHeight = newHeight;
+      window.__COSTructLastHeight = newHeight;
+      this.clearExtrusionObjects();
+      this.extrudeFloorToHeight(newHeight);
+    }
+    const length = (l1 + l2) * 0.5;
+    const width = (w1 + w2) * 0.5;
+    const area = this.polygonArea();
+    this._lastFloorArea = area;
+    window.__COSTructLastLength = length;
+    window.__COSTructLastWidth = width;
+    window.__COSTructLastArea = area;
+    this.areaResult.textContent = `Area: ${area.toFixed(2)} m²`;
+    this.areaResult.style.display = 'block';
+    this.useAreaBtn.style.display = 'inline-block';
+    document.getElementById('arSaveBar').style.display = 'block';
+    this.promptText.textContent = `Dimensions updated — Area: ${area.toFixed(2)} m². Tap Save Dimensions.`;
+  },
+
   applyEditedDimensions: function (newLength, newWidth, newHeight) {
     if (!this.corners || this.corners.length < 3 || !this.closed) return;
     const xs=this.corners.map(p=>p.x), zs=this.corners.map(p=>p.z);
@@ -1947,33 +2139,17 @@
       p.z=anchor.z + (p.z-anchor.z)*sz;
     });
 
-    // Rebuild floor lines/labels from the edited vertices.
-    this.lines.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.lines=[];
-    this.labels.forEach(l=>l.parentNode&&l.parentNode.removeChild(l)); this.labels=[];
-    for(let i=0;i<this.corners.length;i++){
-      const a=this.corners[i], b=this.corners[(i+1)%this.corners.length];
-      this.drawLine(a,b);
-      this.finalizeLabel(a,b,`${(a.distanceTo(b)*this.calibrationFactor).toFixed(2)} m`);
-    }
+    this.rebuildFloorGraphics();
 
-    // Move markers to edited floor vertices.
-    this.markers.slice(0,this.corners.length).forEach((m,i)=>m.setAttribute('position',`${this.corners[i].x} ${this.corners[i].y} ${this.corners[i].z}`));
-
-    // Update height geometry/measurement when supplied.
     if (newHeight>0) {
-      const oldBase=this.heightMeasurements.length ? this.heightMeasurements[0].base : null;
       this.heightMeasurements=[];
       this._lastMeasuredHeight=newHeight;
       window.__COSTructLastHeight=newHeight;
       this.clearExtrusionObjects();
       this.extrudeFloorToHeight(newHeight);
-      if(oldBase){
-        // Existing height line/marker may be among the last objects; keep the
-        // saved numeric height authoritative for the estimation module.
-      }
     }
 
-    const area=newLength*newWidth;
+    const area=this.polygonArea();
     this._lastFloorArea=area;
     window.__COSTructLastLength=newLength;
     window.__COSTructLastWidth=newWidth;
