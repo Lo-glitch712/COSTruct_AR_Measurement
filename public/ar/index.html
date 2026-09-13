@@ -716,7 +716,7 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
-      <p class="arEditHint">Edit each floor side. Height stays one value.</p>
+      <p class="arEditHint">Change one side only. The other three lines stay the same.</p>
       <div class="arEditGrid">
         <button type="button" class="arEditField is-active" data-field="l1">
           <span>Length 1 (m)</span>
@@ -1966,50 +1966,33 @@
     const f = this.calibrationFactor || 1;
     const pts = this.corners || [];
     const n = pts.length;
-    const fallback = {
-      l1: window.__COSTructLastLength || 0,
-      l2: window.__COSTructLastLength || 0,
-      w1: window.__COSTructLastWidth || 0,
-      w2: window.__COSTructLastWidth || 0,
+    const edgeLen = (i) => pts[i].distanceTo(pts[(i + 1) % n]) * f;
+    if (n < 3) {
+      return {
+        l1: 0,
+        l2: 0,
+        w1: 0,
+        w2: 0,
+        lengthIsEven: true,
+      };
+    }
+    if (n === 3) {
+      return { l1: edgeLen(0), l2: edgeLen(1), w1: edgeLen(2), w2: edgeLen(2), lengthIsEven: true };
+    }
+    return {
+      l1: edgeLen(0),
+      w1: edgeLen(1),
+      l2: edgeLen(2),
+      w2: edgeLen(3),
       lengthIsEven: true,
     };
-    if (n < 3) return fallback;
-    const edgeLen = (i) => pts[i].distanceTo(pts[(i + 1) % n]) * f;
-    if (n !== 4) {
-      const xs = pts.map((p) => p.x), zs = pts.map((p) => p.z);
-      const L = (Math.max(...xs) - Math.min(...xs)) * f;
-      const W = (Math.max(...zs) - Math.min(...zs)) * f;
-      return { l1: L, l2: L, w1: W, w2: W, lengthIsEven: true };
-    }
-    const e = [0, 1, 2, 3].map(edgeLen);
-    const avgA = (e[0] + e[2]) * 0.5;
-    const avgB = (e[1] + e[3]) * 0.5;
-    if (avgA >= avgB) {
-      return { l1: e[0], l2: e[2], w1: e[1], w2: e[3], lengthIsEven: true };
-    }
-    return { l1: e[1], l2: e[3], w1: e[0], w2: e[2], lengthIsEven: false };
   },
 
   pinFloorSides: function () {
-    const classified = this.classifyFloorSides();
-    if (!this.sideMap && this.corners.length === 4) {
-      this.sideMap = classified.lengthIsEven
-        ? { l1: 0, w1: 1, l2: 2, w2: 3 }
-        : { l1: 1, w1: 0, l2: 3, w2: 2 };
+    if (!this.sideMap && this.corners.length >= 4) {
+      this.sideMap = { l1: 0, w1: 1, l2: 2, w2: 3 };
     }
-    if (this.sideMap && this.corners.length === 4) {
-      const f = this.calibrationFactor || 1;
-      const len = (i) =>
-        this.corners[i].distanceTo(this.corners[(i + 1) % 4]) * f;
-      return {
-        l1: len(this.sideMap.l1),
-        l2: len(this.sideMap.l2),
-        w1: len(this.sideMap.w1),
-        w2: len(this.sideMap.w2),
-        lengthIsEven: this.sideMap.l1 % 2 === 0,
-      };
-    }
-    return classified;
+    return this.classifyFloorSides();
   },
 
   getFloorSideLengths: function () {
@@ -2081,61 +2064,110 @@
     );
   },
 
-  scaleEdgeFromMid: function (edgeIndex, newMeters) {
-    const n = this.corners.length;
-    const a = this.corners[edgeIndex];
-    const b = this.corners[(edgeIndex + 1) % n];
-    const raw = newMeters / (this.calibrationFactor || 1);
-    const mid = new THREE.Vector3((a.x + b.x) * 0.5, a.y, (a.z + b.z) * 0.5);
-    const dir = new THREE.Vector3(b.x - a.x, 0, b.z - a.z);
-    if (dir.lengthSq() < 1e-12) dir.set(1, 0, 0);
-    else dir.normalize();
-    const half = raw * 0.5;
-    a.set(mid.x - dir.x * half, a.y, mid.z - dir.z * half);
-    b.set(mid.x + dir.x * half, b.y, mid.z + dir.z * half);
+  circleCircleXZ: function (c1, r1, c2, r2) {
+    const dx = c2.x - c1.x;
+    const dz = c2.z - c1.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 1e-8) return [];
+    const tooFar = dist > r1 + r2 + 1e-6;
+    const tooNear = dist < Math.abs(r1 - r2) - 1e-6;
+    if (tooFar || tooNear) return [];
+    const a = (r1 * r1 - r2 * r2 + dist * dist) / (2 * dist);
+    const hSq = Math.max(0, r1 * r1 - a * a);
+    const h = Math.sqrt(hSq);
+    const mx = c1.x + (a * dx) / dist;
+    const mz = c1.z + (a * dz) / dist;
+    const ox = (-dz * h) / dist;
+    const oz = (dx * h) / dist;
+    if (h < 1e-8) return [{ x: mx, z: mz }];
+    return [
+      { x: mx + ox, z: mz + oz },
+      { x: mx - ox, z: mz - oz },
+    ];
   },
 
-  setWidthBySlidingLength: function (widthEdgeIndex, newMeters) {
-    const n = 4;
-    const l1 = this.sideMap.l1;
-    const l2 = this.sideMap.l2;
-    const l1verts = [l1, (l1 + 1) % n];
-    const l2verts = [l2, (l2 + 1) % n];
-    const i0 = widthEdgeIndex;
-    const i1 = (widthEdgeIndex + 1) % n;
-    const onL1 = l1verts.includes(i0) ? i0 : l1verts.includes(i1) ? i1 : -1;
-    const onL2 = l2verts.includes(i0) ? i0 : l2verts.includes(i1) ? i1 : -1;
-    if (onL1 < 0 || onL2 < 0) {
-      this.scaleEdgeFromMid(widthEdgeIndex, newMeters);
-      return;
+  windingXZ: function (pts) {
+    let sum = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i];
+      const b = pts[(i + 1) % pts.length];
+      sum += a.x * b.z - b.x * a.z;
     }
-    const moving = this.corners[onL1];
-    const fixed = this.corners[onL2];
-    const raw = newMeters / (this.calibrationFactor || 1);
-    const dir = new THREE.Vector3(moving.x - fixed.x, 0, moving.z - fixed.z);
-    if (dir.lengthSq() < 1e-12) dir.set(0, 0, 1);
-    else dir.normalize();
-    const shiftX = fixed.x + dir.x * raw - moving.x;
-    const shiftZ = fixed.z + dir.z * raw - moving.z;
-    l1verts.forEach((i) => {
-      this.corners[i].x += shiftX;
-      this.corners[i].z += shiftZ;
-    });
+    return Math.sign(sum) || 1;
+  },
+
+  setOneEdgeLength: function (edgeIndex, newMeters) {
+    const n = this.corners.length;
+    if (n < 4) return false;
+    const L = newMeters / (this.calibrationFactor || 1);
+    if (!(L > 0.02)) return false;
+    const iA = edgeIndex;
+    const iB = (edgeIndex + 1) % n;
+    const iC = (edgeIndex + 2) % n;
+    const iD = (edgeIndex + 3) % n;
+    const A = this.corners[iA];
+    const B = this.corners[iB];
+    const C = this.corners[iC];
+    const D = this.corners[iD];
+    const rBC = Math.hypot(B.x - C.x, B.z - C.z);
+    const rDA = Math.hypot(D.x - A.x, D.z - A.z);
+    if (rBC < 1e-4 || rDA < 1e-4) return false;
+    const oldWind = this.windingXZ(this.corners);
+    const oldA = { x: A.x, z: A.z };
+    const oldB = { x: B.x, z: B.z };
+    const c = { x: C.x, z: C.z };
+    const d = { x: D.x, z: D.z };
+    let best = null;
+    let bestScore = Infinity;
+    const steps = 180;
+    for (let i = 0; i < steps; i++) {
+      const theta = (i * 2 * Math.PI) / steps;
+      const bx = c.x + rBC * Math.cos(theta);
+      const bz = c.z + rBC * Math.sin(theta);
+      const hits = this.circleCircleXZ(d, rDA, { x: bx, z: bz }, L);
+      hits.forEach((hit) => {
+        const pts = [
+          { x: hit.x, z: hit.z },
+          { x: bx, z: bz },
+          { x: C.x, z: C.z },
+          { x: D.x, z: D.z },
+        ];
+        if (this.windingXZ(pts) !== oldWind) return;
+        const score =
+          (hit.x - oldA.x) ** 2 +
+          (hit.z - oldA.z) ** 2 +
+          (bx - oldB.x) ** 2 +
+          (bz - oldB.z) ** 2;
+        if (score < bestScore) {
+          bestScore = score;
+          best = { ax: hit.x, az: hit.z, bx, bz };
+        }
+      });
+    }
+    if (!best) return false;
+    A.set(best.ax, A.y, best.az);
+    B.set(best.bx, B.y, best.bz);
+    return true;
   },
 
   applyEditedSides: function (l1, l2, w1, w2, newHeight) {
     if (!this.corners || this.corners.length < 3 || !this.closed) return;
-    if (this.corners.length !== 4) {
+    if (this.corners.length < 4) {
       this.applyEditedDimensions(l1, w1, newHeight);
       return;
     }
     this.pinFloorSides();
     const before = this.getFloorSideLengths();
     const changed = (next, prev) => Math.abs((+next || 0) - (+prev || 0)) > 0.005;
-    if (changed(l1, before.l1)) this.scaleEdgeFromMid(this.sideMap.l1, l1);
-    if (changed(l2, before.l2)) this.scaleEdgeFromMid(this.sideMap.l2, l2);
-    if (changed(w1, before.w1)) this.setWidthBySlidingLength(this.sideMap.w1, w1);
-    if (changed(w2, before.w2)) this.setWidthBySlidingLength(this.sideMap.w2, w2);
+    const edits = [
+      [changed(l1, before.l1), this.sideMap.l1, l1],
+      [changed(l2, before.l2), this.sideMap.l2, l2],
+      [changed(w1, before.w1), this.sideMap.w1, w1],
+      [changed(w2, before.w2), this.sideMap.w2, w2],
+    ];
+    edits.forEach(([did, edge, meters]) => {
+      if (did) this.setOneEdgeLength(edge, meters);
+    });
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
       this.heightMeasurements = [];
