@@ -716,7 +716,7 @@
   <div id="arDimensionEditor">
     <div class="arEditCard">
       <div class="arEditTitle">Edit measurement</div>
-      <p class="arEditHint">Change one side only. The other three lines stay the same.</p>
+      <p class="arEditHint">Change one side. That wall stretches point to point; the floor stays connected.</p>
       <div class="arEditGrid">
         <button type="button" class="arEditField is-active" data-field="l1">
           <span>Length 1 (m)</span>
@@ -2106,14 +2106,12 @@
     return Math.sign(sum) || 1;
   },
 
-  scaleEdgeFromMid: function (edgeIndex, newMeters) {
+  setEdgeLengthAlongWall: function (edgeIndex, newMeters) {
     const n = this.corners.length;
     const a = this.corners[edgeIndex];
     const b = this.corners[(edgeIndex + 1) % n];
     const raw = newMeters / (this.calibrationFactor || 1);
-    if (!(raw > 0.02)) return false;
-    const midX = (a.x + b.x) * 0.5;
-    const midZ = (a.z + b.z) * 0.5;
+    if (!(raw > 0.02) || !a || !b) return false;
     let dx = b.x - a.x;
     let dz = b.z - a.z;
     const len = Math.hypot(dx, dz);
@@ -2124,11 +2122,8 @@
       dx /= len;
       dz /= len;
     }
-    const half = raw * 0.5;
-    a.x = midX - dx * half;
-    a.z = midZ - dz * half;
-    b.x = midX + dx * half;
-    b.z = midZ + dz * half;
+    b.x = a.x + dx * raw;
+    b.z = a.z + dz * raw;
     return true;
   },
 
@@ -2143,21 +2138,21 @@
     const map = this.sideMap || { l1: 0, w1: 1, l2: 2, w2: 3 };
     const values = { l1, l2, w1, w2 };
     const keys = ['l1', 'l2', 'w1', 'w2'];
+    const key =
+      focus && values[focus] > 0
+        ? focus
+        : keys.find((item) => {
+            const edge = map[item];
+            if (!(edge >= 0) || edge >= this.corners.length) return false;
+            return Math.abs(values[item] - this.edgeLengthMeters(edge)) > 0.005;
+          });
     let applied = 0;
-    const resize = (key) => {
+    if (key && values[key] > 0) {
       const edge = map[key];
-      const meters = values[key];
-      if (!(edge >= 0) || !(meters > 0) || edge >= this.corners.length) return;
-      if (this.scaleEdgeFromMid(edge, meters)) applied += 1;
-    };
-    if (focus && values[focus] > 0) resize(focus);
-    keys.forEach((key) => {
-      if (key === focus) return;
-      const edge = map[key];
-      if (!(edge >= 0) || edge >= this.corners.length) return;
-      const live = this.edgeLengthMeters(edge);
-      if (Math.abs(values[key] - live) > 0.005) resize(key);
-    });
+      if (edge >= 0 && edge < this.corners.length && this.setEdgeLengthAlongWall(edge, values[key])) {
+        applied = 1;
+      }
+    }
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
       this.heightMeasurements = [];
