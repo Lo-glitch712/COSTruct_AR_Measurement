@@ -1630,11 +1630,49 @@
     return p;
   },
 
+  existingCornerIndex: function (point, skipIndex) {
+    let nearestIndex = -1;
+    let nearestDist = Infinity;
+    for (let i = 0; i < this.corners.length; i++) {
+      if (i === skipIndex) continue;
+      const c = this.corners[i];
+      const d = Math.hypot(point.x - c.x, point.z - c.z);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearestIndex = i;
+      }
+    }
+    return nearestIndex >= 0 ? { index: nearestIndex, distance: nearestDist } : null;
+  },
+
+  collapseDuplicateCorners: function () {
+    const limit = this.snapThreshold || 0.12;
+    let guard = 0;
+    while (this.corners.length > 3 && guard++ < 8) {
+      let removed = false;
+      for (let i = 0; i < this.corners.length; i++) {
+        const a = this.corners[i];
+        const b = this.corners[(i + 1) % this.corners.length];
+        if (Math.hypot(a.x - b.x, a.z - b.z) > limit) continue;
+        const remove = (i + 1) % this.corners.length;
+        if (remove === 0) this.corners.pop();
+        else this.corners.splice(remove, 1);
+        removed = true;
+        break;
+      }
+      if (!removed) break;
+    }
+  },
+
   onPlaceClick: function () {
     if (!this.rawAimPoint) return;
     const point = this.getStableAimPoint();
     if (!point) return;
     this.aimHistory = [];
+    if (this.closed && this.measureMode === 'floor') {
+      this.promptText.textContent = 'Shape is closed. Tap Edit to move the existing points.';
+      return;
+    }
 
     if (this.step === 'A') {
       if (this.calibrationActive) {
@@ -1689,22 +1727,12 @@
         if (this.waitingForContinue) {
           if (!this.isSnapped) return;
           const snapped = point.clone();
-
-          let nearestIndex = -1;
-          let nearestDist = Infinity;
-          for (let i = 0; i < this.corners.length; i++) {
-            const c = this.corners[i];
-            const d = Math.hypot(snapped.x - c.x, snapped.z - c.z);
-            if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
-          }
-
-          if (nearestIndex === 0 && this.corners.length >= 3) {
+          const nearest = this.existingCornerIndex(snapped);
+          if (nearest && nearest.index === 0 && this.corners.length >= 3) {
             this.closePolygon();
             return;
           }
-
-          // Do not duplicate an existing point marker; the snapped vertex already exists.
-          this.corners.push(snapped);
+          // Already on an existing corner — never add another point.
           this.waitingForContinue = false;
           this.measurementY = snapped.y;
           this.floorMeasurementY = snapped.y;
@@ -1720,6 +1748,14 @@
         const end = point.clone();
         const rawDistance = start.distanceTo(end);
         if (rawDistance < 0.01) return;
+        const first = this.corners[0];
+        if (first && this.corners.length >= 3 && Math.hypot(end.x - first.x, end.z - first.z) <= this.snapThreshold) {
+          this.closePolygon();
+          return;
+        }
+        if (this.existingCornerIndex(end, this.corners.length - 1)?.distance <= this.snapThreshold) {
+          return;
+        }
 
         this.placeMarker(end);
         this.corners.push(end);
@@ -1851,39 +1887,32 @@
     const rawClosing = last.distanceTo(first);
     if (rawClosing > 0.15) return;
 
+    // Closing snaps back to the first point — do not keep a near-copy as a 5th corner.
+    if (this.corners.length > 3 && rawClosing <= (this.snapThreshold || 0.12)) {
+      this.corners.pop();
+    }
+    this.collapseDuplicateCorners();
+    if (this.corners.length < 3) return;
+
     this.clearPreview();
     this.removePreviewLabel();
-    if (rawClosing > 0.001) {
-      this.drawLine(last, first);
-      this.finalizeLabel(last, first, `${(rawClosing * this.calibrationFactor).toFixed(2)} m`);
-    }
-
-    let sum = 0;
-    for (let i = 0; i < this.corners.length; i++) {
-      const a = this.corners[i];
-      const b = this.corners[(i + 1) % this.corners.length];
-      sum += a.x * b.z - b.x * a.z;
-    }
-    const areaRaw = Math.abs(sum) * 0.5;
-    const areaM2 = areaRaw * this.calibrationFactor * this.calibrationFactor;
-
     this.closed = true;
     this.waitingForContinue = false;
     this.step = 'DONE';
     this.floorStep = 'DONE';
     this.snapHint.style.display = 'none';
+    this.rebuildFloorGraphics();
+    const areaM2 = this.polygonArea();
     this.promptText.textContent = `Closed shape — Area: ${areaM2.toFixed(2)} m². You can switch to Height.`;
     this.areaResult.textContent = `Area: ${areaM2.toFixed(2)} m²`;
     this.areaResult.style.display = 'block';
     this.useAreaBtn.style.display = 'inline-block';
     document.getElementById('arSaveBar').style.display = 'block';
-    // Send the completed AR floor area back to Material & Cost Estimation.
     this._lastFloorArea = areaM2;
     window.__COSTructLastArea = areaM2;
     const sides = this.pinFloorSides();
     window.__COSTructLastLength = sides.l1;
     window.__COSTructLastWidth = sides.l2;
-    this.labelFloorSides();
   },
 
   placeMarker: function (point) {
@@ -2159,6 +2188,10 @@
         }
       }
     }
+    this.closed = true;
+    this.waitingForContinue = false;
+    this.step = 'DONE';
+    this.floorStep = 'DONE';
     this.rebuildFloorGraphics();
     if (newHeight > 0) {
       this.heightMeasurements = [];
