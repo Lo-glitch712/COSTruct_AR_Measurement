@@ -1564,16 +1564,7 @@ textarea.input-area {
 }
 
 .material-name {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  max-width: 100%;
-  padding: 3px 10px;
-  border-radius: 8px;
-  background: var(--accent-tint);
-  color: var(--accent);
-  font-weight: 600;
-  letter-spacing: -0.012em;
+  color: var(--label);
 }
 
 .material-qty,
@@ -1582,8 +1573,18 @@ textarea.input-area {
 }
 
 .material-qty {
-  color: var(--label-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: var(--accent-tint);
+  color: var(--accent);
   font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
 }
 
 .material-cost {
