@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRulerNav } from "@/components/RulerLoader"
 import { COMPONENTS, type ComponentName } from "@/lib/estimate"
 import { readWorkspace, saveWorkspace } from "@/lib/project"
 import { readSession } from "@/lib/session"
@@ -19,7 +19,7 @@ type BuildType = (typeof BUILD_TYPES)[number]
 const EMPTY_INPUT = { length: "", width: "", height: "" }
 
 export default function MeasurementSetupPage() {
-  const router = useRouter()
+  const { go, loading, overlay } = useRulerNav()
   const [step, setStep] = useState(0)
   const [name, setName] = useState("")
   const [address, setAddress] = useState("")
@@ -104,13 +104,14 @@ export default function MeasurementSetupPage() {
       customComponents: workspace?.customComponents ?? [],
       hiddenComponents: workspace?.hiddenComponents ?? [],
     })
-    router.push("/measurements")
+    go("/measurements", "Opening the measuring tools")
   }
 
   if (!ready) return null
 
   return (
     <>
+      {overlay}
       <header>
         <span className="eyebrow">Step {step + 1} of {totalSteps}</span>
         <h1 className="page-title">A few questions before you measure</h1>
@@ -240,7 +241,7 @@ export default function MeasurementSetupPage() {
               Back
             </button>
           ) : null}
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {step === totalSteps - 1 ? "Start measuring" : "Continue"}
           </button>
         </div>

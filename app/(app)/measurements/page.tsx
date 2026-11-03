@@ -8,9 +8,9 @@ import {
   type FormEvent,
 } from "react"
 import { createPortal } from "react-dom"
-import { useRouter } from "next/navigation"
 import Carousel from "@/components/Carousel"
 import Icon from "@/components/Icon"
+import { useRulerNav } from "@/components/RulerLoader"
 import { arUrlFor } from "@/lib/ar"
 import {
   COMPONENTS,
@@ -60,7 +60,7 @@ function listFields(fields: string[]) {
 const LONG_PRESS_MS = 450
 
 export default function MeasurementsPage() {
-  const router = useRouter()
+  const { go, loading, overlay } = useRulerNav()
   const [projectName, setProjectName] = useState("")
   const [projectAddress, setProjectAddress] = useState("")
   const [projectDescription, setProjectDescription] = useState("")
@@ -320,11 +320,12 @@ export default function MeasurementsPage() {
         dimensions: row.dimensions,
       })),
     })
-    router.push("/measurements/estimate")
+    go("/measurements/estimate", "Calculating your estimate")
   }
 
   return (
     <>
+      {overlay}
       <header>
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">
@@ -615,7 +616,7 @@ export default function MeasurementsPage() {
           type="button"
           className="btn btn-primary btn-block"
           onClick={calculate}
-          disabled={!ready}
+          disabled={!ready || loading}
         >
           Estimate project
         </button>
