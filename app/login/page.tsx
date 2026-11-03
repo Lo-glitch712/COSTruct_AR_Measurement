@@ -81,6 +81,12 @@ function LoginForm() {
       <div className="auth-card">
         <div className="auth-brand">COSTruct</div>
         <p className="auth-tagline">Sign in to continue to your workspace</p>
+        {!supabaseEnabled ? (
+          <p className="notice-error">
+            Not connected to the database. Add the Supabase URL and publishable
+            key, then restart the app.
+          </p>
+        ) : null}
 
         <div className="segmented" role="tablist" aria-label="Account type">
           {(["buyer", "supplier", "admin"] as Role[]).map((value) => (

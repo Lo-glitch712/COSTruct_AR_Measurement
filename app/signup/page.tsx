@@ -62,9 +62,12 @@ export default function SignupPage() {
     setError("")
     try {
       const payload = { ...profile, email: profile.email.trim(), password }
-      if (supabaseEnabled) {
-        await signUpBuyerRemote(payload)
+      if (!supabaseEnabled) {
+        throw new Error(
+          "Not connected to the database. Add the Supabase URL and publishable key, then restart the app.",
+        )
       }
+      await signUpBuyerRemote(payload)
       try {
         registerBuyer(payload)
       } catch {
@@ -83,6 +86,11 @@ export default function SignupPage() {
       <div className="auth-card auth-card-wide">
         <div className="auth-brand">COSTruct</div>
         <p className="auth-tagline">Create a buyer account</p>
+        <p className="auth-role-hint">
+          {supabaseEnabled
+            ? "New accounts are saved to your Supabase profiles table."
+            : "This app is not connected to the database. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, then restart."}
+        </p>
 
         <form className="stack" onSubmit={handleSubmit} noValidate>
           <h2 className="form-section-title">Personal information</h2>

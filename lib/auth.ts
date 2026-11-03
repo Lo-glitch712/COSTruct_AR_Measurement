@@ -67,7 +67,7 @@ export async function loadProfile(userId: string): Promise<Session | null> {
 
 async function upsertProfile(userId: string, session: Session) {
   if (!supabaseEnabled) return
-  await supabase.from("profiles").upsert({
+  const { error } = await supabase.from("profiles").upsert({
     id: userId,
     role: session.role,
     name: session.name,
@@ -83,6 +83,7 @@ async function upsertProfile(userId: string, session: Session) {
     province: session.province || null,
     zip_code: session.zipCode || null,
   })
+  if (error) throw new Error(error.message)
 }
 
 function seededMeta(email: string, role: Role) {
@@ -219,22 +220,27 @@ export async function signUpBuyerRemote(
   })
 
   if (error) throw new Error(error.message)
+  if (!data.user) {
+    throw new Error("Could not create the account in the database.")
+  }
 
-  if (data.user) {
-    const session: Session = {
-      name,
-      email,
-      phone: input.phone.trim(),
-      role: "buyer",
-      firstName: input.firstName.trim(),
-      middleName: input.middleName.trim(),
-      lastName: input.lastName.trim(),
-      birthday: input.birthday,
-      street: input.street.trim(),
-      city: input.city.trim(),
-      province: input.province.trim(),
-      zipCode: input.zipCode.trim(),
-    }
+  const session: Session = {
+    name,
+    email,
+    phone: input.phone.trim(),
+    role: "buyer",
+    firstName: input.firstName.trim(),
+    middleName: input.middleName.trim(),
+    lastName: input.lastName.trim(),
+    birthday: input.birthday,
+    street: input.street.trim(),
+    city: input.city.trim(),
+    province: input.province.trim(),
+    zipCode: input.zipCode.trim(),
+  }
+
+  // Email confirmation can leave no session; the DB trigger still writes profiles.
+  if (data.session) {
     await upsertProfile(data.user.id, session)
   }
 
