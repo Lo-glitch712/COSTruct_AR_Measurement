@@ -156,6 +156,30 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+-- Demo: allow immediate sign-in without a confirmation email.
+create or replace function public.auto_confirm_auth_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.email_confirmed_at is null then
+    new.email_confirmed_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_auto_confirm on auth.users;
+create trigger on_auth_user_auto_confirm
+  before insert or update on auth.users
+  for each row execute procedure public.auto_confirm_auth_user();
+
+update auth.users
+set email_confirmed_at = now()
+where email_confirmed_at is null;
+
 alter table public.profiles enable row level security;
 alter table public.suppliers enable row level security;
 alter table public.catalog_items enable row level security;

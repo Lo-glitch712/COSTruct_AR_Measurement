@@ -4,6 +4,7 @@
 2. Paste and run `schema.sql`.
 3. If Create account does not add a row in **Table Editor → profiles**, also run `profiles-signup.sql`.
 4. Authentication → Providers → Email: turn **Confirm email** OFF so demo accounts can sign in immediately.
+   If login says **Email not confirmed**, run `confirm-emails.sql`.
 5. Look for new users in **Table Editor → profiles** and **Authentication → Users**, not Logs.
 
 That creates `profiles`, `suppliers`, `catalog_items`, `projects`, and `project_components`, with RLS so:

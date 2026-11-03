@@ -159,7 +159,13 @@ export async function signInRemote(
   }
 
   if (error || !data.user) {
-    throw new Error(error?.message ?? "Email or password is incorrect.")
+    const message = error?.message ?? "Email or password is incorrect."
+    if (message.toLowerCase().includes("not confirmed")) {
+      throw new Error(
+        "Email is not confirmed. Run supabase/confirm-emails.sql in the SQL Editor, or turn Confirm email OFF in Authentication → Providers → Email.",
+      )
+    }
+    throw new Error(message)
   }
 
   let session = await loadProfile(data.user.id)
