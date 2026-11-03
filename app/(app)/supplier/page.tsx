@@ -1,83 +1,131 @@
-const SUPPLIERS = [
-  {
-    name: "Northgate Aggregates",
-    location: "Quezon City",
-    items: "Sand, Gravel, CHB",
-    lead: "1–2 days",
-  },
-  {
-    name: "Pacific Cement Depot",
-    location: "Caloocan",
-    items: "Portland Cement, Mortar mix",
-    lead: "Same day",
-  },
-  {
-    name: "Southline Hardware",
-    location: "Parañaque",
-    items: "CHB 4\", CHB 5\", Rebar",
-    lead: "2–3 days",
-  },
-  {
-    name: "Metro Builders Supply",
-    location: "Mandaluyong",
-    items: "Full range",
-    lead: "1 day",
-  },
-]
+"use client"
 
-const MATERIALS = [
-  { name: "Sand", price: "₱1,350.00", unit: "per m³" },
-  { name: "Portland Cement", price: "₱245.00", unit: "per bag" },
-  { name: "Gravel", price: "₱1,700.00", unit: "per m³" },
-  { name: 'CHB — 4"', price: "₱17.00", unit: "per pc" },
-  { name: 'CHB — 5"', price: "₱20.00", unit: "per pc" },
-]
+import { useMemo, useState } from "react"
+import {
+  REFERENCE_MATERIALS,
+  SUPPLIERS,
+  TOWNS,
+  catalogSummary,
+  formatPeso,
+  isCheaperThanReference,
+  type Town,
+} from "@/lib/suppliers"
+
+type TownFilter = "All" | Town
 
 export default function SupplierPage() {
+  const [town, setTown] = useState<TownFilter>("All")
+
+  const visible = useMemo(
+    () =>
+      town === "All"
+        ? SUPPLIERS
+        : SUPPLIERS.filter((supplier) => supplier.town === town),
+    [town],
+  )
+
+  const grouped = useMemo(() => {
+    return TOWNS.map((place) => ({
+      place,
+      stores: visible.filter((supplier) => supplier.town === place),
+    })).filter((group) => group.stores.length > 0)
+  }, [visible])
+
   return (
     <>
       <header>
         <span className="eyebrow">Procurement</span>
         <h1 className="page-title">Suppliers</h1>
         <p className="page-subtitle">
-          Registered suppliers and their reference pricing. Decision support
-          ranks them against your bill of materials by price, availability, and
-          lead time.
+          Local hardware stores in the Partido Area and their baseline retail
+          prices. Decision support highlights items priced below the reference
+          estimate so you can compare towns side by side.
         </p>
       </header>
 
-      <section className="grid grid-2">
-        {SUPPLIERS.map((supplier) => (
-          <div key={supplier.name} className="card">
-            <div className="card-icon" aria-hidden>
-              🏬
-            </div>
-            <h3>{supplier.name}</h3>
-            <p>
-              {supplier.location} · {supplier.items}
-            </p>
-            <div style={{ marginTop: 14 }}>
-              <span className="badge">Lead time {supplier.lead}</span>
-            </div>
-          </div>
+      <div
+        className="town-filters"
+        role="toolbar"
+        aria-label="Filter by municipality"
+      >
+        {(["All", ...TOWNS] as TownFilter[]).map((place) => (
+          <button
+            key={place}
+            type="button"
+            className="town-filter"
+            aria-pressed={town === place}
+            onClick={() => setTown(place)}
+          >
+            {place}
+          </button>
         ))}
-      </section>
+      </div>
+
+      {grouped.map((group) => (
+        <section key={group.place} className="stack" style={{ gap: 12 }}>
+          <h2 className="town-heading">
+            {group.place}
+            <span>
+              {group.stores.length}{" "}
+              {group.stores.length === 1 ? "store" : "stores"}
+            </span>
+          </h2>
+          <div className="grid grid-2">
+            {group.stores.map((supplier) => (
+              <article
+                key={`${supplier.town}-${supplier.name}`}
+                className="card"
+              >
+                <div className="card-icon" aria-hidden>
+                  🏬
+                </div>
+                <h3>{supplier.name}</h3>
+                <p>
+                  {supplier.town}, Camarines Sur ·{" "}
+                  {catalogSummary(supplier.catalog)}
+                </p>
+                <div className="supplier-catalog">
+                  {supplier.catalog.map((item) => (
+                    <div key={item.key} className="catalog-row">
+                      <span>{item.name}</span>
+                      <span
+                        className="catalog-price"
+                        data-cheaper={isCheaperThanReference(item)}
+                      >
+                        {formatPeso(item.amount)} <small>{item.unit}</small>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section>
         <h2 className="section-title">Reference material pricing</h2>
         <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Starter estimating prices used until a supplier quote is attached.
+          Typical Partido baseline used for estimates until a store quote is
+          chosen. Green prices on the cards are cheaper than this reference.
         </p>
         <div className="list">
-          {MATERIALS.map((material) => (
-            <div key={material.name} className="list-row">
+          {REFERENCE_MATERIALS.map((material) => (
+            <div key={material.key} className="list-row">
               <span className="list-row-title">{material.name}</span>
               <span className="list-row-value">
-                {material.price} {material.unit}
+                {formatPeso(material.amount)} {material.unit}
               </span>
             </div>
           ))}
         </div>
+        <p className="muted" style={{ fontSize: 13, marginTop: 16 }}>
+          Prices from Table 1 — Baseline Construction Material Retail Prices in
+          Selected Municipalities of Partido Area (Tigaon, Goa, Lagonoy, San
+          Jose, and Sagnay). AS = all-in sand, CR = crushed rock, GR = river
+          gravel or grit, as recorded at each store. A dash in the survey means
+          that item was not offered.
+        </p>
       </section>
     </>
   )

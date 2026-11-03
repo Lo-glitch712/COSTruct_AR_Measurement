@@ -34,7 +34,7 @@ const STATS = [
   { value: "7", label: "Structural components" },
   { value: "AR", label: "On-site measurement" },
   { value: "₱", label: "Live cost estimate" },
-  { value: "24/7", label: "Supplier catalog" },
+  { value: "18", label: "Partido hardware stores" },
 ]
 
 export default function HomePage() {
