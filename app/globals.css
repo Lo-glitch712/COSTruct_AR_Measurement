@@ -1099,17 +1099,22 @@ textarea.input-area {
    -------------------------------------------------------------------------- */
 
 .ar-preview {
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(280px, 1.08fr);
-  gap: 8px 28px;
-  align-items: center;
-  padding: 8px 8px 8px 4px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 18px 4px;
   background: var(--bg-elevated);
   border: 1px solid var(--separator);
   border-radius: var(--radius-xl);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   overflow: hidden;
+}
+
+.ar-preview-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(280px, 1.08fr);
+  gap: 8px 28px;
+  align-items: center;
 }
 
 .ar-preview-copy {
@@ -1132,8 +1137,15 @@ textarea.input-area {
   line-height: 1.5;
 }
 
-.ar-preview-copy .btn {
-  margin-top: 6px;
+.ar-preview-footer {
+  display: flex;
+  justify-content: center;
+  padding: 4px 22px 8px;
+}
+
+.ar-preview-footer .btn {
+  min-width: min(100%, 280px);
+  justify-content: center;
 }
 
 .ar-stage {
@@ -1310,8 +1322,11 @@ textarea.input-area {
 
 @media (max-width: 820px) {
   .ar-preview {
+    padding: 4px 4px 16px;
+  }
+
+  .ar-preview-body {
     grid-template-columns: minmax(0, 1fr);
-    padding: 4px 4px 8px;
   }
 
   .ar-preview-copy {

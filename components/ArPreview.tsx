@@ -81,52 +81,57 @@ export default function ArPreview() {
 
   return (
     <section className="ar-preview">
-      <div className="ar-preview-copy">
-        <span className="eyebrow">AR module</span>
-        <h2 className="section-title">Preview the space before you measure</h2>
-        <p className="muted">
-          Drag the tesseract to inspect length, width, and height the way the AR
-          camera locks a room in place.
-        </p>
+      <div className="ar-preview-body">
+        <div className="ar-preview-copy">
+          <span className="eyebrow">AR module</span>
+          <h2 className="section-title">Preview the space before you measure</h2>
+          <p className="muted">
+            Drag the tesseract to inspect length, width, and height the way the AR
+            camera locks a room in place.
+          </p>
+        </div>
+
+        <div
+          className="ar-stage"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          role="img"
+          aria-label="Rotatable AR cube preview with length, width, and height"
+        >
+          <div className="ar-stage-glow" />
+          <div className="ar-scene" ref={sceneRef}>
+            <div className="ar-floor" />
+            <div className="ar-cube ar-cube-outer">
+              {FACES.map((face) => (
+                <div key={`outer-${face}`} className="ar-face" data-face={face} />
+              ))}
+            </div>
+            <div className="ar-cube ar-cube-inner">
+              {FACES.map((face) => (
+                <div key={`inner-${face}`} className="ar-face" data-face={face} />
+              ))}
+            </div>
+            <div className="ar-dim ar-dim-l">
+              <span>L</span> {SAMPLE.length}
+            </div>
+            <div className="ar-dim ar-dim-w">
+              <span>W</span> {SAMPLE.width}
+            </div>
+            <div className="ar-dim ar-dim-h">
+              <span>H</span> {SAMPLE.height}
+            </div>
+          </div>
+          <p className="ar-stage-hint">Drag to rotate</p>
+        </div>
+      </div>
+
+      <div className="ar-preview-footer">
         <Link href="/measurements" className="btn btn-primary">
           Open AR measurement
           <Icon name="camera" size={18} />
         </Link>
-      </div>
-
-      <div
-        className="ar-stage"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        role="img"
-        aria-label="Rotatable AR cube preview with length, width, and height"
-      >
-        <div className="ar-stage-glow" />
-        <div className="ar-scene" ref={sceneRef}>
-          <div className="ar-floor" />
-          <div className="ar-cube ar-cube-outer">
-            {FACES.map((face) => (
-              <div key={`outer-${face}`} className="ar-face" data-face={face} />
-            ))}
-          </div>
-          <div className="ar-cube ar-cube-inner">
-            {FACES.map((face) => (
-              <div key={`inner-${face}`} className="ar-face" data-face={face} />
-            ))}
-          </div>
-          <div className="ar-dim ar-dim-l">
-            <span>L</span> {SAMPLE.length}
-          </div>
-          <div className="ar-dim ar-dim-w">
-            <span>W</span> {SAMPLE.width}
-          </div>
-          <div className="ar-dim ar-dim-h">
-            <span>H</span> {SAMPLE.height}
-          </div>
-        </div>
-        <p className="ar-stage-hint">Drag to rotate</p>
       </div>
     </section>
   )
