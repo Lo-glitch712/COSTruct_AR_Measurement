@@ -43,7 +43,7 @@ export default function BuyerHome({ session }: { session: Session }) {
           materials, and reach hardware suppliers — all in one workflow.
         </p>
         <div className="hero-actions">
-          <Link href="/measurements" className="btn btn-primary">
+          <Link href="/measurements/setup" className="btn btn-primary">
             Start a measurement
             <Icon name="arrowRight" size={18} />
           </Link>

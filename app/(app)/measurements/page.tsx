@@ -314,9 +314,8 @@ export default function MeasurementsPage() {
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">Measure and estimate</h1>
         <p className="page-subtitle">
-          Name the project, add the site address, pick the hardware, then tap a
-          component to measure it. The form opens in place — no extra section
-          below.
+          Your project details are in. Pick a hardware store, then tap a
+          component to measure it. The form opens in place.
         </p>
       </header>
 

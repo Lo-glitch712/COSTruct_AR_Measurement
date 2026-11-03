@@ -1342,6 +1342,60 @@ textarea.input-area {
   }
 }
 
+.intake-progress {
+  display: flex;
+  gap: 8px;
+}
+
+.intake-dot {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--separator-strong);
+}
+
+.intake-dot[data-on="true"] {
+  background: var(--accent);
+}
+
+.intake-card {
+  max-width: 640px;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choice-chip {
+  border: 1px solid var(--separator-strong);
+  background: var(--bg-sunken);
+  color: var(--label);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out);
+}
+
+.choice-chip[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.intake-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
 .stat {
   padding: 18px;
   border-radius: var(--radius-md);

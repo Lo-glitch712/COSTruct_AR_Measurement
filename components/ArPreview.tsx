@@ -128,7 +128,7 @@ export default function ArPreview() {
       </div>
 
       <div className="ar-preview-footer">
-        <Link href="/measurements" className="btn btn-primary">
+        <Link href="/measurements/setup" className="btn btn-primary">
           Open AR measurement
           <Icon name="camera" size={18} />
         </Link>
