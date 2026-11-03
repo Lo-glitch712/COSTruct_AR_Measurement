@@ -8,7 +8,6 @@ import { initials, type Session } from "@/lib/session"
 import { signOutRemote } from "@/lib/auth"
 
 const BUYER_LINKS = [
-  { href: "/measurements", label: "Measurements" },
   { href: "/projects", label: "Projects" },
   { href: "/supplier", label: "Suppliers" },
   { href: "/about", label: "About" },
