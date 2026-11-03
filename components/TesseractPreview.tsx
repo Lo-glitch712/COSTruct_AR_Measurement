@@ -115,7 +115,6 @@ export default function TesseractPreview({
           <span>H</span> {SAMPLE.height}
         </div>
       </div>
-      <p className="ar-stage-hint">Drag to rotate</p>
     </div>
   )
 }
