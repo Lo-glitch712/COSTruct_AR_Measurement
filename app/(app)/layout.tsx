@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import TermsGate from "@/components/TermsGate"
 import TopNav from "@/components/TopNav"
 import { useSession } from "@/lib/session"
 
@@ -44,6 +45,7 @@ export default function AppLayout({
         COSTruct — Measurement, Cost Estimation & Procurement with Decision
         Support
       </footer>
+      <TermsGate />
     </div>
   )
 }
