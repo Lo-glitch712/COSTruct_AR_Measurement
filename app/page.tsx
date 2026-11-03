@@ -30,7 +30,6 @@ export default function LandingPage() {
 
         <Link href="/login" className="btn btn-primary btn-lg btn-block">
           Get started
-          <Icon name="arrowRight" size={18} />
         </Link>
 
         <p className="landing-note">

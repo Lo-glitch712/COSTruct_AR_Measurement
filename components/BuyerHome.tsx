@@ -45,7 +45,6 @@ export default function BuyerHome({ session }: { session: Session }) {
         <div className="hero-actions">
           <Link href="/measurements/setup" className="btn btn-primary">
             Start a measurement
-            <Icon name="arrowRight" size={18} />
           </Link>
         </div>
       </header>

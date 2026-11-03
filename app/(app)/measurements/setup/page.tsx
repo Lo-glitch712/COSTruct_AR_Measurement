@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import Icon from "@/components/Icon"
 import { COMPONENTS, type ComponentName } from "@/lib/estimate"
 import { readWorkspace, saveWorkspace } from "@/lib/project"
 import { readSession } from "@/lib/session"
@@ -237,13 +236,11 @@ export default function MeasurementSetupPage() {
                 setStep((current) => current - 1)
               }}
             >
-              <Icon name="arrowLeft" size={16} />
               Back
             </button>
           ) : null}
           <button type="submit" className="btn btn-primary">
             {step === totalSteps - 1 ? "Start measuring" : "Continue"}
-            <Icon name="arrowRight" size={16} />
           </button>
         </div>
       </form>

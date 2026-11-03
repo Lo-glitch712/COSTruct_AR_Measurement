@@ -126,7 +126,6 @@ export default function ProjectsPage() {
                     onClick={() => open(project)}
                   >
                     View estimate
-                    <Icon name="arrowRight" size={14} />
                   </button>
                 </div>
               </article>
