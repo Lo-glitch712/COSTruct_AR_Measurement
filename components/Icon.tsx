@@ -19,6 +19,7 @@ export type IconName =
   | "trash"
   | "mail"
   | "phone"
+  | "search"
 
 const PATHS: Record<IconName, ReactElement> = {
   ruler: (
@@ -86,6 +87,12 @@ const PATHS: Record<IconName, ReactElement> = {
   ),
   phone: (
     <path d="M8.4 3.5H5.2A1.7 1.7 0 0 0 3.5 5.3c0 8.4 6.8 15.2 15.2 15.2a1.7 1.7 0 0 0 1.8-1.7v-3.2l-4.2-1.4-2 2a13.4 13.4 0 0 1-5.5-5.5l2-2z" />
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.25" />
+      <path d="m16 16 4.5 4.5" />
+    </>
   ),
 }
 

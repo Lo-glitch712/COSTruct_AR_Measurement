@@ -79,6 +79,7 @@ export default function MeasurementsPage() {
   const pressTimer = useRef<number | null>(null)
   const holdFired = useRef(false)
   const [catalog, setCatalog] = useState<Supplier | null>(null)
+  const [hardwareQuery, setHardwareQuery] = useState("")
   const [arLocked, setArLocked] = useState<Record<string, ArLockedFields>>({})
   const [restored, setRestored] = useState(false)
   const [arNote, setArNote] = useState<string | null>(null)
@@ -253,6 +254,16 @@ export default function MeasurementsPage() {
 
   const measured = rows.filter((row) => row.measured)
   const ready = measured.length > 0 && supplierId !== null
+  const hardwareMatches = useMemo(() => {
+    const query = hardwareQuery.trim().toLowerCase()
+    if (!query) return SUPPLIERS
+    return SUPPLIERS.filter((supplier) =>
+      [supplier.name, supplier.town, supplier.location]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    )
+  }, [hardwareQuery])
   const ordered = [
     ...selected,
     ...catalogItems
@@ -507,57 +518,89 @@ export default function MeasurementsPage() {
       <section>
         <h2 className="section-title">Choose a hardware</h2>
         <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Swipe through the registered hardware stores and pick the one you want
-          to source from.
+          Search by store name or town, then tap the one you want to source from.
         </p>
 
-        <Carousel label="Hardware supplier">
-          {SUPPLIERS.map((supplier) => {
-            const chosen = supplier.id === supplierId
-            return (
-              <article
-                key={supplier.id}
-                className="carousel-item"
-                role="radio"
-                aria-checked={chosen}
-              >
-                <button
-                  type="button"
-                  className="choose-item-toggle"
-                  onClick={() => setSupplierId(supplier.id)}
+        <label className="search-field">
+          <span className="sr-only">Search hardware stores</span>
+          <span className="search-field-icon" aria-hidden="true">
+            <Icon name="search" size={18} />
+          </span>
+          <input
+            className="input"
+            type="search"
+            placeholder="Search hardware or town"
+            value={hardwareQuery}
+            onChange={(event) => setHardwareQuery(event.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          {hardwareQuery ? (
+            <button
+              type="button"
+              className="search-field-clear"
+              onClick={() => setHardwareQuery("")}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          ) : null}
+        </label>
+
+        {hardwareMatches.length === 0 ? (
+          <p className="muted" role="status">
+            No hardware store matches “{hardwareQuery.trim()}”.
+          </p>
+        ) : (
+          <Carousel label="Hardware supplier">
+            {hardwareMatches.map((supplier) => {
+              const chosen = supplier.id === supplierId
+              return (
+                <article
+                  key={supplier.id}
+                  className="carousel-item"
+                  role="radio"
+                  aria-checked={chosen}
                 >
-                  <div className="card-head">
-                    <span className="card-icon">
-                      <Icon name="store" size={20} />
-                    </span>
-                    <h3>{supplier.name}</h3>
-                    {chosen ? (
-                      <span className="carousel-check">
-                        <Icon name="check" size={15} />
-                      </span>
-                    ) : null}
-                  </div>
-                  <p>
-                    {supplier.location} · {supplier.catalog.length} materials
-                  </p>
-                </button>
-                <div className="carousel-actions">
-                  <span className="badge badge-muted">Lead {supplier.lead}</span>
                   <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setCatalog(supplier)
-                    }}
+                    className="choose-item-toggle"
+                    onClick={() => setSupplierId(supplier.id)}
                   >
-                    View
+                    <div className="card-head">
+                      <span className="card-icon">
+                        <Icon name="store" size={20} />
+                      </span>
+                      <h3>{supplier.name}</h3>
+                      {chosen ? (
+                        <span className="carousel-check">
+                          <Icon name="check" size={15} />
+                        </span>
+                      ) : null}
+                    </div>
+                    <p>
+                      {supplier.location} · {supplier.catalog.length} materials
+                    </p>
                   </button>
-                </div>
-              </article>
-            )
-          })}
-        </Carousel>
+                  <div className="carousel-actions">
+                    <span className="badge badge-muted">Lead {supplier.lead}</span>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setCatalog(supplier)
+                      }}
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              )
+            })}
+          </Carousel>
+        )}
       </section>
 
       <div className="estimate-footer">
