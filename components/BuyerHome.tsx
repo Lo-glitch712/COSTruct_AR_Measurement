@@ -1,8 +1,8 @@
 "use client"
 
-import Link from "next/link"
 import ArPreview from "@/components/ArPreview"
 import Icon, { type IconName } from "@/components/Icon"
+import { useRulerNav } from "@/components/RulerLoader"
 import type { Session } from "@/lib/session"
 
 const PILLARS: { icon: IconName; title: string; body: string }[] = [
@@ -30,9 +30,15 @@ const PILLARS: { icon: IconName; title: string; body: string }[] = [
 
 export default function BuyerHome({ session }: { session: Session }) {
   const firstName = session.name.split(" ")[0]
+  const { go, overlay } = useRulerNav()
+
+  function startMeasurement() {
+    go("/measurements/setup", "Setting up your measurement")
+  }
 
   return (
     <>
+      {overlay}
       <header className="hero">
         <span className="eyebrow">Buyer Home</span>
         <h1 className="hero-title">Welcome, {firstName}.</h1>
@@ -43,13 +49,17 @@ export default function BuyerHome({ session }: { session: Session }) {
           materials, and reach hardware suppliers — all in one workflow.
         </p>
         <div className="hero-actions">
-          <Link href="/measurements/setup" className="btn btn-primary">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={startMeasurement}
+          >
             Start a measurement
-          </Link>
+          </button>
         </div>
       </header>
 
-      <ArPreview />
+      <ArPreview onMeasure={startMeasurement} />
 
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (

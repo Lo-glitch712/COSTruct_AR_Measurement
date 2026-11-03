@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
+import { useRulerNav } from "@/components/RulerLoader"
 import { peso } from "@/lib/estimate"
 import {
   readProjectsFor,
@@ -18,6 +18,7 @@ export default function ProjectsPage() {
   const router = useRouter()
   const { session } = useSession()
   const [projects, setProjects] = useState<SavedProject[]>([])
+  const { go, overlay } = useRulerNav()
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function ProjectsPage() {
         </p>
       </header>
 
+      {overlay}
       {projects.length === 0 ? (
         <div
           className="card"
@@ -74,9 +76,13 @@ export default function ProjectsPage() {
             className="hero-actions"
             style={{ justifyContent: "center", marginTop: 22 }}
           >
-            <Link href="/measurements" className="btn btn-primary">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => go("/measurements/setup", "Setting up your measurement")}
+            >
               Start a measurement
-            </Link>
+            </button>
           </div>
         </div>
       ) : (

@@ -4,6 +4,7 @@ import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Icon from "@/components/Icon"
+import { useRulerNav } from "@/components/RulerLoader"
 import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
@@ -43,6 +44,7 @@ function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const { go, loading, overlay } = useRulerNav()
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -74,16 +76,16 @@ function LoginForm() {
           supplierId: account.supplierId,
         })
       }
-      router.push("/home")
+      go("/home", "Opening your workspace")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in.")
-    } finally {
       setPending(false)
     }
   }
 
   return (
     <main className="auth">
+      {overlay}
       <div className="auth-card">
         <div className="auth-brand">COSTruct</div>
         <p className="auth-tagline">Sign in to continue to your workspace</p>
@@ -168,7 +170,7 @@ function LoginForm() {
           <button
             type="submit"
             className="btn btn-primary btn-lg btn-block"
-            disabled={pending}
+            disabled={pending || loading}
           >
             {pending ? "Signing in…" : "Sign in"}
           </button>

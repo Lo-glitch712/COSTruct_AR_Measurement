@@ -1,8 +1,10 @@
+"use client"
+
 import Link from "next/link"
 import Icon from "@/components/Icon"
 import TesseractPreview from "@/components/TesseractPreview"
 
-export default function ArPreview() {
+export default function ArPreview({ onMeasure }: { onMeasure?: () => void }) {
   return (
     <section className="ar-preview">
       <div className="ar-preview-body">
@@ -19,10 +21,17 @@ export default function ArPreview() {
       </div>
 
       <div className="ar-preview-footer">
-        <Link href="/measurements/setup" className="btn btn-primary">
-          Open AR measurement
-          <Icon name="camera" size={18} />
-        </Link>
+        {onMeasure ? (
+          <button type="button" className="btn btn-primary" onClick={onMeasure}>
+            Open AR measurement
+            <Icon name="camera" size={18} />
+          </button>
+        ) : (
+          <Link href="/measurements/setup" className="btn btn-primary">
+            Open AR measurement
+            <Icon name="camera" size={18} />
+          </Link>
+        )}
       </div>
     </section>
   )
