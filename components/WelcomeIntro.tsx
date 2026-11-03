@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import HouseMeasurePreview from "@/components/HouseMeasurePreview"
 import TesseractPreview from "@/components/TesseractPreview"
+import WallMeasurePreview from "@/components/WallMeasurePreview"
 import { readSession, type Role } from "@/lib/session"
 
 const ROLES: { value: Role; label: string; hint: string }[] = [
@@ -54,11 +54,7 @@ export default function WelcomeIntro() {
 
   return (
     <main className="intro">
-      <section className="intro-card">
-        <span className="eyebrow">
-          Step {step + 1} of {totalSteps}
-        </span>
-
+      <section className="intro-content">
         <div className="intake-progress" aria-hidden="true">
           {Array.from({ length: totalSteps }, (_, index) => (
             <span
@@ -76,22 +72,18 @@ export default function WelcomeIntro() {
               Drag the tesseract. Length, width, and height stay locked on the
               space the way the measuring tools will.
             </p>
-            <div className="intro-stage">
-              <TesseractPreview compact />
-            </div>
+            <TesseractPreview compact />
           </>
         ) : null}
 
         {step === 1 ? (
           <>
-            <h1 className="intro-title">Watch a house get measured</h1>
+            <h1 className="intro-title">Watch a wall get measured</h1>
             <p className="intro-copy">
-              COSTruct traces length and width, then turns the floor into an
-              area you can estimate from.
+              COSTruct traces length and height along the wall, the same way you
+              will on site.
             </p>
-            <div className="intro-stage">
-              <HouseMeasurePreview />
-            </div>
+            <WallMeasurePreview />
           </>
         ) : null}
 
