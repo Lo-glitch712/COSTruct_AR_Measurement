@@ -867,15 +867,25 @@ textarea.input-area {
 .legal {
   min-height: 100dvh;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
+}
+
+.intro {
+  align-items: stretch;
+  padding: 24px 20px 0;
+}
+
+.legal {
+  align-items: flex-start;
   padding: 28px 20px 40px;
 }
 
 .intro-content {
   width: min(94vw, 520px);
-  margin: 12px 0;
-  padding: 12px 4px 8px;
+  min-height: calc(100dvh - 24px);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 4px 0;
 }
 
 .legal-card {
@@ -916,8 +926,28 @@ textarea.input-area {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-end;
-  margin-top: 18px;
+  justify-content: center;
+  align-items: stretch;
+  margin-top: auto;
+  padding: 18px 0 calc(18px + env(safe-area-inset-bottom, 0px));
+}
+
+.intro-actions .btn {
+  min-width: 168px;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .intro-actions {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .intro-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .intro-terms {
