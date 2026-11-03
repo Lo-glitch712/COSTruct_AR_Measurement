@@ -1,6 +1,6 @@
 # Supabase schema
 
-1. Open https://supabase.com/dashboard/project/rgudroapzqzzabumlors/sql
+1. Open https://supabase.com/dashboard/project/nhjsadyqgygfffjyisjg/sql
 2. Paste and run `schema.sql`.
 3. Authentication → Providers → Email: turn **Confirm email** OFF so demo accounts can sign in immediately.
 
