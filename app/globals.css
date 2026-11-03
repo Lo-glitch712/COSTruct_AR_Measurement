@@ -860,6 +860,330 @@ textarea.input-area {
 }
 
 /* --------------------------------------------------------------------------
+   Welcome intro + terms
+   -------------------------------------------------------------------------- */
+
+.intro,
+.legal {
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 20px 40px;
+}
+
+.intro-card,
+.legal-card {
+  width: min(94vw, 520px);
+  margin: 12px 0;
+  padding: 28px 24px 24px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  border: 1px solid var(--separator);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+.legal-card {
+  width: min(94vw, 640px);
+}
+
+.intro-card .intake-progress {
+  margin: 12px 0 18px;
+}
+
+.intro-title {
+  font-size: clamp(28px, 7vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 0 0 10px;
+}
+
+.intro-copy {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--label-secondary);
+}
+
+.intro-stage {
+  margin: 0 -8px 8px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--separator);
+  overflow: visible;
+}
+
+.intro-stage .ar-stage[data-compact="true"] {
+  min-height: 280px;
+}
+
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.intro-terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--label-secondary);
+  cursor: pointer;
+}
+
+.intro-terms input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.intro-terms a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.legal-section {
+  margin: 18px 0;
+}
+
+.legal-section h2 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.legal-section p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--label-secondary);
+}
+
+.house-measure {
+  position: relative;
+  min-height: 300px;
+  padding: 12px 12px 28px 8px;
+}
+
+.house-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.house-outline,
+.house-partition,
+.house-dim-l,
+.house-dim-w {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.house-outline {
+  stroke-width: 2.6;
+  animation: house-draw 7.5s var(--ease-out) infinite;
+}
+
+.house-partition {
+  stroke-width: 1.6;
+  stroke: var(--accent-bright);
+  animation: house-draw 7.5s 0.35s var(--ease-out) infinite;
+}
+
+.house-dim-l,
+.house-dim-w {
+  stroke-width: 1.7;
+  animation: house-draw 7.5s var(--ease-out) infinite;
+}
+
+.house-dim-l {
+  animation-delay: 1.6s;
+}
+
+.house-dim-w {
+  animation-delay: 2.3s;
+}
+
+.house-scan {
+  fill: rgba(18, 38, 58, 0.12);
+  transform-origin: 90px 48px;
+  transform: scaleX(0);
+  animation: house-fill 7.5s var(--ease-out) infinite;
+}
+
+.house-dot {
+  fill: var(--accent);
+  opacity: 0;
+  animation: house-fade 7.5s 1.8s var(--ease-out) infinite;
+}
+
+.house-dot-w {
+  animation-delay: 2.5s;
+}
+
+.house-label {
+  position: absolute;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(18, 38, 58, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0;
+}
+
+.house-label-l {
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  animation: house-fade 7.5s 2.1s var(--ease-out) infinite;
+}
+
+.house-label-w {
+  left: 10px;
+  top: 46%;
+  animation: house-fade 7.5s 2.8s var(--ease-out) infinite;
+}
+
+.house-area {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%) scale(0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--separator-strong);
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  opacity: 0;
+  animation: house-pop 7.5s var(--ease-out) infinite;
+}
+
+.house-area small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+}
+
+@keyframes house-draw {
+  0%,
+  4% {
+    stroke-dashoffset: 1;
+  }
+  18%,
+  84% {
+    stroke-dashoffset: 0;
+  }
+  96%,
+  100% {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes house-fill {
+  0%,
+  12% {
+    transform: scaleX(0);
+  }
+  28%,
+  84% {
+    transform: scaleX(1);
+  }
+  96%,
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes house-fade {
+  0%,
+  8% {
+    opacity: 0;
+  }
+  16%,
+  84% {
+    opacity: 1;
+  }
+  96%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes house-pop {
+  0%,
+  34% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  44%,
+  84% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house-outline,
+  .house-partition,
+  .house-dim-l,
+  .house-dim-w,
+  .house-scan,
+  .house-dot,
+  .house-label,
+  .house-area {
+    animation: none !important;
+  }
+
+  .house-outline,
+  .house-partition,
+  .house-dim-l,
+  .house-dim-w {
+    stroke-dashoffset: 0;
+  }
+
+  .house-scan {
+    transform: none;
+  }
+
+  .house-dot,
+  .house-label,
+  .house-area {
+    opacity: 1;
+  }
+
+  .house-area {
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* --------------------------------------------------------------------------
    Auth screen
    -------------------------------------------------------------------------- */
 
