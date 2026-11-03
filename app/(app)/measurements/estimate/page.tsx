@@ -127,8 +127,7 @@ export default function EstimatePage() {
                 <li key={line.material}>
                   <span className="material-name">{line.material}</span>
                   <span className="material-qty">
-                    {quantity(line.quantity)} {line.unit} ×{" "}
-                    {peso(line.unitPrice)}
+                    {quantity(line.quantity)} {line.unit}
                   </span>
                   <span className="material-cost">{peso(line.cost)}</span>
                 </li>
