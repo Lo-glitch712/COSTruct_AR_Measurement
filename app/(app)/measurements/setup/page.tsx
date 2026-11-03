@@ -88,8 +88,9 @@ export default function MeasurementSetupPage() {
 
     const description = [buildType, notes.trim()].filter(Boolean).join(": ")
     const workspace = readWorkspace()
+    const measuring = selected.length ? selected : [COMPONENTS[0].name]
     const inputs = { ...(workspace?.inputs ?? {}) }
-    for (const component of selected) {
+    for (const component of measuring) {
       if (!inputs[component]) inputs[component] = { ...EMPTY_INPUT }
     }
     saveWorkspace({
@@ -97,7 +98,7 @@ export default function MeasurementSetupPage() {
       address: address.trim(),
       description,
       supplierId: workspace?.supplierId ?? null,
-      selected,
+      selected: measuring,
       inputs,
       arLocked: workspace?.arLocked ?? {},
       customComponents: workspace?.customComponents ?? [],

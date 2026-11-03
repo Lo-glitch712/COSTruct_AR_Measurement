@@ -92,11 +92,15 @@ export default function MeasurementsPage() {
       setProjectAddress(workspace.address ?? "")
       setProjectDescription(workspace.description ?? "")
       setSupplierId(workspace.supplierId)
-      setSelected(workspace.selected)
+      setSelected(
+        workspace.selected.length ? workspace.selected : [COMPONENTS[0].name],
+      )
       setInputs((current) => ({ ...current, ...workspace.inputs }))
       setArLocked(workspace.arLocked ?? {})
       setCustomComponents(workspace.customComponents ?? [])
       setHiddenComponents(workspace.hiddenComponents ?? [])
+    } else {
+      setSelected([COMPONENTS[0].name])
     }
     if (applied) {
       setArNote(
@@ -312,10 +316,13 @@ export default function MeasurementsPage() {
     <>
       <header>
         <span className="eyebrow">Measurements</span>
-        <h1 className="page-title">Measure and estimate</h1>
+        <h1 className="page-title">
+          {projectName.trim() || "Take measurements"}
+        </h1>
         <p className="page-subtitle">
-          Your project details are in. Pick a hardware store, then tap a
-          component to measure it. The form opens in place.
+          {projectAddress.trim()
+            ? projectAddress.trim()
+            : "Enter length, width, and height, or use the camera for AR."}
         </p>
       </header>
 
@@ -334,99 +341,10 @@ export default function MeasurementsPage() {
         </div>
       ) : null}
 
-      <div className="card stack">
-        <label className="field">
-          <span className="field-label">Project name</span>
-          <input
-            className="input"
-            placeholder="e.g. Two-storey residence"
-            value={projectName}
-            onChange={(event) => setProjectName(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span className="field-label">Project address</span>
-          <input
-            className="input"
-            autoComplete="street-address"
-            placeholder="e.g. Poblacion, Goa, Camarines Sur"
-            value={projectAddress}
-            onChange={(event) => setProjectAddress(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span className="field-label">Description (optional)</span>
-          <textarea
-            className="input input-area"
-            rows={3}
-            placeholder="Notes about the job, site, or scope"
-            value={projectDescription}
-            onChange={(event) => setProjectDescription(event.target.value)}
-          />
-        </label>
-      </div>
-
       <section>
-        <h2 className="section-title">Choose a hardware</h2>
+        <h2 className="section-title">Enter dimensions</h2>
         <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Swipe through the registered hardware stores and pick the one you want
-          to source from.
-        </p>
-
-        <Carousel label="Hardware supplier">
-          {SUPPLIERS.map((supplier) => {
-            const chosen = supplier.id === supplierId
-            return (
-              <article
-                key={supplier.id}
-                className="carousel-item"
-                role="radio"
-                aria-checked={chosen}
-              >
-                <button
-                  type="button"
-                  className="choose-item-toggle"
-                  onClick={() => setSupplierId(supplier.id)}
-                >
-                  <div className="card-head">
-                    <span className="card-icon">
-                      <Icon name="store" size={20} />
-                    </span>
-                    <h3>{supplier.name}</h3>
-                    {chosen ? (
-                      <span className="carousel-check">
-                        <Icon name="check" size={15} />
-                      </span>
-                    ) : null}
-                  </div>
-                  <p>
-                    {supplier.location} · {supplier.catalog.length} materials
-                  </p>
-                </button>
-                <div className="carousel-actions">
-                  <span className="badge badge-muted">Lead {supplier.lead}</span>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setCatalog(supplier)
-                    }}
-                  >
-                    View
-                  </button>
-                </div>
-              </article>
-            )
-          })}
-        </Carousel>
-      </section>
-
-      <section>
-        <h2 className="section-title">Choose to measure</h2>
-        <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
-          Tap a component to move it to the top and measure it. Tap it again to
-          close.
+          Length, width, and height are in meters. Tap the camera for AR.
         </p>
         <div className="choose-grid" role="group" aria-label="Components to measure">
           {ordered.map((name) => {
@@ -540,7 +458,7 @@ export default function MeasurementsPage() {
                     <div className="choose-calculate">
                       <p className="tiny">
                         {supplierId === null
-                          ? "Choose a hardware above first."
+                          ? "Choose a hardware store below first."
                           : ready
                             ? `${measured.length} component${measured.length === 1 ? "" : "s"} ready.`
                             : "Fill length, width, and height to calculate."}
@@ -602,6 +520,62 @@ export default function MeasurementsPage() {
             Add custom component
           </button>
         )}
+      </section>
+
+      <section>
+        <h2 className="section-title">Choose a hardware</h2>
+        <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>
+          Swipe through the registered hardware stores and pick the one you want
+          to source from.
+        </p>
+
+        <Carousel label="Hardware supplier">
+          {SUPPLIERS.map((supplier) => {
+            const chosen = supplier.id === supplierId
+            return (
+              <article
+                key={supplier.id}
+                className="carousel-item"
+                role="radio"
+                aria-checked={chosen}
+              >
+                <button
+                  type="button"
+                  className="choose-item-toggle"
+                  onClick={() => setSupplierId(supplier.id)}
+                >
+                  <div className="card-head">
+                    <span className="card-icon">
+                      <Icon name="store" size={20} />
+                    </span>
+                    <h3>{supplier.name}</h3>
+                    {chosen ? (
+                      <span className="carousel-check">
+                        <Icon name="check" size={15} />
+                      </span>
+                    ) : null}
+                  </div>
+                  <p>
+                    {supplier.location} · {supplier.catalog.length} materials
+                  </p>
+                </button>
+                <div className="carousel-actions">
+                  <span className="badge badge-muted">Lead {supplier.lead}</span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setCatalog(supplier)
+                    }}
+                  >
+                    View
+                  </button>
+                </div>
+              </article>
+            )
+          })}
+        </Carousel>
       </section>
 
       {catalog
