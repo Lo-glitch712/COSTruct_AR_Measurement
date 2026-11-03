@@ -454,24 +454,6 @@ export default function MeasurementsPage() {
                         </span>
                       </div>
                     ) : null}
-
-                    <div className="choose-calculate">
-                      <p className="tiny">
-                        {supplierId === null
-                          ? "Choose a hardware store below first."
-                          : ready
-                            ? `${measured.length} component${measured.length === 1 ? "" : "s"} ready.`
-                            : "Fill length, width, and height to calculate."}
-                      </p>
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={calculate}
-                        disabled={!ready}
-                      >
-                        Estimate project
-                      </button>
-                    </div>
                   </div>
                 ) : null}
               </article>
@@ -577,6 +559,24 @@ export default function MeasurementsPage() {
           })}
         </Carousel>
       </section>
+
+      <div className="estimate-footer">
+        <p className="tiny">
+          {supplierId === null
+            ? "Choose a hardware store above first."
+            : ready
+              ? `${measured.length} component${measured.length === 1 ? "" : "s"} ready.`
+              : "Fill length, width, and height to calculate."}
+        </p>
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={calculate}
+          disabled={!ready}
+        >
+          Estimate project
+        </button>
+      </div>
 
       {catalog
         ? createPortal(

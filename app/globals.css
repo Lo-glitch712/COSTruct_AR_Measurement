@@ -1725,18 +1725,16 @@ textarea.input-area {
   flex-shrink: 0;
 }
 
-.choose-calculate {
+.estimate-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
   padding-top: 4px;
+  padding-bottom: 8px;
 }
 
-.choose-calculate .tiny {
-  flex: 1;
-  min-width: 16ch;
+.estimate-footer .tiny {
+  margin: 0;
 }
 
 .choose-item-top {
