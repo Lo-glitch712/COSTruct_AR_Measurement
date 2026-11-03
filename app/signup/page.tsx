@@ -252,11 +252,7 @@ export default function SignupPage() {
         </form>
 
         <div className="auth-footer">
-          By creating an account you agree to the{" "}
-          <Link href="/terms">Terms and Conditions</Link>.
-          <div style={{ marginTop: 10 }}>
-            Already have an account? <Link href="/login">Sign in</Link>
-          </div>
+          Already have an account? <Link href="/login">Sign in</Link>
           <div className="tiny back-link" style={{ marginTop: 10 }}>
             <Link href="/">
               <Icon name="arrowLeft" size={14} />

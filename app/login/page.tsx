@@ -29,10 +29,16 @@ export default function LoginPage() {
   )
 }
 
+function roleFromParam(value: string | null): Role {
+  if (value === "supplier" || value === "admin" || value === "buyer") return value
+  return "buyer"
+}
+
 function LoginForm() {
   const router = useRouter()
-  const created = useSearchParams().get("created") === "1"
-  const [role, setRole] = useState<Role>("buyer")
+  const params = useSearchParams()
+  const created = params.get("created") === "1"
+  const [role, setRole] = useState<Role>(() => roleFromParam(params.get("role")))
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")

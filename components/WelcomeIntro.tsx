@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import TesseractPreview from "@/components/TesseractPreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
@@ -18,7 +17,6 @@ export default function WelcomeIntro() {
   const [step, setStep] = useState(0)
   const [role, setRole] = useState<Role | null>(null)
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
-  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState("")
   const totalSteps = 3
 
@@ -37,19 +35,11 @@ export default function WelcomeIntro() {
       setError("Choose which user you are.")
       return
     }
-    if (hasAccount === null) {
-      setError("Tell us if you already have an account.")
-      return
-    }
-    if (!agreed) {
-      setError("Agree to the Terms and Conditions to continue.")
-      return
-    }
     if (role === "buyer" && hasAccount === false) {
       router.push("/signup")
       return
     }
-    router.push("/login")
+    router.push(`/login?role=${role}`)
   }
 
   return (
@@ -154,21 +144,6 @@ export default function WelcomeIntro() {
                 </p>
               ) : null}
             </div>
-
-            <label className="intro-terms">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(event) => {
-                  setAgreed(event.target.checked)
-                  setError("")
-                }}
-              />
-              <span>
-                I agree to the{" "}
-                <Link href="/terms">Terms and Conditions</Link>
-              </span>
-            </label>
           </>
         ) : null}
 
