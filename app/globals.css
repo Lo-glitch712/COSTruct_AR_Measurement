@@ -1094,6 +1094,239 @@ textarea.input-area {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Buyer home — AR cube / tesseract preview
+   -------------------------------------------------------------------------- */
+
+.ar-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(280px, 1.08fr);
+  gap: 8px 28px;
+  align-items: center;
+  padding: 8px 8px 8px 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  overflow: hidden;
+}
+
+.ar-preview-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 22px 8px 22px 22px;
+}
+
+.ar-preview-copy .section-title {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 28px);
+  max-width: 16ch;
+}
+
+.ar-preview-copy .muted {
+  max-width: 36ch;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.ar-preview-copy .btn {
+  margin-top: 6px;
+}
+
+.ar-stage {
+  position: relative;
+  min-height: 340px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  perspective: 920px;
+}
+
+.ar-stage:active {
+  cursor: grabbing;
+}
+
+.ar-stage-glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(26, 58, 88, 0.18) 0%,
+    rgba(26, 58, 88, 0.05) 48%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.ar-scene {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  transform-style: preserve-3d;
+  transform: rotateX(-22deg) rotateY(36deg);
+}
+
+.ar-floor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 270px;
+  height: 270px;
+  margin: -135px 0 0 -135px;
+  border-radius: 18px;
+  transform: rotateX(90deg) translateZ(-118px);
+  background:
+    linear-gradient(rgba(18, 38, 58, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 38, 58, 0.1) 1px, transparent 1px);
+  background-size: 27px 27px;
+  box-shadow: 0 28px 40px rgba(18, 38, 58, 0.08);
+  pointer-events: none;
+}
+
+.ar-cube {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-style: preserve-3d;
+}
+
+.ar-cube-outer {
+  width: 168px;
+  height: 168px;
+  margin: -84px 0 0 -84px;
+  --half: 84px;
+}
+
+.ar-cube-inner {
+  width: 86px;
+  height: 86px;
+  margin: -43px 0 0 -43px;
+  --half: 43px;
+}
+
+.ar-face {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(18, 38, 58, 0.28);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(210, 224, 236, 0.16) 100%
+  );
+  backface-visibility: hidden;
+}
+
+.ar-cube-inner .ar-face {
+  border-color: rgba(18, 38, 58, 0.45);
+  background: linear-gradient(
+    160deg,
+    rgba(26, 58, 88, 0.22) 0%,
+    rgba(18, 38, 58, 0.08) 100%
+  );
+}
+
+.ar-face[data-face="front"] {
+  transform: rotateY(0deg) translateZ(var(--half));
+}
+.ar-face[data-face="back"] {
+  transform: rotateY(180deg) translateZ(var(--half));
+}
+.ar-face[data-face="right"] {
+  transform: rotateY(90deg) translateZ(var(--half));
+}
+.ar-face[data-face="left"] {
+  transform: rotateY(-90deg) translateZ(var(--half));
+}
+.ar-face[data-face="top"] {
+  transform: rotateX(90deg) translateZ(var(--half));
+}
+.ar-face[data-face="bottom"] {
+  transform: rotateX(-90deg) translateZ(var(--half));
+}
+
+.ar-dim {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(18, 38, 58, 0.9);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+}
+
+.ar-dim span {
+  opacity: 0.62;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.ar-dim-l {
+  left: 50%;
+  top: 100%;
+  transform: translate3d(-50%, 14px, 84px);
+}
+
+.ar-dim-w {
+  left: 100%;
+  top: 100%;
+  transform: translate3d(12px, 8px, 0) rotateY(-90deg);
+  transform-origin: left center;
+}
+
+.ar-dim-h {
+  left: 0;
+  top: 50%;
+  transform: translate3d(-108%, -50%, 84px);
+}
+
+.ar-stage-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+  pointer-events: none;
+}
+
+@media (max-width: 820px) {
+  .ar-preview {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 4px 4px 8px;
+  }
+
+  .ar-preview-copy {
+    padding: 20px 18px 0;
+  }
+
+  .ar-preview-copy .section-title {
+    max-width: none;
+  }
+
+  .ar-stage {
+    min-height: 300px;
+  }
+}
+
 .stat {
   padding: 18px;
   border-radius: var(--radius-md);

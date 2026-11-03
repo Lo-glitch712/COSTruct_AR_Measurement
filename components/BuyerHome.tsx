@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import ArPreview from "@/components/ArPreview"
 import Icon, { type IconName } from "@/components/Icon"
 import type { Session } from "@/lib/session"
 
@@ -48,6 +49,8 @@ export default function BuyerHome({ session }: { session: Session }) {
           </Link>
         </div>
       </header>
+
+      <ArPreview />
 
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
