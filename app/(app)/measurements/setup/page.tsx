@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useRulerNav } from "@/components/RulerLoader"
 import { COMPONENTS, type ComponentName } from "@/lib/estimate"
 import { readWorkspace, saveWorkspace } from "@/lib/project"
@@ -240,7 +241,11 @@ export default function MeasurementSetupPage() {
             >
               Back
             </button>
-          ) : null}
+          ) : (
+            <Link href="/home" className="btn btn-secondary">
+              Back
+            </Link>
+          )}
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {step === totalSteps - 1 ? "Start measuring" : "Continue"}
           </button>

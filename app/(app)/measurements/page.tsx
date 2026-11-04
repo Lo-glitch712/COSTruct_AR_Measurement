@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react"
 import { createPortal } from "react-dom"
+import Link from "next/link"
 import Carousel from "@/components/Carousel"
 import Icon from "@/components/Icon"
 import { useRulerNav } from "@/components/RulerLoader"
@@ -327,6 +328,12 @@ export default function MeasurementsPage() {
     <>
       {overlay}
       <header>
+        <div className="tiny back-link" style={{ marginBottom: 10 }}>
+          <Link href="/measurements/setup">
+            <Icon name="arrowLeft" size={14} />
+            Back
+          </Link>
+        </div>
         <span className="eyebrow">Measurements</span>
         <h1 className="page-title">
           {projectName.trim() || "Take measurements"}

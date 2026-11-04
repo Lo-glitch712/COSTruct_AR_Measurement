@@ -33,9 +33,12 @@ export default function AppLayout({
 
   if (!session || blocked) return null
 
+  const measuring =
+    pathname === "/measurements" || pathname.startsWith("/measurements/")
+
   return (
     <div className="shell">
-      <TopNav session={session} />
+      {measuring ? null : <TopNav session={session} />}
       <main className="page">
         <div className="container stack" style={{ gap: 26 }}>
           {children}
