@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { useRulerNav } from "@/components/RulerLoader"
@@ -14,12 +15,20 @@ import {
 import { useSession } from "@/lib/session"
 import { supplierById } from "@/lib/suppliers"
 
+const HOLD_MS = 520
+const MOVE_PX = 12
+
 export default function ProjectsPage() {
   const router = useRouter()
   const { session } = useSession()
   const [projects, setProjects] = useState<SavedProject[]>([])
   const { go, overlay } = useRulerNav()
   const [loaded, setLoaded] = useState(false)
+  const [armedId, setArmedId] = useState<string | null>(null)
+  const [pending, setPending] = useState<SavedProject | null>(null)
+  const holdTimer = useRef<number | null>(null)
+  const holdOrigin = useRef<{ x: number; y: number } | null>(null)
+  const suppressClick = useRef(false)
 
   useEffect(() => {
     if (!session) return
@@ -27,7 +36,56 @@ export default function ProjectsPage() {
     setLoaded(true)
   }, [session])
 
+  useEffect(() => {
+    if (!armedId) return
+    function onPointerDown(event: PointerEvent) {
+      const node = event.target as HTMLElement | null
+      if (node?.closest(`[data-project-id="${armedId}"]`)) return
+      if (node?.closest(".logout-dialog")) return
+      setArmedId(null)
+    }
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
+  }, [armedId])
+
+  function clearHold() {
+    if (holdTimer.current != null) {
+      window.clearTimeout(holdTimer.current)
+      holdTimer.current = null
+    }
+    holdOrigin.current = null
+  }
+
+  function startHold(id: string, event: React.PointerEvent) {
+    if (event.pointerType === "mouse" && event.button !== 0) return
+    clearHold()
+    suppressClick.current = false
+    holdOrigin.current = { x: event.clientX, y: event.clientY }
+    holdTimer.current = window.setTimeout(() => {
+      suppressClick.current = true
+      setArmedId(id)
+      holdTimer.current = null
+      try {
+        navigator.vibrate?.(20)
+      } catch {
+        /* ignore */
+      }
+    }, HOLD_MS)
+  }
+
+  function onHoldMove(event: React.PointerEvent) {
+    const origin = holdOrigin.current
+    if (!origin || holdTimer.current == null) return
+    const dx = event.clientX - origin.x
+    const dy = event.clientY - origin.y
+    if (Math.hypot(dx, dy) > MOVE_PX) clearHold()
+  }
+
   function open(project: SavedProject) {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      return
+    }
     saveDraft({
       name: project.name,
       address: project.address,
@@ -39,9 +97,12 @@ export default function ProjectsPage() {
     router.push("/measurements/estimate")
   }
 
-  function remove(id: string) {
-    removeProject(id)
+  function confirmRemove() {
+    if (!pending) return
+    removeProject(pending.id)
     setProjects(session ? readProjectsFor(session.email) : [])
+    setPending(null)
+    setArmedId(null)
   }
 
   if (!loaded) return null
@@ -90,21 +151,24 @@ export default function ProjectsPage() {
           {projects.map((project) => {
             const supplier = supplierById(project.supplierId)
             const savedAt = new Date(project.savedAt)
+            const title = project.name.trim() || "Untitled project"
+            const armed = armedId === project.id
             return (
-              <article key={project.id} className="card">
+              <article
+                key={project.id}
+                className={`card project-card${armed ? " is-armed" : ""}`}
+                data-project-id={project.id}
+                onPointerDown={(event) => startHold(project.id, event)}
+                onPointerUp={clearHold}
+                onPointerCancel={clearHold}
+                onPointerMove={onHoldMove}
+                onContextMenu={(event) => event.preventDefault()}
+              >
                 <div className="card-head">
                   <span className="card-icon">
                     <Icon name="folder" size={20} />
                   </span>
-                  <h3>{project.name.trim() || "Untitled project"}</h3>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    onClick={() => remove(project.id)}
-                    aria-label={`Delete ${project.name.trim() || "untitled project"}`}
-                  >
-                    <Icon name="trash" size={16} />
-                  </button>
+                  <h3>{title}</h3>
                 </div>
                 {project.address?.trim() ? (
                   <p className="tiny">{project.address.trim()}</p>
@@ -134,11 +198,64 @@ export default function ProjectsPage() {
                     View estimate
                   </button>
                 </div>
+                {armed ? (
+                  <button
+                    type="button"
+                    className="btn btn-danger project-delete"
+                    onClick={() => setPending(project)}
+                  >
+                    Delete
+                  </button>
+                ) : null}
               </article>
             )
           })}
         </section>
       )}
+
+      {pending
+        ? createPortal(
+            <div
+              className="logout-scrim"
+              role="presentation"
+              onClick={() => setPending(null)}
+            >
+              <div
+                className="logout-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-project-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <h2 id="delete-project-title" className="section-title">
+                  Delete this project?
+                </h2>
+                <p className="muted" style={{ fontSize: 14 }}>
+                  This removes{" "}
+                  <strong>{pending.name.trim() || "Untitled project"}</strong>{" "}
+                  from Your projects. You can&apos;t undo this.
+                </p>
+                <div className="logout-dialog-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setPending(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmRemove}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   )
 }
