@@ -17,41 +17,15 @@ const ROLES: { value: Role; label: string; hint: string }[] = [
   { value: "admin", label: "Admin", hint: "Monitor buyers, stores, and projects." },
 ]
 
-const SITE_ROLES: {
-  value: "builder" | "contractor" | "other"
-  label: string
-  hint: string
-}[] = [
-  {
-    value: "builder",
-    label: "Builder",
-    hint: "You measure, estimate, and buy the materials for the work you build.",
-  },
-  {
-    value: "contractor",
-    label: "Contractor",
-    hint: "You run the project, compare hardware, and track what gets bought.",
-  },
-  {
-    value: "other",
-    label: "Neither of these",
-    hint: "Continue if you supply materials or administer COSTruct.",
-  },
-]
-
 export default function WelcomeIntro() {
   const router = useRouter()
   const { go, loading, overlay } = useRulerNav()
   const [ready, setReady] = useState(false)
   const [step, setStep] = useState(0)
   const [role, setRole] = useState<Role | null>(null)
-  const [siteRole, setSiteRole] = useState<"builder" | "contractor" | "other" | null>(
-    null,
-  )
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
   const [error, setError] = useState("")
-  const totalSteps = 7
-  const siteStep = 5
+  const totalSteps = 6
 
   useEffect(() => {
     if (readSession()) {
@@ -63,10 +37,6 @@ export default function WelcomeIntro() {
   }, [router])
 
   function next() {
-    if (step === siteStep && !siteRole) {
-      setError("Choose whether you are a builder or a contractor.")
-      return
-    }
     setError("")
     setStep((current) => Math.min(current + 1, totalSteps - 1))
   }
@@ -158,44 +128,6 @@ export default function WelcomeIntro() {
         ) : null}
 
         {step === 5 ? (
-          <>
-            <h1 className="intro-title">Are you a builder or a contractor?</h1>
-            <p className="intro-copy">
-              Tell us how you work on site so the buyer tools match the job.
-            </p>
-            <div className="field">
-              <span className="field-label">How do you work?</span>
-              <div className="choice-row">
-                {SITE_ROLES.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    className="choice-chip"
-                    aria-pressed={siteRole === item.value}
-                    onClick={() => {
-                      setSiteRole(item.value)
-                      setError("")
-                      if (item.value === "other") {
-                        if (role === "buyer") setRole(null)
-                        return
-                      }
-                      setRole("buyer")
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              {siteRole ? (
-                <p className="tiny" style={{ marginTop: 8 }}>
-                  {SITE_ROLES.find((item) => item.value === siteRole)?.hint}
-                </p>
-              ) : null}
-            </div>
-          </>
-        ) : null}
-
-        {step === 6 ? (
           <div className="intro-start">
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">
