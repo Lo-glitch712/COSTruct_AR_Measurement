@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
@@ -33,6 +34,8 @@ export default function TopNav({ session }: { session: Session }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const links =
     session.role === "admin"
       ? ADMIN_LINKS
@@ -41,11 +44,20 @@ export default function TopNav({ session }: { session: Session }) {
         : BUYER_LINKS
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
     setOpen(false)
   }, [pathname])
 
-  function signOut() {
+  function askSignOut() {
     setOpen(false)
+    setConfirming(true)
+  }
+
+  function signOut() {
+    setConfirming(false)
     void signOutRemote().then(() => router.push("/"))
   }
 
@@ -83,7 +95,7 @@ export default function TopNav({ session }: { session: Session }) {
 
           <nav className="nav-links">
             {renderLinks()}
-            <button type="button" className="nav-link" onClick={signOut}>
+            <button type="button" className="nav-link" onClick={askSignOut}>
               Log out
             </button>
           </nav>
@@ -127,12 +139,54 @@ export default function TopNav({ session }: { session: Session }) {
             Cost guide
           </button>
         ) : null}
-        <button type="button" className="nav-link nav-logout" onClick={signOut}>
+        <button type="button" className="nav-link nav-logout" onClick={askSignOut}>
           Log out
         </button>
       </nav>
 
       {session.role === "buyer" ? <CostGuideBar /> : null}
+
+      {mounted && confirming
+        ? createPortal(
+            <div
+              className="logout-scrim"
+              role="presentation"
+              onClick={() => setConfirming(false)}
+            >
+              <div
+                className="logout-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="logout-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <h2 id="logout-title" className="section-title">
+                  Log out?
+                </h2>
+                <p className="muted" style={{ fontSize: 14 }}>
+                  You’ll need to sign in again to get back to your account.
+                </p>
+                <div className="logout-dialog-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setConfirming(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={signOut}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </header>
   )
 }
