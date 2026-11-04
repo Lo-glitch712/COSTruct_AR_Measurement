@@ -196,7 +196,7 @@ export default function WelcomeIntro() {
         ) : null}
 
         {step === 6 ? (
-          <>
+          <div className="intro-start">
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">
               Tell us which user you are, and whether you already have an
@@ -262,7 +262,7 @@ export default function WelcomeIntro() {
                 </p>
               ) : null}
             </div>
-          </>
+          </div>
         ) : null}
 
         {error ? <p className="notice-error">{error}</p> : null}

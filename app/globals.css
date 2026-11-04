@@ -985,6 +985,18 @@ textarea.input-area {
   color: var(--label-secondary);
 }
 
+.intro-start {
+  text-align: center;
+}
+
+.intro-start .field {
+  align-items: center;
+}
+
+.intro-start .choice-row {
+  justify-content: center;
+}
+
 .intro .ar-stage[data-compact="true"] {
   min-height: 280px;
 }
