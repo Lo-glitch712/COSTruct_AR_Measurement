@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import Icon from "@/components/Icon"
 import { UNITS, useCatalog } from "@/lib/catalog"
 import { peso } from "@/lib/estimate"
@@ -13,6 +13,7 @@ export default function SupplierDashboard({ session }: { session: Session }) {
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [unit, setUnit] = useState(UNITS[0])
+  const [query, setQuery] = useState("")
   const [error, setError] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [armed, setArmed] = useState<string | null>(null)
@@ -21,6 +22,13 @@ export default function SupplierDashboard({ session }: { session: Session }) {
   const holdFired = useRef(false)
 
   const firstName = session.name.split(" ")[0]
+  const matches = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (!needle) return items
+    return items.filter((item) =>
+      [item.name, item.unit].join(" ").toLowerCase().includes(needle),
+    )
+  }, [items, query])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -213,6 +221,35 @@ export default function SupplierDashboard({ session }: { session: Session }) {
           Hold a material to edit it, change stock, or remove it.
         </p>
 
+        {loaded && items.length > 0 ? (
+          <label className="search-field">
+            <span className="sr-only">Search materials</span>
+            <span className="search-field-icon" aria-hidden="true">
+              <Icon name="search" size={18} />
+            </span>
+            <input
+              className="input"
+              type="search"
+              placeholder="Search materials"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            {query ? (
+              <button
+                type="button"
+                className="search-field-clear"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            ) : null}
+          </label>
+        ) : null}
+
         {loaded && items.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: 40 }}>
             <h3>No materials listed</h3>
@@ -220,9 +257,13 @@ export default function SupplierDashboard({ session }: { session: Session }) {
               Add your first material above and it will appear here.
             </p>
           </div>
+        ) : matches.length === 0 ? (
+          <p className="muted" role="status">
+            No materials match “{query.trim()}”.
+          </p>
         ) : (
           <div className="list">
-            {items.map((item) => (
+            {matches.map((item) => (
               <div
                 key={item.id}
                 className="list-row catalog-hold-row"
