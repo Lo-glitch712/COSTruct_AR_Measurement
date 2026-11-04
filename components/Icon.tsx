@@ -20,6 +20,7 @@ export type IconName =
   | "mail"
   | "phone"
   | "search"
+  | "plus"
 
 const PATHS: Record<IconName, ReactElement> = {
   ruler: (
@@ -94,6 +95,7 @@ const PATHS: Record<IconName, ReactElement> = {
       <path d="m16 16 4.5 4.5" />
     </>
   ),
+  plus: <path d="M12 5v14M5 12h14" />,
 }
 
 type IconProps = SVGProps<SVGSVGElement> & {

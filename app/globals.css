@@ -3562,6 +3562,63 @@ textarea.input-area {
    Supplier catalog
    -------------------------------------------------------------------------- */
 
+.catalog-add[data-open="false"] {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.catalog-add-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.catalog-add-head .section-title {
+  flex: 1;
+  margin: 0;
+}
+
+.catalog-add-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: transform var(--duration-press) var(--ease-out),
+    background var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out);
+}
+
+.catalog-add-toggle:active {
+  transform: scale(0.94);
+}
+
+.catalog-add-toggle svg {
+  display: block;
+  transition: transform var(--duration-ui) var(--ease-out);
+}
+
+.catalog-add-toggle[aria-expanded="true"] {
+  background: var(--bg-sunken);
+  color: var(--label);
+  border: 1px solid var(--hairline);
+}
+
+.catalog-add-toggle[aria-expanded="true"] svg {
+  transform: rotate(45deg);
+}
+
+.catalog-add-body {
+  margin-top: 12px;
+}
+
 .catalog-form {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 108px auto;

@@ -18,8 +18,10 @@ export default function SupplierDashboard({ session }: { session: Session }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [armed, setArmed] = useState<string | null>(null)
   const [pressed, setPressed] = useState<string | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
   const pressTimer = useRef<number | null>(null)
   const holdFired = useRef(false)
+  const nameRef = useRef<HTMLInputElement | null>(null)
 
   const firstName = session.name.split(" ")[0]
   const matches = useMemo(() => {
@@ -65,6 +67,7 @@ export default function SupplierDashboard({ session }: { session: Session }) {
     setUnit(UNITS[0])
     setEditingId(null)
     setError("")
+    setFormOpen(false)
   }
 
   function startEdit(id: string) {
@@ -76,6 +79,7 @@ export default function SupplierDashboard({ session }: { session: Session }) {
     setUnit(item.unit)
     setError("")
     setArmed(null)
+    setFormOpen(true)
   }
 
   function cancelEdit() {
@@ -84,6 +88,20 @@ export default function SupplierDashboard({ session }: { session: Session }) {
     setPrice("")
     setUnit(UNITS[0])
     setError("")
+    setFormOpen(false)
+  }
+
+  function toggleForm() {
+    if (formOpen) {
+      if (editingId) {
+        cancelEdit()
+        return
+      }
+      setFormOpen(false)
+      setError("")
+      return
+    }
+    setFormOpen(true)
   }
 
   function clearPress() {
@@ -119,6 +137,11 @@ export default function SupplierDashboard({ session }: { session: Session }) {
     return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [armed])
 
+  useEffect(() => {
+    if (!formOpen || editingId) return
+    nameRef.current?.focus()
+  }, [formOpen, editingId])
+
   return (
     <>
       <section className="hero">
@@ -138,80 +161,101 @@ export default function SupplierDashboard({ session }: { session: Session }) {
         </div>
       </section>
 
-      <section className="card">
-        <h2 className="section-title">
-          {editingId ? "Edit material" : "Add a material"}
-        </h2>
-        <p className="muted" style={{ fontSize: 14, marginBottom: 16 }}>
-          Set your own unit price. It replaces the reference price once a buyer
-          attaches your quote.
-        </p>
+      <section className="card catalog-add" data-open={formOpen ? "true" : "false"}>
+        <div className="catalog-add-head" onClick={toggleForm}>
+          <h2 className="section-title">
+            {editingId ? "Edit material" : "Add a material"}
+          </h2>
+          <button
+            type="button"
+            className="catalog-add-toggle"
+            aria-expanded={formOpen}
+            aria-controls="catalog-add-body"
+            aria-label={formOpen ? "Close add material" : "Add a material"}
+            onClick={(event) => {
+              event.stopPropagation()
+              toggleForm()
+            }}
+          >
+            <Icon name="plus" size={18} />
+          </button>
+        </div>
 
-        <form className="catalog-form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="field-label">Material</span>
-            <input
-              className="input"
-              placeholder="e.g. Rebar 10mm"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value)
-                setError("")
-              }}
-            />
-          </label>
+        {formOpen ? (
+          <div id="catalog-add-body" className="catalog-add-body">
+            <p className="muted" style={{ fontSize: 14, marginBottom: 16 }}>
+              Set your own unit price. It replaces the reference price once a
+              buyer attaches your quote.
+            </p>
 
-          <label className="field">
-            <span className="field-label">Unit price (₱)</span>
-            <input
-              className="input"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={price}
-              onChange={(event) => {
-                const next = event.target.value
-                if (next !== "" && !/^\d*\.?\d*$/.test(next)) return
-                setPrice(next)
-                setError("")
-              }}
-            />
-          </label>
+            <form className="catalog-form" onSubmit={handleSubmit}>
+              <label className="field">
+                <span className="field-label">Material</span>
+                <input
+                  ref={nameRef}
+                  className="input"
+                  placeholder="e.g. Rebar 10mm"
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value)
+                    setError("")
+                  }}
+                />
+              </label>
 
-          <label className="field">
-            <span className="field-label">Unit</span>
-            <select
-              className="input"
-              value={unit}
-              onChange={(event) => setUnit(event.target.value)}
-            >
-              {UNITS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
+              <label className="field">
+                <span className="field-label">Unit price (₱)</span>
+                <input
+                  className="input"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={price}
+                  onChange={(event) => {
+                    const next = event.target.value
+                    if (next !== "" && !/^\d*\.?\d*$/.test(next)) return
+                    setPrice(next)
+                    setError("")
+                  }}
+                />
+              </label>
 
-          <div className="catalog-form-actions">
-            {editingId ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={cancelEdit}
-              >
-                Cancel
-              </button>
+              <label className="field">
+                <span className="field-label">Unit</span>
+                <select
+                  className="input"
+                  value={unit}
+                  onChange={(event) => setUnit(event.target.value)}
+                >
+                  {UNITS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="catalog-form-actions">
+                {editingId ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={cancelEdit}
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+                <button type="submit" className="btn btn-primary">
+                  {editingId ? "Save" : "Add material"}
+                </button>
+              </div>
+            </form>
+
+            {error ? (
+              <p className="notice" style={{ marginTop: 14 }}>
+                {error}
+              </p>
             ) : null}
-            <button type="submit" className="btn btn-primary">
-              {editingId ? "Save" : "Add material"}
-            </button>
           </div>
-        </form>
-
-        {error ? (
-          <p className="notice" style={{ marginTop: 14 }}>
-            {error}
-          </p>
         ) : null}
       </section>
 
