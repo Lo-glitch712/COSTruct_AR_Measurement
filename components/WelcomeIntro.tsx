@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import BrandSplash, { BRAND_LOAD_MS } from "@/components/BrandSplash"
+import EstimatePreview from "@/components/EstimatePreview"
 import PointMeasurePreview from "@/components/PointMeasurePreview"
+import ProcurePreview from "@/components/ProcurePreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
 import { readSession, type Role } from "@/lib/session"
 
@@ -20,7 +22,7 @@ export default function WelcomeIntro() {
   const [role, setRole] = useState<Role | null>(null)
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
   const [error, setError] = useState("")
-  const totalSteps = 3
+  const totalSteps = 5
 
   useEffect(() => {
     if (readSession()) {
@@ -87,6 +89,28 @@ export default function WelcomeIntro() {
         ) : null}
 
         {step === 2 ? (
+          <>
+            <h1 className="intro-title">Watch an estimate add up</h1>
+            <p className="intro-copy">
+              Dimensions become quantities. The chips light up the same way they
+              will on the estimate — names stay plain, the amounts stand out.
+            </p>
+            <EstimatePreview />
+          </>
+        ) : null}
+
+        {step === 3 ? (
+          <>
+            <h1 className="intro-title">Then pick a hardware</h1>
+            <p className="intro-copy">
+              COSTruct ranks stores on price, availability, and lead time, then
+              marks the best match for the bill.
+            </p>
+            <ProcurePreview />
+          </>
+        ) : null}
+
+        {step === 4 ? (
           <>
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">
