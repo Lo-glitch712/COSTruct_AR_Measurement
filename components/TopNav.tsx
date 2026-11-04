@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import AppCalc from "@/components/AppCalc"
 import { CostGuideBar, openCostGuide } from "@/components/CostGuide"
-import { initials, type Session } from "@/lib/session"
+import type { Session } from "@/lib/session"
 import { signOutRemote } from "@/lib/auth"
 
 const BUYER_LINKS = [
@@ -40,7 +40,12 @@ export default function TopNav({ session }: { session: Session }) {
         ? SUPPLIER_LINKS
         : BUYER_LINKS
 
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   function signOut() {
+    setOpen(false)
     void signOutRemote().then(() => router.push("/"))
   }
 
@@ -76,7 +81,12 @@ export default function TopNav({ session }: { session: Session }) {
             <Icon name="menu" size={20} />
           </button>
 
-          <nav className="nav-links">{renderLinks()}</nav>
+          <nav className="nav-links">
+            {renderLinks()}
+            <button type="button" className="nav-link" onClick={signOut}>
+              Log out
+            </button>
+          </nav>
 
           {session.role === "buyer" ? (
             <button
@@ -91,19 +101,19 @@ export default function TopNav({ session }: { session: Session }) {
           ) : null}
 
           <AppCalc />
-
-          <button
-            type="button"
-            className="nav-avatar"
-            title={`${session.name} — sign out`}
-            onClick={signOut}
-          >
-            {initials(session.name)}
-          </button>
         </div>
       </div>
 
-      <nav className="nav-drawer" data-open={open} aria-label="Menu">
+      {open ? (
+        <button
+          type="button"
+          className="nav-scrim"
+          aria-label="Close menu"
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
+
+      <nav className="nav-drawer" data-open={open ? "true" : "false"} aria-label="Menu">
         {renderLinks()}
         {session.role === "buyer" ? (
           <button
@@ -117,6 +127,9 @@ export default function TopNav({ session }: { session: Session }) {
             Cost guide
           </button>
         ) : null}
+        <button type="button" className="nav-link nav-logout" onClick={signOut}>
+          Log out
+        </button>
       </nav>
 
       {session.role === "buyer" ? <CostGuideBar /> : null}
