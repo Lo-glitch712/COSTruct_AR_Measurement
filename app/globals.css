@@ -560,10 +560,9 @@ textarea {
   width: min(94vw, 340px);
   padding: 16px;
   border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  border: 1px solid var(--separator);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  background: #fff;
+  border: 1px solid var(--separator-strong);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
 }
 
 .calc-head {
@@ -623,7 +622,7 @@ textarea {
   height: 42px;
   border: 0;
   border-radius: 12px;
-  background: var(--bg-sunken);
+  background: #e8eef4;
   color: var(--label);
   font-size: 16px;
   font-weight: 600;
@@ -640,7 +639,7 @@ textarea {
 }
 
 .calc-key.is-op {
-  background: var(--accent-tint);
+  background: #d5dee8;
   color: var(--accent);
 }
 
