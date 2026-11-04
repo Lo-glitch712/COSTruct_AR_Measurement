@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import AppCalc from "@/components/AppCalc"
+import { CostGuideBar, openCostGuide } from "@/components/CostGuide"
 import { initials, type Session } from "@/lib/session"
 import { signOutRemote } from "@/lib/auth"
 
@@ -77,6 +78,18 @@ export default function TopNav({ session }: { session: Session }) {
 
           <nav className="nav-links">{renderLinks()}</nav>
 
+          {session.role === "buyer" ? (
+            <button
+              type="button"
+              className="nav-calc"
+              title="Cost guide"
+              aria-label="Cost guide"
+              onClick={() => openCostGuide("answer")}
+            >
+              <Icon name="guide" size={18} />
+            </button>
+          ) : null}
+
           <AppCalc />
 
           <button
@@ -92,7 +105,21 @@ export default function TopNav({ session }: { session: Session }) {
 
       <nav className="nav-drawer" data-open={open} aria-label="Menu">
         {renderLinks()}
+        {session.role === "buyer" ? (
+          <button
+            type="button"
+            className="nav-link"
+            onClick={() => {
+              setOpen(false)
+              openCostGuide("answer")
+            }}
+          >
+            Cost guide
+          </button>
+        ) : null}
       </nav>
+
+      {session.role === "buyer" ? <CostGuideBar /> : null}
     </header>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import ArPreview from "@/components/ArPreview"
+import CostGuide from "@/components/CostGuide"
 import Icon, { type IconName } from "@/components/Icon"
 import { useRulerNav } from "@/components/RulerLoader"
 import type { Session } from "@/lib/session"
@@ -60,6 +61,8 @@ export default function BuyerHome({ session }: { session: Session }) {
       </header>
 
       <ArPreview onMeasure={startMeasurement} />
+
+      <CostGuide />
 
       <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
         {PILLARS.map((pillar) => (
