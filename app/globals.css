@@ -875,6 +875,71 @@ textarea.input-area {
   padding: 24px 20px 0;
 }
 
+.brand-splash {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.brand-splash-mark {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  display: grid;
+  place-items: center;
+}
+
+.brand-splash-name {
+  margin: 18px 0 0;
+  font-size: clamp(42px, 12vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.048em;
+  line-height: 0.95;
+}
+
+.brand-splash-tag {
+  margin: 8px 0 22px;
+  max-width: 28ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--label-secondary);
+}
+
+.brand-splash-bar {
+  width: min(220px, 56vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(18, 38, 58, 0.12);
+}
+
+.brand-splash-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: brand-load 8s linear forwards;
+}
+
+@keyframes brand-load {
+  to {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-splash-fill {
+    width: 100%;
+    animation: none;
+  }
+}
+
 .legal {
   align-items: flex-start;
   padding: 28px 20px 40px;
@@ -1110,45 +1175,8 @@ textarea.input-area {
 .pt-viewport {
   position: relative;
   overflow: hidden;
-  width: min(100%, 420px);
+  width: 100%;
   aspect-ratio: 360 / 280;
-  margin: 0 auto;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, #9eb4c6 0%, #c5d3de 38%, #dce4ea 100%);
-}
-
-.pt-sky {
-  position: absolute;
-  inset: 0 0 42% 0;
-  background: linear-gradient(180deg, #6f8aa0 0%, #b7c7d4 70%, transparent 100%);
-  pointer-events: none;
-}
-
-.pt-floor {
-  position: absolute;
-  left: 50%;
-  bottom: -8%;
-  width: 220%;
-  height: 150%;
-  background-color: #d4dde5;
-  background-image:
-    linear-gradient(rgba(18, 38, 58, 0.14) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(18, 38, 58, 0.14) 1px, transparent 1px);
-  background-size: 36px 36px;
-  transform: translateX(-50%) perspective(520px) rotateX(64deg);
-  transform-origin: center bottom;
-  animation: pt-floor-drift 10s linear infinite;
-}
-
-.pt-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 50% 48%,
-    transparent 42%,
-    rgba(15, 23, 42, 0.28) 100%
-  );
-  pointer-events: none;
 }
 
 .pt-svg {
@@ -1164,15 +1192,30 @@ textarea.input-area {
   animation: pt-fill 10s var(--ease-out) infinite;
 }
 
+.pt-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  width: 160%;
+  height: 120%;
+  background-image:
+    linear-gradient(rgba(18, 38, 58, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 38, 58, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  transform: translateX(-50%) perspective(640px) rotateX(62deg);
+  transform-origin: center bottom;
+  animation: pt-floor-drift 10s linear infinite;
+  pointer-events: none;
+}
+
 .pt-seg {
   fill: none;
-  stroke: #fff;
+  stroke: var(--accent);
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
 }
 
 .pt-seg-1 {
@@ -1219,7 +1262,7 @@ textarea.input-area {
 
 .pt-ripple {
   fill: none;
-  stroke: #fff;
+  stroke: var(--accent-bright);
   stroke-width: 1.4;
   opacity: 0.7;
   transform-box: fill-box;
@@ -1300,12 +1343,11 @@ textarea.input-area {
   width: 36px;
   height: 36px;
   margin: -18px 0 0 -18px;
-  color: #fff;
+  color: var(--accent);
   font-size: 28px;
   font-weight: 300;
   line-height: 36px;
   text-align: center;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   animation: pt-aim 10s var(--ease-in-out) infinite;
   pointer-events: none;
 }
@@ -1313,7 +1355,7 @@ textarea.input-area {
 .pt-reticle {
   position: absolute;
   inset: 4px;
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border: 1.5px solid var(--accent);
   border-radius: 50%;
 }
 
@@ -1332,10 +1374,8 @@ textarea.input-area {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: rgba(18, 38, 58, 0.72);
-  color: #fff;
+  padding: 4px 8px;
+  color: var(--label-secondary);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.3;

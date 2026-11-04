@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import BrandSplash, { BRAND_LOAD_MS } from "@/components/BrandSplash"
 import PointMeasurePreview from "@/components/PointMeasurePreview"
-import TesseractPreview from "@/components/TesseractPreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
 import { readSession, type Role } from "@/lib/session"
 
@@ -15,14 +15,20 @@ const ROLES: { value: Role; label: string; hint: string }[] = [
 
 export default function WelcomeIntro() {
   const router = useRouter()
+  const [ready, setReady] = useState(false)
   const [step, setStep] = useState(0)
   const [role, setRole] = useState<Role | null>(null)
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
   const [error, setError] = useState("")
-  const totalSteps = 4
+  const totalSteps = 3
 
   useEffect(() => {
-    if (readSession()) router.replace("/home")
+    if (readSession()) {
+      router.replace("/home")
+      return
+    }
+    const id = window.setTimeout(() => setReady(true), BRAND_LOAD_MS)
+    return () => window.clearTimeout(id)
   }, [router])
 
   function next() {
@@ -43,6 +49,8 @@ export default function WelcomeIntro() {
     router.push(`/login?role=${role}`)
   }
 
+  if (!ready) return <BrandSplash />
+
   return (
     <main className="intro">
       <section className="intro-content">
@@ -58,7 +66,7 @@ export default function WelcomeIntro() {
 
         {step === 0 ? (
           <>
-            <h1 className="intro-title">Point to point</h1>
+            <h1 className="intro-title">Welcome to COSTruct</h1>
             <p className="intro-copy">
               Aim, tap Place, then the next corner. COSTruct draws each run and
               labels L1 and L2 the same way the AR module measures on site.
@@ -69,17 +77,6 @@ export default function WelcomeIntro() {
 
         {step === 1 ? (
           <>
-            <h1 className="intro-title">Welcome to COSTruct</h1>
-            <p className="intro-copy">
-              Drag the tesseract. Length, width, and height stay locked on the
-              space the way the measuring tools will.
-            </p>
-            <TesseractPreview compact />
-          </>
-        ) : null}
-
-        {step === 2 ? (
-          <>
             <h1 className="intro-title">Watch a wall get measured</h1>
             <p className="intro-copy">
               COSTruct traces length and height along the wall, the same way you
@@ -89,7 +86,7 @@ export default function WelcomeIntro() {
           </>
         ) : null}
 
-        {step === 3 ? (
+        {step === 2 ? (
           <>
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">

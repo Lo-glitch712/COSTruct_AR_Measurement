@@ -6,9 +6,7 @@ export default function PointMeasurePreview() {
       aria-label="Animated point-to-point measurement. Four floor points are placed, then L1 through L4 and the floor area appear."
     >
       <div className="pt-viewport">
-        <div className="pt-sky" />
         <div className="pt-floor" aria-hidden="true" />
-        <div className="pt-vignette" />
 
         <svg className="pt-svg" viewBox="0 0 360 280" aria-hidden="true">
           <polygon
