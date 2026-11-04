@@ -64,10 +64,10 @@ export default function BuyerHome({ session }: { session: Session }) {
 
       <CostGuide />
 
-      <section className="grid grid-2" style={{ gridAutoRows: "1fr" }}>
+      <section className="home-pillars">
         {PILLARS.map((pillar) => (
-          <article key={pillar.title} className="card">
-            <div className="card-head">
+          <article key={pillar.title} className="home-pillar">
+            <div className="home-pillar-head">
               <span className="card-icon">
                 <Icon name={pillar.icon} size={20} />
               </span>

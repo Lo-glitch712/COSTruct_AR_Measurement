@@ -2673,6 +2673,50 @@ textarea.input-area {
 }
 
 /* --------------------------------------------------------------------------
+   Buyer home — pillars, no card chrome
+   -------------------------------------------------------------------------- */
+
+.home-pillars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 36px;
+  padding: 4px 2px 8px;
+}
+
+.home-pillar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.home-pillar-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.home-pillar h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.home-pillar p {
+  margin: 0;
+  padding-left: 29px;
+  font-size: 14px;
+  color: var(--label-secondary);
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .home-pillars {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+}
+
+/* --------------------------------------------------------------------------
    Buyer home — AR cube / tesseract preview
    -------------------------------------------------------------------------- */
 
