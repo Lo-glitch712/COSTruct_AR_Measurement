@@ -397,7 +397,7 @@ textarea {
 }
 
 .calc-dialog {
-  width: min(92vw, 280px);
+  width: min(94vw, 340px);
   padding: 16px;
   border-radius: var(--radius-lg);
   background: var(--bg-elevated);
@@ -409,12 +409,26 @@ textarea {
 .calc-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
 .calc-head strong {
+  margin-right: auto;
   font-size: 15px;
+}
+
+.calc-mode {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
 }
 
 .calc-close {
@@ -446,14 +460,19 @@ textarea {
 }
 
 .calc-key {
-  height: 48px;
+  height: 42px;
   border: 0;
   border-radius: 12px;
   background: var(--bg-sunken);
   color: var(--label);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.calc-key.is-fn {
+  height: 38px;
+  font-size: 13px;
 }
 
 .calc-key.is-wide {

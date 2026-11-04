@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
-import SupplierCalc from "@/components/SupplierCalc"
+import AppCalc from "@/components/AppCalc"
 import { initials, type Session } from "@/lib/session"
 import { signOutRemote } from "@/lib/auth"
 
@@ -77,7 +77,7 @@ export default function TopNav({ session }: { session: Session }) {
 
           <nav className="nav-links">{renderLinks()}</nav>
 
-          {session.role === "supplier" ? <SupplierCalc /> : null}
+          <AppCalc />
 
           <button
             type="button"
