@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import PointMeasurePreview from "@/components/PointMeasurePreview"
 import TesseractPreview from "@/components/TesseractPreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
 import { readSession, type Role } from "@/lib/session"
@@ -18,7 +19,7 @@ export default function WelcomeIntro() {
   const [role, setRole] = useState<Role | null>(null)
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
   const [error, setError] = useState("")
-  const totalSteps = 3
+  const totalSteps = 4
 
   useEffect(() => {
     if (readSession()) router.replace("/home")
@@ -57,6 +58,17 @@ export default function WelcomeIntro() {
 
         {step === 0 ? (
           <>
+            <h1 className="intro-title">Point to point</h1>
+            <p className="intro-copy">
+              Aim, tap Place, then the next corner. COSTruct draws each run and
+              labels L1 and L2 the same way the AR module measures on site.
+            </p>
+            <PointMeasurePreview />
+          </>
+        ) : null}
+
+        {step === 1 ? (
+          <>
             <h1 className="intro-title">Welcome to COSTruct</h1>
             <p className="intro-copy">
               Drag the tesseract. Length, width, and height stay locked on the
@@ -66,7 +78,7 @@ export default function WelcomeIntro() {
           </>
         ) : null}
 
-        {step === 1 ? (
+        {step === 2 ? (
           <>
             <h1 className="intro-title">Watch a wall get measured</h1>
             <p className="intro-copy">
@@ -77,7 +89,7 @@ export default function WelcomeIntro() {
           </>
         ) : null}
 
-        {step === 2 ? (
+        {step === 3 ? (
           <>
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">
