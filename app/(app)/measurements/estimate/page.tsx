@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
 import { componentEstimate, peso, quantity } from "@/lib/estimate"
+import { downloadEstimatePdf } from "@/lib/estimatePdf"
 import { readDraft, saveProject, type ProjectDraft } from "@/lib/project"
 import { readSession } from "@/lib/session"
 import { supplierById } from "@/lib/suppliers"
@@ -33,11 +34,31 @@ export default function EstimatePage() {
   )
 
   const total = components.reduce((sum, component) => sum + component.cost, 0)
+  const savedAt = draft?.savedAt ? new Date(draft.savedAt) : new Date()
+  const supplier = supplierById(draft?.supplierId)
 
   function save() {
     if (!draft) return
     saveProject(draft, total, readSession()?.email)
     router.push("/projects")
+  }
+
+  function downloadPdf() {
+    if (!draft) return
+    downloadEstimatePdf({
+      name: draft.name?.trim() || "Untitled project",
+      address: draft.address,
+      description: draft.description,
+      dateLabel: savedAt.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+      supplierName: supplier?.name,
+      componentCount: components.length,
+      components,
+      total,
+    })
   }
 
   if (!loaded) return null
@@ -63,17 +84,24 @@ export default function EstimatePage() {
     )
   }
 
-  const savedAt = draft?.savedAt ? new Date(draft.savedAt) : new Date()
-  const supplier = supplierById(draft?.supplierId)
-
   return (
     <>
-      <header>
-        <span className="eyebrow">Estimate</span>
-        <h1 className="page-title">Project estimate</h1>
-        <p className="page-subtitle">
-          Material quantities and cost for every component you measured.
-        </p>
+      <header className="estimate-head">
+        <div>
+          <span className="eyebrow">Estimate</span>
+          <h1 className="page-title">Project estimate</h1>
+          <p className="page-subtitle">
+            Material quantities and cost for every component you measured.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={downloadPdf}
+        >
+          <Icon name="download" size={18} />
+          Download PDF
+        </button>
       </header>
 
       <article className="receipt">

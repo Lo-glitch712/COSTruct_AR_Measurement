@@ -3750,6 +3750,24 @@ textarea.input-area {
   font-variant-numeric: tabular-nums;
 }
 
+.estimate-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+}
+
+.estimate-head .btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .estimate-head .btn {
+    width: 100%;
+  }
+}
+
 .estimate-actions {
   display: flex;
   flex-direction: row;
