@@ -965,6 +965,8 @@ textarea.input-area {
 }
 
 .intro-content .intake-progress {
+  width: 100%;
+  justify-content: center;
   margin: 0 0 22px;
 }
 

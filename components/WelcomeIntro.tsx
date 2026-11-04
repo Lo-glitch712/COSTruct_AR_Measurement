@@ -8,6 +8,7 @@ import PointMeasurePreview from "@/components/PointMeasurePreview"
 import ProcurePreview from "@/components/ProcurePreview"
 import TrackPreview from "@/components/TrackPreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
+import { useRulerNav } from "@/components/RulerLoader"
 import { readSession, type Role } from "@/lib/session"
 
 const ROLES: { value: Role; label: string; hint: string }[] = [
@@ -40,6 +41,7 @@ const SITE_ROLES: {
 
 export default function WelcomeIntro() {
   const router = useRouter()
+  const { go, loading, overlay } = useRulerNav()
   const [ready, setReady] = useState(false)
   const [step, setStep] = useState(0)
   const [role, setRole] = useState<Role | null>(null)
@@ -76,15 +78,17 @@ export default function WelcomeIntro() {
       return
     }
     if (role === "buyer" && hasAccount === false) {
-      router.push("/signup")
+      go("/signup", "Opening your account")
       return
     }
-    router.push(`/login?role=${role}`)
+    go(`/login?role=${role}`, "Opening sign in")
   }
 
   if (!ready) return <BrandSplash />
 
   return (
+    <>
+      {overlay}
     <main className="intro">
       <section className="intro-content">
         <div className="intake-progress" aria-hidden="true">
@@ -281,12 +285,18 @@ export default function WelcomeIntro() {
               Next
             </button>
           ) : (
-            <button type="button" className="btn btn-primary" onClick={start}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={start}
+              disabled={loading}
+            >
               Get started
             </button>
           )}
         </div>
       </section>
     </main>
+    </>
   )
 }
