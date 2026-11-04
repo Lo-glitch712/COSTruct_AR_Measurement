@@ -83,16 +83,6 @@ export default function TopNav({ session }: { session: Session }) {
             COSTruct
           </Link>
 
-          <button
-            type="button"
-            className="nav-toggle"
-            aria-expanded={open}
-            aria-label="Toggle navigation"
-            onClick={() => setOpen((value) => !value)}
-          >
-            <Icon name="menu" size={20} />
-          </button>
-
           <nav className="nav-links">
             {renderLinks()}
             <button type="button" className="nav-link" onClick={askSignOut}>
@@ -100,19 +90,29 @@ export default function TopNav({ session }: { session: Session }) {
             </button>
           </nav>
 
-          {session.role === "buyer" ? (
+          <div className="nav-tools">
+            <AppCalc />
+            {session.role === "buyer" ? (
+              <button
+                type="button"
+                className="nav-calc"
+                title="Cost guide"
+                aria-label="Cost guide"
+                onClick={() => openCostGuide("answer")}
+              >
+                <Icon name="guide" size={18} />
+              </button>
+            ) : null}
             <button
               type="button"
-              className="nav-calc"
-              title="Cost guide"
-              aria-label="Cost guide"
-              onClick={() => openCostGuide("answer")}
+              className="nav-toggle"
+              aria-expanded={open}
+              aria-label="Toggle navigation"
+              onClick={() => setOpen((value) => !value)}
             >
-              <Icon name="guide" size={18} />
+              <Icon name="menu" size={20} />
             </button>
-          ) : null}
-
-          <AppCalc />
+          </div>
         </div>
       </div>
 
