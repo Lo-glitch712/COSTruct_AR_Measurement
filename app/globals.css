@@ -2732,7 +2732,7 @@ textarea.input-area {
   display: grid;
   place-items: center;
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   perspective: 920px;
 }

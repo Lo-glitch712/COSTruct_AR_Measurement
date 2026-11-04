@@ -21,8 +21,17 @@ export default function TesseractPreview({
     active: boolean
     lastX: number
     lastY: number
+    startX: number
+    startY: number
     pointerId: number | null
-  }>({ active: false, lastX: 0, lastY: 0, pointerId: null })
+  }>({
+    active: false,
+    lastX: 0,
+    lastY: 0,
+    startX: 0,
+    startY: 0,
+    pointerId: null,
+  })
 
   useEffect(() => {
     const scene = sceneRef.current
@@ -54,17 +63,36 @@ export default function TesseractPreview({
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 && event.pointerType === "mouse") return
-    event.currentTarget.setPointerCapture(event.pointerId)
+    const mouse = event.pointerType === "mouse"
     drag.current = {
-      active: true,
+      active: mouse,
       lastX: event.clientX,
       lastY: event.clientY,
+      startX: event.clientX,
+      startY: event.clientY,
       pointerId: event.pointerId,
     }
+    if (mouse) event.currentTarget.setPointerCapture(event.pointerId)
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (!drag.current.active || drag.current.pointerId !== event.pointerId) return
+    if (drag.current.pointerId !== event.pointerId) return
+
+    if (!drag.current.active) {
+      const dx = event.clientX - drag.current.startX
+      const dy = event.clientY - drag.current.startY
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
+      if (Math.abs(dy) > Math.abs(dx)) {
+        drag.current.pointerId = null
+        return
+      }
+      drag.current.active = true
+      drag.current.lastX = event.clientX
+      drag.current.lastY = event.clientY
+      event.currentTarget.setPointerCapture(event.pointerId)
+      return
+    }
+
     const dx = event.clientX - drag.current.lastX
     const dy = event.clientY - drag.current.lastY
     drag.current.lastX = event.clientX
