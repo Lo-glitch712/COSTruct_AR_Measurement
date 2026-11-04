@@ -2,6 +2,7 @@ import {
   ADMIN_EMAIL,
   ADMIN_PASSWORD,
   SUPPLIER_PASSWORD,
+  authenticate,
   findAccount,
 } from "@/lib/accounts"
 import {
@@ -86,6 +87,23 @@ async function upsertProfile(userId: string, session: Session) {
   if (error) throw new Error(error.message)
 }
 
+function seededLocalSession(
+  email: string,
+  password: string,
+  role: Role,
+): Session | null {
+  const account = authenticate(email, password)
+  if (!account || account.role !== role) return null
+  if (account.role !== "supplier" && account.role !== "admin") return null
+  return {
+    name: account.name,
+    email: account.email,
+    phone: account.phone,
+    role: account.role,
+    supplierId: account.supplierId,
+  }
+}
+
 function seededMeta(email: string, role: Role) {
   const lower = email.trim().toLowerCase()
   if (lower === ADMIN_EMAIL) {
@@ -159,10 +177,16 @@ export async function signInRemote(
   }
 
   if (error || !data.user) {
+    const seeded = seededLocalSession(trimmed, password, role)
+    if (seeded) {
+      await supabase.auth.signOut()
+      writeSession(seeded)
+      return seeded
+    }
     const message = error?.message ?? "Email or password is incorrect."
     if (message.toLowerCase().includes("not confirmed")) {
       throw new Error(
-        "Email is not confirmed. Run supabase/confirm-emails.sql in the SQL Editor, or turn Confirm email OFF in Authentication → Providers → Email.",
+        "That email is not confirmed yet. Open the confirmation mail, then sign in again.",
       )
     }
     throw new Error(message)
