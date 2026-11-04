@@ -1864,6 +1864,149 @@ textarea.input-area {
   animation: intro-mod-fade 8s 2s var(--ease-out) infinite;
 }
 
+/* Project listing + material tracking intro */
+.track-preview {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 2px 8px;
+}
+
+.track-project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  animation: intro-mod-fade 8s var(--ease-out) infinite;
+}
+
+.track-icon {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+
+.track-project div {
+  min-width: 0;
+  flex: 1;
+}
+
+.track-project strong,
+.track-name {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.track-project div span {
+  color: var(--label-secondary);
+  font-size: 13px;
+}
+
+.track-sum {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+}
+
+.track-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.track-step {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0;
+}
+
+.track-step-1 {
+  animation: intro-mod-fade 8s 0.35s var(--ease-out) infinite;
+}
+
+.track-step-2 {
+  animation: intro-mod-fade 8s 0.7s var(--ease-out) infinite;
+}
+
+.track-step-3 {
+  animation: intro-mod-fade 8s 1.05s var(--ease-out) infinite;
+}
+
+.track-step-4 {
+  animation: intro-mod-fade 8s 1.4s var(--ease-out) infinite;
+}
+
+.track-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.track-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.track-line-1 {
+  animation: intro-mod-rise 8s 1.7s var(--ease-out) infinite;
+}
+
+.track-line-2 {
+  animation: intro-mod-rise 8s 2.15s var(--ease-out) infinite;
+}
+
+.track-line-3 {
+  animation: intro-mod-rise 8s 2.6s var(--ease-out) infinite;
+}
+
+.track-qty {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+
+.track-status {
+  min-width: 5.6em;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--label-secondary);
+}
+
+@media (max-width: 420px) {
+  .track-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .track-status {
+    grid-column: 1;
+    min-width: 0;
+    text-align: left;
+  }
+}
+
 @keyframes intro-mod-fade {
   0%,
   6% {
@@ -1904,7 +2047,10 @@ textarea.input-area {
   .proc-criteria,
   .proc-store,
   .proc-badge,
-  .proc-truck {
+  .proc-truck,
+  .track-project,
+  .track-step,
+  .track-line {
     animation: none !important;
     opacity: 1;
     transform: none;

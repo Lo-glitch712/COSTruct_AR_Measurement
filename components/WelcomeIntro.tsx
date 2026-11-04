@@ -6,6 +6,7 @@ import BrandSplash, { BRAND_LOAD_MS } from "@/components/BrandSplash"
 import EstimatePreview from "@/components/EstimatePreview"
 import PointMeasurePreview from "@/components/PointMeasurePreview"
 import ProcurePreview from "@/components/ProcurePreview"
+import TrackPreview from "@/components/TrackPreview"
 import WallMeasurePreview from "@/components/WallMeasurePreview"
 import { readSession, type Role } from "@/lib/session"
 
@@ -22,7 +23,7 @@ export default function WelcomeIntro() {
   const [role, setRole] = useState<Role | null>(null)
   const [hasAccount, setHasAccount] = useState<boolean | null>(null)
   const [error, setError] = useState("")
-  const totalSteps = 5
+  const totalSteps = 6
 
   useEffect(() => {
     if (readSession()) {
@@ -111,6 +112,18 @@ export default function WelcomeIntro() {
         ) : null}
 
         {step === 4 ? (
+          <>
+            <h1 className="intro-title">See your materials and projects</h1>
+            <p className="intro-copy">
+              Every bill you save stays listed. Open a project to track the
+              materials you are buying — quantities, the store, and where each
+              line stands.
+            </p>
+            <TrackPreview />
+          </>
+        ) : null}
+
+        {step === 5 ? (
           <>
             <h1 className="intro-title">Get started</h1>
             <p className="intro-copy">
