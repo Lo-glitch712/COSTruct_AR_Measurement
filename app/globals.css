@@ -1350,16 +1350,25 @@ textarea.input-area {
   color: var(--label-secondary);
 }
 
-.intro-start {
+.intro-return {
+  justify-content: center;
   text-align: center;
 }
 
-.intro-start .field {
-  align-items: center;
+.intro-return .intro-actions {
+  margin-top: 28px;
 }
 
-.intro-start .choice-row {
-  justify-content: center;
+.start-dialog {
+  width: min(94vw, 380px);
+}
+
+.start-dialog .choice-row {
+  justify-content: flex-start;
+}
+
+.start-dialog .notice-error {
+  margin-top: 12px;
 }
 
 .intro .ar-stage[data-compact="true"] {

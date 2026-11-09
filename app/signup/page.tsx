@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import DatePicker from "@/components/DatePicker"
 import Icon from "@/components/Icon"
 import { registerBuyer } from "@/lib/accounts"
 import { signUpBuyerRemote } from "@/lib/auth"
@@ -31,7 +30,6 @@ export default function SignupPage() {
     if (
       !profile.firstName.trim() ||
       !profile.lastName.trim() ||
-      !profile.birthday ||
       !profile.street.trim() ||
       !profile.city.trim() ||
       !profile.province.trim() ||
@@ -126,15 +124,6 @@ export default function SignupPage() {
               />
             </label>
           </div>
-
-          <label className="field">
-            <span className="field-label">Birthday</span>
-            <DatePicker
-              id="birthday"
-              value={profile.birthday}
-              onChange={(next) => set("birthday", next)}
-            />
-          </label>
 
           <h2 className="form-section-title">Address</h2>
           <label className="field">
