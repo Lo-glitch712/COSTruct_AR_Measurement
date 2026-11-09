@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import TermsGate from "@/components/TermsGate"
 import TopNav from "@/components/TopNav"
+import { startPresence } from "@/lib/presence"
 import { useSession } from "@/lib/session"
 
 /** Measuring, projects, and browsing suppliers only apply to a buyer. */
@@ -30,6 +31,11 @@ export default function AppLayout({
     if (!session) router.replace("/login")
     else if (blocked) router.replace("/home")
   }, [loaded, session, blocked, router])
+
+  useEffect(() => {
+    if (!session) return
+    return startPresence(session)
+  }, [session])
 
   if (!session || blocked) return null
 

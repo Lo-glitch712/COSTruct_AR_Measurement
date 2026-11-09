@@ -11,7 +11,8 @@ import {
   readProjects,
   type SavedProject,
 } from "@/lib/project"
-import type { Session } from "@/lib/session"
+import { useOnlineUsers } from "@/lib/presence"
+import { ROLE_LABEL, type Session } from "@/lib/session"
 import { supplierById } from "@/lib/suppliers"
 
 type Tab = "buyers" | "suppliers"
@@ -145,6 +146,8 @@ export default function AdminDashboard({ session }: { session: Session }) {
 
   const accounts = tab === "buyers" ? buyerAccounts : supplierAccounts
   const firstName = session.name.split(" ")[0]
+  const online = useOnlineUsers(session)
+  const onlineEmails = new Set(online.map((user) => user.email))
 
   return (
     <>
@@ -156,7 +159,7 @@ export default function AdminDashboard({ session }: { session: Session }) {
         </p>
       </section>
 
-      <section className="grid grid-3">
+      <section className="grid grid-2">
         <div className="stat">
           <div className="stat-value">{buyerAccounts.length}</div>
           <div className="stat-label">Buyer accounts</div>
@@ -169,6 +172,31 @@ export default function AdminDashboard({ session }: { session: Session }) {
           <div className="stat-value">{projects.length}</div>
           <div className="stat-label">Saved projects</div>
         </div>
+        <div className="stat">
+          <div className="stat-value">{online.length}</div>
+          <div className="stat-label">Online now</div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="section-title">Online users</h2>
+        {online.length === 0 ? (
+          <p className="muted">No one is signed in right now.</p>
+        ) : (
+          <div className="online-list">
+            {online.map((user) => (
+              <div key={user.email} className="online-row">
+                <span className="online-dot" aria-hidden="true" />
+                <div>
+                  <div className="online-name">{user.name}</div>
+                  <p className="tiny">
+                    {ROLE_LABEL[user.role]} · {user.email}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="segmented" role="tablist" aria-label="Account lists">
@@ -230,7 +258,12 @@ export default function AdminDashboard({ session }: { session: Session }) {
                     size={20}
                   />
                 </span>
-                <h3>{account.name}</h3>
+                <h3>
+                  {account.name}
+                  {onlineEmails.has(account.email.toLowerCase()) ? (
+                    <span className="online-dot" title="Online" />
+                  ) : null}
+                </h3>
               </div>
               <p>{account.email}</p>
               <p>
