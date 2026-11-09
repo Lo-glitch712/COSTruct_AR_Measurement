@@ -1361,10 +1361,19 @@ textarea.input-area {
 
 .start-dialog {
   width: min(94vw, 380px);
+  text-align: center;
+}
+
+.start-dialog .section-title {
+  text-align: center;
 }
 
 .start-dialog .choice-row {
-  justify-content: flex-start;
+  justify-content: center;
+}
+
+.start-dialog .logout-dialog-actions {
+  justify-content: center;
 }
 
 .start-dialog .notice-error {

@@ -15,7 +15,6 @@ import { readSession, type Role } from "@/lib/session"
 const ROLES: { value: Role; label: string; hint: string }[] = [
   { value: "buyer", label: "Buyer", hint: "Measure a project and estimate materials." },
   { value: "supplier", label: "Supplier", hint: "Manage a hardware catalog." },
-  { value: "admin", label: "Admin", hint: "Monitor buyers, stores, and projects." },
 ]
 
 const INTRO_STEPS = 5
@@ -298,8 +297,7 @@ export default function WelcomeIntro() {
                 </div>
                 {role && role !== "buyer" && hasAccount === false ? (
                   <p className="tiny" style={{ marginTop: 10 }}>
-                    Supplier and admin accounts are already issued. Continue to
-                    sign in.
+                    Supplier accounts are already issued. Continue to sign in.
                   </p>
                 ) : null}
                 {error ? <p className="notice-error">{error}</p> : null}
