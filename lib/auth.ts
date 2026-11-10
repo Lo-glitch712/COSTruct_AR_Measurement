@@ -293,7 +293,7 @@ export async function signInRemote(
   if (session.role !== role) {
     await supabase.auth.signOut()
     throw new Error(
-      `That account is a ${session.role}. Switch the tab and try again.`,
+      `That account is a ${session.role}. Go back and choose ${session.role}.`,
     )
   }
 

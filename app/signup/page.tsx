@@ -248,7 +248,7 @@ export default function SignupPage() {
         </form>
 
         <div className="auth-footer">
-          Already have an account? <Link href="/login">Sign in</Link>
+          Already have an account? <Link href="/login?role=buyer">Sign in</Link>
           <div className="tiny back-link" style={{ marginTop: 10 }}>
             <Link href="/">
               <Icon name="arrowLeft" size={14} />

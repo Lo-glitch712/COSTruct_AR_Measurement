@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Icon from "@/components/Icon"
 import { useRulerNav } from "@/components/RulerLoader"
@@ -36,10 +36,9 @@ function roleFromParam(value: string | null): Role {
 }
 
 function LoginForm() {
-  const router = useRouter()
   const params = useSearchParams()
   const created = params.get("created") === "1"
-  const [role, setRole] = useState<Role>(() => roleFromParam(params.get("role")))
+  const role = roleFromParam(params.get("role"))
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -65,7 +64,7 @@ function LoginForm() {
         if (!account) throw new Error("Email or password is incorrect.")
         if (account.role !== role) {
           throw new Error(
-            `That account is a ${account.role}. Switch the tab and try again.`,
+            `That account is a ${account.role}. Go back and choose ${account.role}.`,
           )
         }
         writeSession({
@@ -105,21 +104,14 @@ function LoginForm() {
         ) : null}
 
         <div className="segmented" role="tablist" aria-label="Account type">
-          {(["buyer", "supplier", "admin"] as Role[]).map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              className="segment"
-              aria-selected={role === value}
-              onClick={() => {
-                setRole(value)
-                setError("")
-              }}
-            >
-              {value.toUpperCase()}
-            </button>
-          ))}
+          <button
+            type="button"
+            role="tab"
+            className="segment"
+            aria-selected="true"
+          >
+            {role.toUpperCase()}
+          </button>
         </div>
 
         {created ? (
