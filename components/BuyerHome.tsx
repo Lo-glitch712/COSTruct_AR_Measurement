@@ -60,7 +60,7 @@ export default function BuyerHome({ session }: { session: Session }) {
         </div>
       </header>
 
-      <ArPreview onMeasure={startMeasurement} />
+      <ArPreview />
 
       <CostGuide />
 
