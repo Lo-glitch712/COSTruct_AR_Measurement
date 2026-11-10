@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Icon from "@/components/Icon"
-import { componentEstimate, peso, quantity } from "@/lib/estimate"
+import { readCatalog } from "@/lib/catalog"
+import {
+  componentEstimate,
+  peso,
+  quantity,
+  quotesFromCatalog,
+  type PriceQuote,
+} from "@/lib/estimate"
 import { downloadEstimatePdf } from "@/lib/estimatePdf"
 import { readDraft, saveProject, type ProjectDraft } from "@/lib/project"
 import { readSession } from "@/lib/session"
@@ -20,17 +27,29 @@ export default function EstimatePage() {
     setLoaded(true)
   }, [])
 
+  const quotes = useMemo<PriceQuote[]>(() => {
+    const id = draft?.supplierId
+    if (!id) return []
+    const live = quotesFromCatalog(readCatalog(id))
+    if (live.length) return live
+    return quotesFromCatalog(supplierById(id)?.catalog)
+  }, [draft?.supplierId])
+
   const components = useMemo(
     () =>
       (draft?.components ?? []).map((component) => {
-        const lines = componentEstimate(component.name, component.dimensions)
+        const lines = componentEstimate(
+          component.name,
+          component.dimensions,
+          quotes,
+        )
         return {
           ...component,
           lines,
           cost: lines.reduce((total, line) => total + line.cost, 0),
         }
       }),
-    [draft],
+    [draft, quotes],
   )
 
   const total = components.reduce((sum, component) => sum + component.cost, 0)
@@ -91,7 +110,8 @@ export default function EstimatePage() {
           <span className="eyebrow">Estimate</span>
           <h1 className="page-title">Project estimate</h1>
           <p className="page-subtitle">
-            Material quantities and cost for every component you measured.
+            Material quantities at the hardware store's unit prices — quantity ×
+            price, no added markup.
           </p>
         </div>
         <button
@@ -155,7 +175,7 @@ export default function EstimatePage() {
                 <li key={line.material}>
                   <span className="material-name">{line.material}</span>
                   <span className="material-qty">
-                    {quantity(line.quantity)} {line.unit}
+                    {quantity(line.quantity)} {line.unit} × {peso(line.unitPrice)}
                   </span>
                   <span className="material-cost">{peso(line.cost)}</span>
                 </li>

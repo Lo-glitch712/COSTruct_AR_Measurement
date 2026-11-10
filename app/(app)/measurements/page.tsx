@@ -29,6 +29,7 @@ import {
   saveWorkspace,
   type ArLockedFields,
 } from "@/lib/project"
+import { readCatalog } from "@/lib/catalog"
 import { dialable, SUPPLIERS, type Supplier } from "@/lib/suppliers"
 
 type DimensionInput = { length: string; width: string; height: string }
@@ -113,6 +114,11 @@ export default function MeasurementsPage() {
     }
     setRestored(true)
   }, [])
+
+  useEffect(() => {
+    if (!supplierId) return
+    readCatalog(supplierId)
+  }, [supplierId])
 
   useEffect(() => {
     if (!catalog) return

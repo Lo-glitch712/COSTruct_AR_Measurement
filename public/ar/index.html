@@ -1227,28 +1227,97 @@
     });
     function peso(v){ return '₱'+v.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function qty(v, decimals=2){ return v.toLocaleString('en-PH',{minimumFractionDigits:decimals,maximumFractionDigits:decimals}); }
+    const REFERENCE_PRICES=[
+      {name:'Sand',price:1350,unit:'m³'},
+      {name:'Portland Cement',price:245,unit:'bag'},
+      {name:'Pozzolan Cement',price:250,unit:'bag'},
+      {name:'Gravel',price:1700,unit:'m³'},
+      {name:'CHB — 4"',price:17,unit:'pc'},
+      {name:'CHB — 5"',price:20,unit:'pc'},
+      {name:'CHB — 6"',price:20,unit:'pc'}
+    ];
+    function materialKey(name){
+      return String(name||'').toLowerCase()
+        .replace(/[—“”"'′″]/g,'"')
+        .replace(/[()]/g,' ')
+        .replace(/[^a-z0-9."]+/g,' ')
+        .replace(/\s+/g,' ')
+        .trim();
+    }
+    function materialFamily(key){
+      if(key.startsWith('chb')) return 'chb';
+      if(key.startsWith('sand')) return 'sand';
+      if(key.startsWith('gravel')) return 'gravel';
+      if(key.includes('portland')) return 'portland';
+      if(key.includes('pozzolan')) return 'pozzolan';
+      return key.split(' ')[0]||key;
+    }
+    function loadQuotes(){
+      try{
+        const draft=JSON.parse(localStorage.getItem('costruct.draft')||'null');
+        const workspace=JSON.parse(localStorage.getItem('costruct.workspace')||'null');
+        const id=draft&&draft.supplierId||workspace&&workspace.supplierId;
+        if(!id) return [];
+        const catalogs=JSON.parse(localStorage.getItem('costruct.catalogs')||'{}');
+        const rows=catalogs&&Array.isArray(catalogs[id])?catalogs[id]:[];
+        return rows.filter(item=>item&&typeof item.price==='number').map(item=>({
+          name:item.name||item.material||'',
+          price:item.price,
+          unit:item.unit||''
+        }));
+      }catch(err){
+        return [];
+      }
+    }
+    function unitPriceFor(material, quotes){
+      const fallback=REFERENCE_PRICES.find(item=>{
+        const have=materialKey(item.name);
+        const need=materialKey(material);
+        return have===need||materialFamily(have)===materialFamily(need);
+      })||REFERENCE_PRICES[0];
+      if(!quotes.length) return {price:fallback.price,unit:fallback.unit};
+      const needKey=materialKey(material);
+      const needFamily=materialFamily(needKey);
+      const needInch=(needKey.match(/(\d+)/)||[])[1];
+      let best=null;
+      quotes.forEach(quote=>{
+        const haveKey=materialKey(quote.name);
+        const haveFamily=materialFamily(haveKey);
+        if(haveFamily!==needFamily) return;
+        let score=1;
+        if(haveKey===needKey) score=4;
+        else if(haveKey.startsWith(needKey)||needKey.startsWith(haveKey)) score=3;
+        else if(needFamily==='chb'){
+          const haveInch=(haveKey.match(/(\d+)/)||[])[1];
+          if(needInch&&needInch===haveInch) score=3;
+          else return;
+        }
+        if(!best||score>best.score) best={score,quote};
+      });
+      if(best) return {price:best.quote.price,unit:best.quote.unit||fallback.unit};
+      return {price:fallback.price,unit:fallback.unit};
+    }
     function componentEstimate(name,d){
       const L=d.length,W=d.width,H=d.height;
-      const floorArea=L*W;
       const wallArea=2*(L+W)*H;
       const concreteVol=L*W*H;
+      const quotes=loadQuotes();
       const out=[];
       if(!(L>0&&W>0&&H>0)) return out;
-      if(['Column','Beam','Ground Floor Slab','Slab'].includes(name)){
-        out.push(['Sand',concreteVol*0.50,1350,'m³']);
-        out.push(['Portland Cement',concreteVol*9,245,'bag']);
-        out.push(['Gravel',concreteVol*0.80,1700,'m³']);
-      } else if(name==='Mortar'){
-        out.push(['Sand',concreteVol*1.00,1350,'m³']);
-        out.push(['Portland Cement',concreteVol*6,245,'bag']);
-      } else if(name==='Plastering'){
-        out.push(['Sand',wallArea*0.02,1350,'m³']);
-        out.push(['Portland Cement',wallArea*0.18,245,'bag']);
-      } else if(name==='Walls'){
-        out.push(['CHB - 4\"',wallArea*12.5,17,'pc']);
-        out.push(['Sand (Mortar)',wallArea*0.015,1350,'m³']);
-        out.push(['Portland Cement',wallArea*0.14,245,'bag']);
-      }
+      const qtyLines=
+        ['Column','Beam','Ground Floor Slab','Slab'].includes(name)
+          ? [['Sand',concreteVol*0.50],['Portland Cement',concreteVol*9],['Gravel',concreteVol*0.80]]
+          : name==='Mortar'
+            ? [['Sand',concreteVol*1.00],['Portland Cement',concreteVol*6]]
+            : name==='Plastering'
+              ? [['Sand',wallArea*0.02],['Portland Cement',wallArea*0.18]]
+              : name==='Walls'
+                ? [['CHB — 4"',wallArea*12.5],['Sand (Mortar)',wallArea*0.015],['Portland Cement',wallArea*0.14]]
+                : [['Sand',concreteVol*0.50],['Portland Cement',concreteVol*9],['Gravel',concreteVol*0.80]];
+      qtyLines.forEach(([material,quantity])=>{
+        const priced=unitPriceFor(material,quotes);
+        out.push([material,quantity,priced.price,priced.unit]);
+      });
       return out;
     }
     function renderReceipt(){

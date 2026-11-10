@@ -293,7 +293,7 @@ function drawHeader(doc: PdfDoc, input: EstimatePdfInput) {
 
 function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
   const costCol = PAGE_W - MARGIN
-  const qtyCol = costCol - 118
+  const qtyCol = costCol - 168
 
   for (const component of input.components) {
     doc.ensure(72)
@@ -309,7 +309,7 @@ function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
 
     for (const line of component.lines) {
       doc.ensure(16)
-      const qty = `${quantity(line.quantity)} ${normalize(line.unit)}`
+      const qty = `${quantity(line.quantity)} ${normalize(line.unit)} x ${php(line.unitPrice)}`
       const cost = php(line.cost)
       const nameWidth = qtyCol - MARGIN - 12 - measure(qty, 9, false)
       const names = wrapText(line.material, Math.max(120, nameWidth), 9, false)
