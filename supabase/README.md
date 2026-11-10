@@ -1,7 +1,9 @@
 # Supabase schema
 
-1. Open https://supabase.com/dashboard/project/nhjsadyqgygfffjyisjg/sql
-2. Paste and run `schema.sql`.
+Project: [`robmfnfvgmgoasllyphd`](https://supabase.com/dashboard/project/robmfnfvgmgoasllyphd)
+
+1. Open https://supabase.com/dashboard/project/robmfnfvgmgoasllyphd/sql
+2. Paste and run `schema.sql`. That creates the tables and loads the Partido supplier catalogs.
 3. If Create account does not add a row in **Table Editor → profiles**, also run `profiles-signup.sql`.
 4. Authentication → Providers → Email: turn **Confirm email** OFF so demo accounts can sign in immediately.
    If login says **Email not confirmed**, run `confirm-emails.sql`.
@@ -13,7 +15,7 @@ That creates `profiles`, `suppliers`, `catalog_items`, `projects`, and `project_
 - suppliers edit only their catalog
 - admin can read accounts, projects, and materials
 
-Then create Auth users:
+Then create Auth users (or sign in once from the app — it can seed them):
 
 | Email | Password | Metadata |
 | --- | --- | --- |
@@ -22,9 +24,10 @@ Then create Auth users:
 
 Buyer accounts are created from **Create an account** in the app. The trigger `handle_new_user` writes a `profiles` row when an Auth user is inserted.
 
-The running Next.js app still uses the local account store so you can demo admin/buyer/supplier without wiring the client yet. Add these env vars when you connect the app:
+App env:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_URL=https://robmfnfvgmgoasllyphd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ```

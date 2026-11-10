@@ -1,5 +1,5 @@
 -- Run this in the SQL Editor if accounts are created but no profiles row appears:
--- https://supabase.com/dashboard/project/nhjsadyqgygfffjyisjg/sql
+-- https://supabase.com/dashboard/project/robmfnfvgmgoasllyphd/sql
 
 create or replace function public.handle_new_user()
 returns trigger

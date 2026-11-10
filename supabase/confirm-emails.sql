@@ -1,5 +1,5 @@
 -- Confirm existing Auth users (fixes "Email not confirmed" on login).
--- Run in: https://supabase.com/dashboard/project/nhjsadyqgygfffjyisjg/sql
+-- Run in: https://supabase.com/dashboard/project/robmfnfvgmgoasllyphd/sql
 
 update auth.users
 set email_confirmed_at = now()

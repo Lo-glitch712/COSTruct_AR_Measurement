@@ -1,4 +1,5 @@
--- COSTruct — push this in the Supabase SQL Editor (or `supabase db push`).
+-- COSTruct — run once in the SQL Editor:
+-- https://supabase.com/dashboard/project/robmfnfvgmgoasllyphd/sql
 -- Creates roles, tables, RLS, and seeds Partido hardware stores + catalogs.
 
 create extension if not exists pgcrypto;
@@ -394,6 +395,16 @@ insert into public.catalog_items (supplier_id, material, price, unit) values
 on conflict (supplier_id, material) do update set
   price = excluded.price,
   unit = excluded.unit;
+
+grant usage on schema public to anon, authenticated, service_role;
+grant select on table public.suppliers to anon, authenticated, service_role;
+grant select on table public.catalog_items to anon, authenticated, service_role;
+grant select, insert, update, delete on table public.catalog_items to authenticated, service_role;
+grant select, insert, update, delete on table public.profiles to authenticated, service_role;
+grant select, insert, update, delete on table public.projects to authenticated, service_role;
+grant select, insert, update, delete on table public.project_components to authenticated, service_role;
+grant execute on function public.is_admin() to anon, authenticated, service_role;
+grant execute on function public.admin_delete_account(uuid) to authenticated, service_role;
 
 -- Auth users cannot be inserted from SQL without the service role.
 -- After this script, create these users in Authentication → Users

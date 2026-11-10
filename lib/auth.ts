@@ -55,6 +55,22 @@ export function isRemoteUnreachable(error: unknown) {
   )
 }
 
+export function isMissingRelation(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message?: string }).message)
+        : String(error ?? "")
+  const lower = message.toLowerCase()
+  return (
+    lower.includes("could not find the table") ||
+    lower.includes("schema cache") ||
+    lower.includes("does not exist") ||
+    lower.includes("pgrst205")
+  )
+}
+
 function sessionFromAccount(account: Account): Session {
   return {
     name: account.name,
@@ -123,7 +139,10 @@ async function upsertProfile(userId: string, session: Session) {
     province: session.province || null,
     zip_code: session.zipCode || null,
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    if (isMissingRelation(error) || isRemoteUnreachable(error)) return
+    throw new Error(error.message)
+  }
 }
 
 function localSession(
@@ -338,7 +357,11 @@ export async function signUpBuyerRemote(
 
   // Email confirmation can leave no session; the DB trigger still writes profiles.
   if (data.session) {
-    await upsertProfile(data.user.id, session)
+    try {
+      await upsertProfile(data.user.id, session)
+    } catch (err) {
+      if (!isRemoteUnreachable(err) && !isMissingRelation(err)) throw err
+    }
   }
 
   await supabase.auth.signOut()

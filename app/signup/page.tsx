@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Icon from "@/components/Icon"
 import { registerBuyer } from "@/lib/accounts"
-import { isRemoteUnreachable, signUpBuyerRemote } from "@/lib/auth"
+import {
+  isMissingRelation,
+  isRemoteUnreachable,
+  signUpBuyerRemote,
+} from "@/lib/auth"
 import { EMPTY_PROFILE, type ProfileDetails } from "@/lib/profile"
 import { supabaseEnabled } from "@/lib/supabase"
 
@@ -66,7 +70,7 @@ export default function SignupPage() {
           await signUpBuyerRemote(payload)
           remoteOk = true
         } catch (err) {
-          if (!isRemoteUnreachable(err)) throw err
+          if (!isRemoteUnreachable(err) && !isMissingRelation(err)) throw err
         }
       }
       try {

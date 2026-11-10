@@ -1,12 +1,20 @@
 import { createClient } from "@supabase/supabase-js"
 
+const NEW_URL = "https://robmfnfvgmgoasllyphd.supabase.co"
+const NEW_KEY = "sb_publishable_lWZvjWnR5Fkq6lIcg3Au3w_PBEBgqIH"
+
+const fromEnvUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const url =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-  "https://nhjsadyqgygfffjyisjg.supabase.co"
-const key =
+  fromEnvUrl && !fromEnvUrl.includes("nhjsadyqgygfffjyisjg")
+    ? fromEnvUrl
+    : NEW_URL
+const fromEnvKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  "sb_publishable_ZyUqnzZYmWHoY3sLR1kZmg_O-gp7UeQ"
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const key =
+  fromEnvKey && !fromEnvKey.includes("ZyUqnzZYmWHoY3sLR1kZmg")
+    ? fromEnvKey
+    : NEW_KEY
 
 export const supabaseEnabled = Boolean(url && key)
 
