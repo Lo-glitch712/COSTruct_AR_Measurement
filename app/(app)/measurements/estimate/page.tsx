@@ -110,8 +110,7 @@ export default function EstimatePage() {
           <span className="eyebrow">Estimate</span>
           <h1 className="page-title">Project estimate</h1>
           <p className="page-subtitle">
-            Material quantities at the hardware store's unit prices — quantity ×
-            price, no added markup.
+            Material quantities and cost for every component you measured.
           </p>
         </div>
         <button
@@ -175,7 +174,7 @@ export default function EstimatePage() {
                 <li key={line.material}>
                   <span className="material-name">{line.material}</span>
                   <span className="material-qty">
-                    {quantity(line.quantity)} {line.unit} × {peso(line.unitPrice)}
+                    {quantity(line.quantity)} {line.unit}
                   </span>
                   <span className="material-cost">{peso(line.cost)}</span>
                 </li>
