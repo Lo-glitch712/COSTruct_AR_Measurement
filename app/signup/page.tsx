@@ -20,6 +20,7 @@ export default function SignupPage() {
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const [created, setCreated] = useState(false)
 
   function set<K extends keyof ProfileDetails>(key: K, value: ProfileDetails[K]) {
     setProfile((current) => ({ ...current, [key]: value }))
@@ -78,7 +79,7 @@ export default function SignupPage() {
       } catch (err) {
         if (!remoteOk) throw err
       }
-      router.push("/login?created=1")
+      setCreated(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account.")
     } finally {
@@ -257,6 +258,34 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
+
+      {created ? (
+        <div className="logout-scrim" role="presentation">
+          <div
+            className="logout-dialog start-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="created-title"
+          >
+            <h2 id="created-title" className="section-title">
+              Account created
+            </h2>
+            <p className="muted" style={{ fontSize: 14 }}>
+              Your buyer account is ready. Sign in with the email and password
+              you just used.
+            </p>
+            <div className="logout-dialog-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => router.push("/login?role=buyer&created=1")}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }
