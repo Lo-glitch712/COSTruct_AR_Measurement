@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Icon from "@/components/Icon"
 import { registerBuyer } from "@/lib/accounts"
-import { signUpBuyerRemote } from "@/lib/auth"
+import { isRemoteUnreachable, signUpBuyerRemote } from "@/lib/auth"
 import { EMPTY_PROFILE, type ProfileDetails } from "@/lib/profile"
 import { supabaseEnabled } from "@/lib/supabase"
 
@@ -60,16 +60,19 @@ export default function SignupPage() {
     setError("")
     try {
       const payload = { ...profile, email: profile.email.trim(), password }
-      if (!supabaseEnabled) {
-        throw new Error(
-          "Not connected to the database. Add the Supabase URL and publishable key, then restart the app.",
-        )
+      let remoteOk = false
+      if (supabaseEnabled) {
+        try {
+          await signUpBuyerRemote(payload)
+          remoteOk = true
+        } catch (err) {
+          if (!isRemoteUnreachable(err)) throw err
+        }
       }
-      await signUpBuyerRemote(payload)
       try {
         registerBuyer(payload)
-      } catch {
-        // already stored locally
+      } catch (err) {
+        if (!remoteOk) throw err
       }
       router.push("/login?created=1")
     } catch (err) {

@@ -74,6 +74,14 @@ function LoginForm() {
           phone: account.phone,
           role: account.role,
           supplierId: account.supplierId,
+          firstName: account.firstName,
+          middleName: account.middleName,
+          lastName: account.lastName,
+          birthday: account.birthday,
+          street: account.street,
+          city: account.city,
+          province: account.province,
+          zipCode: account.zipCode,
         })
       }
       go("/home", "Opening your workspace")

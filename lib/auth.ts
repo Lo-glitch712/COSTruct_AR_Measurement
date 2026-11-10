@@ -4,6 +4,7 @@ import {
   SUPPLIER_PASSWORD,
   authenticate,
   findAccount,
+  type Account,
 } from "@/lib/accounts"
 import {
   clearSession,
@@ -33,6 +34,44 @@ type ProfileRow = {
 }
 
 export type RemoteProfile = Session & { id: string }
+
+/** Browser TypeError when the Supabase host is down, paused, or DNS-missing. */
+export function isRemoteUnreachable(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message?: string }).message)
+        : String(error ?? "")
+  const lower = message.toLowerCase()
+  return (
+    lower.includes("failed to fetch") ||
+    lower.includes("fetch failed") ||
+    lower.includes("networkerror") ||
+    lower.includes("network request failed") ||
+    lower.includes("load failed") ||
+    lower.includes("authretryablefetch") ||
+    lower.includes("err_name_not_resolved")
+  )
+}
+
+function sessionFromAccount(account: Account): Session {
+  return {
+    name: account.name,
+    email: account.email,
+    phone: account.phone,
+    role: account.role,
+    supplierId: account.supplierId,
+    firstName: account.firstName,
+    middleName: account.middleName,
+    lastName: account.lastName,
+    birthday: account.birthday,
+    street: account.street,
+    city: account.city,
+    province: account.province,
+    zipCode: account.zipCode,
+  }
+}
 
 function sessionFromProfile(row: ProfileRow): RemoteProfile {
   return {
@@ -87,21 +126,14 @@ async function upsertProfile(userId: string, session: Session) {
   if (error) throw new Error(error.message)
 }
 
-function seededLocalSession(
+function localSession(
   email: string,
   password: string,
   role: Role,
 ): Session | null {
   const account = authenticate(email, password)
   if (!account || account.role !== role) return null
-  if (account.role !== "supplier" && account.role !== "admin") return null
-  return {
-    name: account.name,
-    email: account.email,
-    phone: account.phone,
-    role: account.role,
-    supplierId: account.supplierId,
-  }
+  return sessionFromAccount(account)
 }
 
 function seededMeta(email: string, role: Role) {
@@ -161,29 +193,59 @@ export async function signInRemote(
   }
 
   const trimmed = email.trim().toLowerCase()
-  let { data, error } = await supabase.auth.signInWithPassword({
-    email: trimmed,
-    password,
-  })
+  let data: Awaited<
+    ReturnType<typeof supabase.auth.signInWithPassword>
+  >["data"] | null = null
+  let error: Awaited<
+    ReturnType<typeof supabase.auth.signInWithPassword>
+  >["error"] = null
 
-  if (error) {
+  try {
+    const result = await supabase.auth.signInWithPassword({
+      email: trimmed,
+      password,
+    })
+    data = result.data
+    error = result.error
+  } catch (err) {
+    error = {
+      message: err instanceof Error ? err.message : "Failed to fetch",
+      name: "AuthRetryableFetchError",
+      status: 0,
+    } as typeof error
+  }
+
+  if (error && !isRemoteUnreachable(error)) {
     const created = await ensureAuthUser(trimmed, password, role)
     if (created) {
-      ;({ data, error } = await supabase.auth.signInWithPassword({
-        email: trimmed,
-        password,
-      }))
+      try {
+        const result = await supabase.auth.signInWithPassword({
+          email: trimmed,
+          password,
+        })
+        data = result.data
+        error = result.error
+      } catch (err) {
+        error = {
+          message: err instanceof Error ? err.message : "Failed to fetch",
+          name: "AuthRetryableFetchError",
+          status: 0,
+        } as typeof error
+      }
     }
   }
 
-  if (error || !data.user) {
-    const seeded = seededLocalSession(trimmed, password, role)
-    if (seeded) {
-      await supabase.auth.signOut()
-      writeSession(seeded)
-      return seeded
+  if (error || !data?.user) {
+    const local = localSession(trimmed, password, role)
+    if (local) {
+      await supabase.auth.signOut().catch(() => {})
+      writeSession(local)
+      return local
     }
     const message = error?.message ?? "Email or password is incorrect."
+    if (isRemoteUnreachable(error)) {
+      throw new Error("Email or password is incorrect.")
+    }
     if (message.toLowerCase().includes("not confirmed")) {
       throw new Error(
         "That email is not confirmed yet. Open the confirmation mail, then sign in again.",
@@ -229,27 +291,32 @@ export async function signUpBuyerRemote(
 
   const email = input.email.trim().toLowerCase()
   const name = fullName(input)
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password: input.password,
-    options: {
-      data: {
-        role: "buyer",
-        name,
-        phone: input.phone.trim(),
-        first_name: input.firstName.trim(),
-        middle_name: input.middleName.trim(),
-        last_name: input.lastName.trim(),
-        birthday: input.birthday,
-        street: input.street.trim(),
-        city: input.city.trim(),
-        province: input.province.trim(),
-        zip_code: input.zipCode.trim(),
+  let data: Awaited<ReturnType<typeof supabase.auth.signUp>>["data"]
+  try {
+    const result = await supabase.auth.signUp({
+      email,
+      password: input.password,
+      options: {
+        data: {
+          role: "buyer",
+          name,
+          phone: input.phone.trim(),
+          first_name: input.firstName.trim(),
+          middle_name: input.middleName.trim(),
+          last_name: input.lastName.trim(),
+          birthday: input.birthday,
+          street: input.street.trim(),
+          city: input.city.trim(),
+          province: input.province.trim(),
+          zip_code: input.zipCode.trim(),
+        },
       },
-    },
-  })
-
-  if (error) throw new Error(error.message)
+    })
+    data = result.data
+    if (result.error) throw new Error(result.error.message)
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : "Failed to fetch")
+  }
   if (!data.user) {
     throw new Error("Could not create the account in the database.")
   }
