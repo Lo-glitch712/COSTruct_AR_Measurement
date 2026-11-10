@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
-import Icon from "@/components/Icon"
+import BlockStack from "@/components/BlockStack"
 
-export const RULER_LOAD_MS = 5000
+export const RULER_LOAD_MS = 3000
 
 export default function RulerLoader({ message }: { message: string }) {
   const [mounted, setMounted] = useState(false)
@@ -18,15 +18,12 @@ export default function RulerLoader({ message }: { message: string }) {
 
   return createPortal(
     <div className="ruler-loader" role="status" aria-live="polite">
-      <div className="ruler-loader-mark" aria-hidden="true">
-        <span className="ruler-ring" />
-        <span className="ruler-ring ruler-ring-inner" />
-        <span className="ruler-spin">
-          <Icon name="ruler" size={52} />
-        </span>
-      </div>
+      <BlockStack />
       <p className="ruler-loader-brand">COSTruct</p>
       <p className="ruler-loader-copy">{message}</p>
+      <div className="ruler-loader-bar" aria-hidden="true">
+        <span className="ruler-loader-fill" />
+      </div>
     </div>,
     document.body,
   )

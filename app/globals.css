@@ -1254,12 +1254,66 @@ textarea.input-area {
   text-align: center;
 }
 
-.brand-splash-mark {
-  position: relative;
+.block-stack {
   width: 168px;
-  height: 168px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  align-items: center;
+}
+
+.block-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.block-row-offset {
+  padding-left: 14px;
+}
+
+.block-brick {
+  width: 38px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--accent);
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+  opacity: 0.18;
+  transform: translateY(8px);
+  animation: block-place 1.8s ease-out infinite;
+}
+
+.block-row:nth-child(1) .block-brick:nth-child(1) { animation-delay: 0s; }
+.block-row:nth-child(1) .block-brick:nth-child(2) { animation-delay: 0.08s; }
+.block-row:nth-child(1) .block-brick:nth-child(3) { animation-delay: 0.16s; }
+.block-row:nth-child(2) .block-brick:nth-child(1) { animation-delay: 0.24s; }
+.block-row:nth-child(2) .block-brick:nth-child(2) { animation-delay: 0.32s; }
+.block-row:nth-child(2) .block-brick:nth-child(3) { animation-delay: 0.4s; }
+.block-row:nth-child(3) .block-brick:nth-child(1) { animation-delay: 0.48s; }
+.block-row:nth-child(3) .block-brick:nth-child(2) { animation-delay: 0.56s; }
+
+@keyframes block-place {
+  0% {
+    opacity: 0.18;
+    transform: translateY(8px);
+  }
+  18%,
+  62% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0.18;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block-brick {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
 }
 
 .brand-splash-name {
@@ -3573,36 +3627,6 @@ textarea.input-area {
   background: linear-gradient(168deg, #e8eef4 0%, #f4f6f8 46%, #dce6ef 100%);
 }
 
-.ruler-loader-mark {
-  position: relative;
-  width: 168px;
-  height: 168px;
-  display: grid;
-  place-items: center;
-}
-
-.ruler-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px dashed rgba(18, 38, 58, 0.28);
-  animation: ruler-orbit 7s linear infinite;
-}
-
-.ruler-ring-inner {
-  inset: 22px;
-  border-style: dotted;
-  border-width: 1.5px;
-  animation-duration: 4.2s;
-  animation-direction: reverse;
-}
-
-.ruler-spin {
-  position: relative;
-  color: var(--accent);
-  animation: ruler-turn 1.8s linear infinite;
-}
-
 .ruler-loader-brand {
   margin: 8px 0 0;
   font-size: 22px;
@@ -3616,23 +3640,33 @@ textarea.input-area {
   color: var(--label-secondary);
 }
 
-@keyframes ruler-orbit {
-  to {
-    transform: rotate(-360deg);
-  }
+.ruler-loader-bar {
+  width: min(220px, 56vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(18, 38, 58, 0.12);
 }
 
-@keyframes ruler-turn {
+.ruler-loader-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: ruler-load 3s linear forwards;
+}
+
+@keyframes ruler-load {
   to {
-    transform: rotate(360deg);
+    width: 100%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ruler-ring,
-  .ruler-ring-inner,
-  .ruler-spin {
-    animation-duration: 4s;
+  .ruler-loader-fill {
+    width: 100%;
+    animation: none;
   }
 }
 

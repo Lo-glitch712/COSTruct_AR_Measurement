@@ -556,32 +556,66 @@
     color: #0f172a;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  .costruct-ar-mark {
+  .costruct-ar-viewfinder {
     position: relative;
     width: 168px;
     height: 168px;
-    display: grid;
-    place-items: center;
   }
-  .costruct-ar-ring {
+  .ar-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 3px solid #12263a;
+    animation: ar-lock 1.6s ease-in-out infinite;
+  }
+  .ar-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+  .ar-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+  .ar-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+  .ar-br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+  .ar-reticle {
     position: absolute;
     inset: 0;
+    margin: auto;
+    width: 18px;
+    height: 18px;
+  }
+  .ar-reticle::before,
+  .ar-reticle::after {
+    content: "";
+    position: absolute;
+    background: #12263a;
+  }
+  .ar-reticle::before { left: 50%; top: 0; width: 1.5px; height: 100%; transform: translateX(-50%); }
+  .ar-reticle::after { top: 50%; left: 0; height: 1.5px; width: 100%; transform: translateY(-50%); }
+  .ar-point {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    border: 2px dashed rgba(18, 38, 58, 0.28);
-    animation: costruct-orbit 7s linear infinite;
+    background: #12263a;
+    box-shadow: 0 0 0 8px rgba(18, 38, 58, 0.12);
+    animation: ar-pulse 1.4s ease-out infinite;
   }
-  .costruct-ar-ring-inner {
-    inset: 22px;
-    border-style: dotted;
-    border-width: 1.5px;
-    animation-duration: 4.2s;
-    animation-direction: reverse;
+  .ar-run {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 36px;
+    height: 2px;
+    background: rgba(18, 38, 58, 0.35);
   }
-  .costruct-ar-spin {
-    position: relative;
+  .ar-run span {
+    position: absolute;
+    top: -18px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     color: #12263a;
-    animation: costruct-turn 1.8s linear infinite;
   }
+  .ar-run .ar-l1 { left: 0; }
+  .ar-run .ar-l2 { right: 0; }
   .costruct-ar-name {
     margin: 18px 0 0;
     font-size: clamp(42px, 12vw, 64px);
@@ -618,16 +652,22 @@
     letter-spacing: 0.04em;
     color: rgba(15, 23, 42, 0.4);
   }
-  @keyframes costruct-orbit { to { transform: rotate(-360deg); } }
-  @keyframes costruct-turn { to { transform: rotate(360deg); } }
   @keyframes costruct-shimmer {
     0% { transform: translateX(-120%); }
     100% { transform: translateX(280%); }
   }
+  @keyframes ar-lock {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(0.92); opacity: 1; }
+  }
+  @keyframes ar-pulse {
+    0% { transform: scale(0.7); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .costruct-ar-ring,
-    .costruct-ar-ring-inner,
-    .costruct-ar-spin,
+    .ar-corner,
+    .ar-point,
     .costruct-ar-fill { animation: none; }
   }
 </style>
@@ -641,18 +681,17 @@
   (function () {
     const splash = ''
       + '<div class="costruct-ar-splash">'
-      +   '<div class="costruct-ar-mark" aria-hidden="true">'
-      +     '<span class="costruct-ar-ring"></span>'
-      +     '<span class="costruct-ar-ring costruct-ar-ring-inner"></span>'
-      +     '<span class="costruct-ar-spin">'
-      +       '<svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
-      +         '<path d="M3.6 14.4 14.4 3.6a1.4 1.4 0 0 1 2 0l4 4a1.4 1.4 0 0 1 0 2L9.6 20.4a1.4 1.4 0 0 1-2 0l-4-4a1.4 1.4 0 0 1 0-2Z"/>'
-      +         '<path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>'
-      +       '</svg>'
-      +     '</span>'
+      +   '<div class="costruct-ar-viewfinder" aria-hidden="true">'
+      +     '<span class="ar-corner ar-tl"></span>'
+      +     '<span class="ar-corner ar-tr"></span>'
+      +     '<span class="ar-corner ar-bl"></span>'
+      +     '<span class="ar-corner ar-br"></span>'
+      +     '<span class="ar-reticle"></span>'
+      +     '<span class="ar-point"></span>'
+      +     '<span class="ar-run"><span class="ar-l1">L1</span><span class="ar-l2">L2</span></span>'
       +   '</div>'
       +   '<div class="costruct-ar-name">COSTruct</div>'
-      +   '<p class="costruct-ar-tag">Measurement, cost estimation &amp; procurement</p>'
+      +   '<p class="costruct-ar-tag">AR measurement — aim, then tap Place</p>'
       +   '<div class="costruct-ar-bar" aria-hidden="true"><span class="costruct-ar-fill"></span></div>'
       +   '<p class="costruct-ar-powered">Powered by 8th Wall</p>'
       + '</div>'

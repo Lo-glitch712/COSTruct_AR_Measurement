@@ -1,17 +1,11 @@
-import Icon from "@/components/Icon"
+import BlockStack from "@/components/BlockStack"
 
 export const BRAND_LOAD_MS = 8000
 
 export default function BrandSplash() {
   return (
     <main className="brand-splash" role="status" aria-live="polite">
-      <div className="brand-splash-mark" aria-hidden="true">
-        <span className="ruler-ring" />
-        <span className="ruler-ring ruler-ring-inner" />
-        <span className="ruler-spin">
-          <Icon name="ruler" size={52} />
-        </span>
-      </div>
+      <BlockStack />
       <h1 className="brand-splash-name">COSTruct</h1>
       <p className="brand-splash-tag">
         Measurement, cost estimation &amp; procurement
