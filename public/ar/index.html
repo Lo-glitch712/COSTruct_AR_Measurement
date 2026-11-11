@@ -1333,13 +1333,21 @@
         const dim=`${qty(d.length)} × ${qty(d.width)} × ${qty(d.height)} m`;
         let subtotal=0;
         const tr=rows.map(r=>{const amount=r[1]*r[2]; subtotal+=amount; grand+=amount; return `<tr><td>${r[0]}</td><td>${qty(r[1])} ${r[3]}</td><td>${peso(r[2])}</td><td>${peso(amount)}</td></tr>`;}).join('');
-        section.innerHTML=`<div class="receiptComponentTitle"><div><b>${card.dataset.component}</b><small>${card.querySelector('.componentMethod.active')?.textContent?.replace(/^[^A-Za-z]+/,'')||'Manual Input'}</small></div><b>${peso(subtotal)}</b></div><div class="receiptDim">Dimensions: <strong>${dim}</strong> · Floor/Plan Area: <strong>${floorAreaFor(card,d).toFixed(2)} m²</strong></div><table class="receiptTable"><thead><tr><th>Material</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr></thead><tbody>${tr}</tbody></table><div class="componentSubtotal">Component Total: ${peso(subtotal)}</div>`;
+        section.innerHTML=`<div class="receiptComponentTitle"><div><b>${card.dataset.component}</b><small>${card.querySelector('.componentMethod.active')?.textContent?.replace(/^[^A-Za-z]+/,'')||'Manual Input'}</small></div><b>${peso(subtotal)}</b></div><div class="receiptDim">Dimensions: <strong>${dim}</strong> · ${metricLine(card.dataset.component,d)}</div><table class="receiptTable"><thead><tr><th>Material</th><th>Quantity</th><th>Unit Price</th><th>Amount</th></tr></thead><tbody>${tr}</tbody></table><div class="componentSubtotal">Component Total: ${peso(subtotal)}</div>`;
         box.appendChild(section);
       });
       if(!count){ box.innerHTML='<div class="emptyReceipt">No complete component dimensions yet.<br>Enter or measure Length, Width, and Height first.</div>'; }
       document.getElementById('receiptGrandTotal').textContent=peso(grand);
     }
     function floorAreaFor(card,d){ return d.length*d.width; }
+    function metricLine(name,d){
+      const floor=d.length*d.width;
+      const wall=2*(d.length+d.width)*d.height;
+      const vol=d.length*d.width*d.height;
+      if(name==='Walls'||name==='Plastering') return `Wall area: <strong>${wall.toFixed(2)} m²</strong>`;
+      if(name==='Mortar') return `Volume: <strong>${vol.toFixed(2)} m³</strong>`;
+      return `Floor area: <strong>${floor.toFixed(2)} m²</strong> · Volume: <strong>${vol.toFixed(2)} m³</strong>`;
+    }
     function showReceipt(){ updateAll(); renderReceipt(); estimationScreen.style.display='none'; document.body.classList.remove('estimation-active'); document.getElementById('materialsPricingScreen').style.display='block'; }
     document.getElementById('calculateEstimateBtn').addEventListener('click',showReceipt);
     document.getElementById('backToMeasurementsBtn').addEventListener('click',()=>{document.getElementById('materialsPricingScreen').style.display='none'; estimationScreen.style.display='block'; document.body.classList.add('estimation-active'); updateAll();});

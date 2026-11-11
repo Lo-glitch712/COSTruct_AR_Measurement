@@ -72,6 +72,15 @@ export function concreteVolume({ length, width, height }: Dimensions) {
   return length * width * height
 }
 
+export type ComponentMetric = "floor" | "wall" | "volume"
+
+/** Which computed areas to show for a component. Wall area is walls/plaster only. */
+export function metricsFor(name: ComponentName): ComponentMetric[] {
+  if (name === "Walls" || name === "Plastering") return ["wall"]
+  if (name === "Mortar") return ["volume"]
+  return ["floor", "volume"]
+}
+
 function quoteName(quote: PriceQuote) {
   return quote.name ?? quote.material ?? ""
 }

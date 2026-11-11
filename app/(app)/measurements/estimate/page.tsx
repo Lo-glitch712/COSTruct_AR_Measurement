@@ -110,7 +110,8 @@ export default function EstimatePage() {
           <span className="eyebrow">Estimate</span>
           <h1 className="page-title">Project estimate</h1>
           <p className="page-subtitle">
-            Material quantities and cost for every component you measured.
+            Each line is quantity × the hardware store unit price. No tax,
+            delivery, or markup.
           </p>
         </div>
         <button
@@ -170,11 +171,21 @@ export default function EstimatePage() {
               </span>
             </div>
             <ul className="material-lines">
+              <li className="material-lines-head">
+                <span>Material</span>
+                <span>Qty</span>
+                <span>Unit price</span>
+                <span>Amount</span>
+              </li>
               {component.lines.map((line) => (
                 <li key={line.material}>
                   <span className="material-name">{line.material}</span>
                   <span className="material-qty">
                     {quantity(line.quantity)} {line.unit}
+                  </span>
+                  <span className="material-rate">
+                    {peso(line.unitPrice)}
+                    <small> / {line.unit}</small>
                   </span>
                   <span className="material-cost">{peso(line.cost)}</span>
                 </li>
@@ -187,6 +198,11 @@ export default function EstimatePage() {
           <span>ESTIMATED TOTAL</span>
           <strong>{peso(total)}</strong>
         </div>
+        <p className="receipt-note">
+          Amount = quantity × unit price from{" "}
+          {supplier?.name ?? "the selected hardware store"}. Pickup prices
+          already include VAT. No delivery, tax, or extra charge is added.
+        </p>
       </article>
 
       <div className="estimate-actions">

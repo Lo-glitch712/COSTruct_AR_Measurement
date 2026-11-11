@@ -17,6 +17,7 @@ import {
   COMPONENTS,
   concreteVolume,
   floorArea,
+  metricsFor,
   peso,
   quantity,
   wallArea,
@@ -463,20 +464,30 @@ export default function MeasurementsPage() {
 
                     {measuredHere ? (
                       <div className="component-metrics">
-                        <span>
-                          Floor area{" "}
-                          <strong>{quantity(floorArea(dimensions))} m²</strong>
-                        </span>
-                        <span>
-                          Wall area{" "}
-                          <strong>{quantity(wallArea(dimensions))} m²</strong>
-                        </span>
-                        <span>
-                          Volume{" "}
-                          <strong>
-                            {quantity(concreteVolume(dimensions))} m³
-                          </strong>
-                        </span>
+                        {metricsFor(name).includes("floor") ? (
+                          <span>
+                            Floor area{" "}
+                            <strong>
+                              {quantity(floorArea(dimensions))} m²
+                            </strong>
+                          </span>
+                        ) : null}
+                        {metricsFor(name).includes("wall") ? (
+                          <span>
+                            Wall area{" "}
+                            <strong>
+                              {quantity(wallArea(dimensions))} m²
+                            </strong>
+                          </span>
+                        ) : null}
+                        {metricsFor(name).includes("volume") ? (
+                          <span>
+                            Volume{" "}
+                            <strong>
+                              {quantity(concreteVolume(dimensions))} m³
+                            </strong>
+                          </span>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

@@ -293,7 +293,8 @@ function drawHeader(doc: PdfDoc, input: EstimatePdfInput) {
 
 function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
   const costCol = PAGE_W - MARGIN
-  const qtyCol = costCol - 118
+  const rateCol = costCol - 92
+  const qtyCol = rateCol - 78
 
   for (const component of input.components) {
     doc.ensure(72)
@@ -310,9 +311,10 @@ function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
     for (const line of component.lines) {
       doc.ensure(16)
       const qty = `${quantity(line.quantity)} ${normalize(line.unit)}`
+      const rate = php(line.unitPrice)
       const cost = php(line.cost)
       const nameWidth = qtyCol - MARGIN - 12 - measure(qty, 9, false)
-      const names = wrapText(line.material, Math.max(120, nameWidth), 9, false)
+      const names = wrapText(line.material, Math.max(100, nameWidth), 9, false)
       names.forEach((nameLine, index) => {
         doc.text(nameLine, MARGIN, 9, {
           color: ACCENT,
@@ -320,6 +322,7 @@ function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
         })
       })
       doc.text(qty, qtyCol - measure(qty, 9, false), 9, { color: MUTED, gap: 0 })
+      doc.text(rate, rateCol - measure(rate, 9, false), 9, { color: MUTED, gap: 0 })
       doc.text(cost, costCol - measure(cost, 9, false), 9, { color: ACCENT, gap: 13 })
     }
     doc.y -= 8
@@ -336,7 +339,7 @@ function drawComponents(doc: PdfDoc, input: EstimatePdfInput) {
   })
 
   const note =
-    "Quantities are estimated from the dimensions you entered or measured in AR. These are planning figures only. Verify them against your project specifications before buying. Pickup prices; no tax or delivery is added."
+    "Each line is quantity times the hardware store unit price. No markup, tax, or delivery is added. Quantities are planning figures from the dimensions you entered or measured in AR. Verify them before buying."
   for (const line of wrapText(note, CONTENT_W, 8, false)) {
     doc.text(line, MARGIN, 8, { color: MUTED, gap: 11 })
   }

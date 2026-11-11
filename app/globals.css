@@ -3266,12 +3266,25 @@ textarea.input-area {
 
 .material-lines li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: baseline;
   gap: 14px;
   padding: 8px 0;
   border-bottom: 1px solid var(--separator);
   font-size: 14px;
+}
+
+.material-lines-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+  border-bottom-color: var(--separator-strong);
+}
+
+.material-lines-head span:not(:first-child) {
+  text-align: right;
 }
 
 .material-lines li:last-child {
@@ -3283,6 +3296,7 @@ textarea.input-area {
 }
 
 .material-qty,
+.material-rate,
 .material-cost {
   font-variant-numeric: tabular-nums;
 }
@@ -3302,6 +3316,19 @@ textarea.input-area {
   white-space: nowrap;
 }
 
+.material-rate {
+  min-width: 92px;
+  text-align: right;
+  color: var(--label-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.material-rate small {
+  color: var(--label-tertiary);
+  font-size: 11px;
+}
+
 .material-cost {
   min-width: 96px;
   text-align: right;
@@ -3319,13 +3346,23 @@ textarea.input-area {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .material-lines-head {
+    display: none;
+  }
+
   .material-qty {
     grid-column: 1;
     grid-row: 2;
   }
 
+  .material-rate {
+    grid-column: 1;
+    grid-row: 3;
+    text-align: left;
+  }
+
   .material-cost {
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
   }
 }
 
@@ -3912,6 +3949,13 @@ textarea.input-area {
   letter-spacing: -0.03em;
   color: var(--accent-bright);
   font-variant-numeric: tabular-nums;
+}
+
+.receipt-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--label-tertiary);
 }
 
 .estimate-head {
